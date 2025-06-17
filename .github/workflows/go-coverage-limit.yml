@@ -1,0 +1,31 @@
+name: Test with Coverage Limit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Run tests with coverage
+        run: |
+          go test ./... -coverprofile=coverage.out
+      - name: Check code coverage
+        run: |
+          coverage=$(go tool cover -func=coverage.out | grep total: | awk '{print $3}' | sed 's/%//')
+          echo "Coverage is $coverage%"
+          threshold=80.0
+          result=$(echo "$coverage < $threshold" | bc -l)
+          if [ "$result" -eq 1 ]; then
+            echo "Code coverage is below $threshold%"
+            exit 1
+          fi
+
+
