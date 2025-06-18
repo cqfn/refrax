@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/cqfn/refrax/internal/server"
+	"github.com/cqfn/refrax/internal/facilitator"
 	"github.com/spf13/cobra"
 )
 
@@ -11,7 +11,7 @@ func newStartCmd() *cobra.Command {
 		Aliases: []string{"st"},
 		Short:   "start server",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.StartServer(8080)
+			return facilitator.StartServer(8080)
 		},
 	}
 	return command
