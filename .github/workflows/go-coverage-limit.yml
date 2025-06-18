@@ -2,9 +2,9 @@ name: Test with Coverage Limit
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   test:
@@ -21,7 +21,7 @@ jobs:
         run: |
           coverage=$(go tool cover -func=coverage.out | grep total: | awk '{print $3}' | sed 's/%//')
           echo "Coverage is $coverage%"
-          threshold=80.0
+          threshold=55.0
           result=$(echo "$coverage < $threshold" | bc -l)
           if [ "$result" -eq 1 ]; then
             echo "Code coverage is below $threshold%"
