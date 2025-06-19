@@ -28,10 +28,20 @@ func NewTrpcServer(card AgentCard, port int) (Server, error) {
 	return &TrpcServer{card: card, server: *serv, port: port}, nil
 }
 
-func (s *TrpcServer) Start() error {
+func (s *TrpcServer) Start(ready chan<- struct{}) error {
 	port := fmt.Sprintf(":%d\n", s.port)
+	if ready != nil {
+		close(ready)
+	}
 	if err := s.server.Start(port); err != nil {
 		return fmt.Errorf("failed to start A2A server: %w", err)
+	}
+	return nil
+}
+
+func (s *TrpcServer) Close() error {
+	if err := s.server.Stop(context.Background()); err != nil {
+		return fmt.Errorf("failed to stop A2A server: %w", err)
 	}
 	return nil
 }
