@@ -36,13 +36,17 @@ func NewCustomServer(card AgentCard, handler MessageHandler, port int) (Server, 
 	return server, nil
 }
 
+func (serv *CustomServer) SetHandler(handler MessageHandler) {
+	serv.handler = handler
+}
+
 func LogRequest(message *Message) (*Message, error) {
 	log.Debug("server received the following message: %s", message.MessageID)
 	return message, nil
 }
 
 func (c *CustomServer) Start(ready chan<- struct{}) error {
-	log.Info("starting custom a2a server on port %d...", c.port)
+	log.Debug("starting custom a2a server on port %d...", c.port)
 	address := fmt.Sprintf(":%d", c.port)
 	l, err := net.Listen("tcp", address)
 	if err != nil {
@@ -56,7 +60,7 @@ func (c *CustomServer) Start(ready chan<- struct{}) error {
 }
 
 func (c *CustomServer) Close() error {
-	log.Info("stopping custom a2a server on port %d...", c.port)
+	log.Debug("stopping custom a2a server on port %d...", c.port)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	return c.server.Shutdown(ctx)
@@ -75,31 +79,32 @@ func (c *CustomServer) handleAgentCard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *CustomServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) {
+	log.Debug("JSON-RPC request received: %s", r.URL.Path)
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	log.Debug("JSON-RPC request received: %s", r.URL.Path)
 	var req JSONRPCRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		sendError(w, "", ErrCodeInvalidRequest, "invalid JSON payload")
 		return
 	}
+	pbytes, err := json.Marshal(req.Params)
+	var params MessageSendParams
+	if err != nil {
+		msg := fmt.Sprintf("failed to marshal params '%v': %v", req.Params, err)
+		sendError(w, toString(req.ID), ErrCodeInvalidRequest, msg)
+		return
+	}
+	if err := json.Unmarshal(pbytes, &params); err != nil {
+		msg := fmt.Sprintf("failed to unmarshal params '%v': : %v", req.Params, err)
+		sendError(w, toString(req.ID), ErrCodeInvalidRequest, msg)
+		return
+	}
+	log.Debug("handling JSON-RPC request: %s, params: %v", req.Method, params)
 	switch req.Method {
 	case "message/send":
-		var params MessageSendParams
-		paramsBytes, err := json.Marshal(req.Params)
-		if err != nil {
-			msg := fmt.Sprintf("failed to marshal params: %v", err)
-			sendError(w, toString(req.ID), ErrCodeInvalidRequest, msg)
-			return
-		}
-		if err := json.Unmarshal(paramsBytes, &params); err != nil {
-			msg := fmt.Sprintf("failed to unmarshal params: %v", err)
-			sendError(w, toString(req.ID), ErrCodeInvalidRequest, msg)
-			return
-		}
-		if err = s.handleMessageSend(w, &req, toString(req.ID)); err != nil {
+		if err := s.handleMessageSend(w, &params, toString(req.ID)); err != nil {
 			msg := fmt.Sprintf("failed to handle message send: %v", err)
 			sendError(w, toString(req.ID), ErrCodeInternalError, msg)
 			return
@@ -130,15 +135,7 @@ func toString(v any) string {
 	}
 }
 
-func (s *CustomServer) handleMessageSend(w http.ResponseWriter, req *JSONRPCRequest, id string) error {
-	var params MessageSendParams
-	paramsBytes, err := json.Marshal(req.Params)
-	if err != nil {
-		return err
-	}
-	if err := json.Unmarshal(paramsBytes, &params); err != nil {
-		return err
-	}
+func (s *CustomServer) handleMessageSend(w http.ResponseWriter, params *MessageSendParams, id string) error {
 	msg := params.Message
 	udpadted, err := s.handler(&msg)
 	if err != nil {

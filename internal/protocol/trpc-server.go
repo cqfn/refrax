@@ -28,6 +28,10 @@ func NewTrpcServer(card AgentCard, port int) (Server, error) {
 	return &TrpcServer{card: card, server: *serv, port: port}, nil
 }
 
+func (s *TrpcServer) SetHandler(handler MessageHandler) {
+	panic("unimplemented")
+}
+
 func (s *TrpcServer) Start(ready chan<- struct{}) error {
 	port := fmt.Sprintf(":%d\n", s.port)
 	if ready != nil {
