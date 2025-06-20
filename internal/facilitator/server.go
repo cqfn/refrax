@@ -1,6 +1,7 @@
 package facilitator
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/cqfn/refrax/internal/log"
@@ -12,18 +13,20 @@ type Facilitator struct {
 }
 
 func NewFacilitator(ai string, port int) (*Facilitator, error) {
-	log.Debug("preparing server on port %d with ai provider %s", port, ai)
+	log.Debug(prefixed("preparing server on port %d with ai provider %s"), port, ai)
 	server, error := protocol.NewCustomServer(agentCard(port), protocol.LogRequest, port)
 	if error != nil {
 		return nil, fmt.Errorf("failed to create A2A server: %w", error)
 	}
-	return &Facilitator{
+	res := &Facilitator{
 		server: server,
-	}, nil
+	}
+	server.SetHandler(res.brainLess)
+	return res, nil
 }
 
 func StartServer(ai string, port int) error {
-	log.Debug("starting refrax server on port %d with ai provider %s", port, ai)
+	log.Debug(prefixed("starting facilitator server on port %d with ai provider %s"), port, ai)
 	facilitator, err := NewFacilitator(ai, port)
 	if err != nil {
 		return fmt.Errorf("failed to create facilitator: %w", err)
@@ -32,21 +35,55 @@ func StartServer(ai string, port int) error {
 }
 
 func (f *Facilitator) Start(ready chan<- struct{}) error {
-	log.Debug("starting facilitator server")
+	log.Info(prefixed("starting facilitator server"))
 	if err := f.server.Start(ready); err != nil {
 		return fmt.Errorf("failed to start facilitator server: %w", err)
 	}
-	log.Info("facilitator server started successfully")
+	log.Info(prefixed("facilitator server started successfully"))
 	return nil
 }
 
 func (f *Facilitator) Close() error {
-	log.Debug("stopping facilitator server")
+	log.Info(prefixed("stopping facilitator server..."))
 	if err := f.server.Close(); err != nil {
 		return fmt.Errorf("failed to stop facilitator server: %w", err)
 	}
-	log.Info("facilitator server stopped successfully")
+	log.Info(prefixed("facilitator server stopped successfully"))
 	return nil
+}
+
+func (f *Facilitator) brainLess(m *protocol.Message) (*protocol.Message, error) {
+	log.Info(prefixed("received message id:  %s"), m.MessageID)
+	log.Debug(prefixed("message parts: %v"), m.Parts)
+	for _, part := range m.Parts {
+		partKind := part.PartKind()
+		if partKind == protocol.PartKindText {
+			task := part.(*protocol.TextPart).Text
+			log.Info(prefixed("received task: %s"), task)
+		}
+		if partKind == protocol.PartKindFile {
+			filePart := part.(*protocol.FilePart)
+			log.Info(prefixed("received file: %s"), filePart.File)
+			content, err := base64.StdEncoding.DecodeString(filePart.File.(protocol.FileWithBytes).Bytes)
+			if err != nil {
+				return nil, err
+			}
+			log.Debug(prefixed("file content: %s"), content)
+		}
+	}
+	res := protocol.Message{
+		Kind: protocol.KindMessage,
+		Parts: []protocol.Part{
+			&protocol.FilePart{
+				Kind: protocol.PartKindFile,
+				File: protocol.FileWithBytes{
+					Bytes: base64.StdEncoding.EncodeToString([]byte(refactored())),
+				},
+			},
+		},
+	}
+	log.Debug(prefixed("sending response: %s"), res)
+	return &res, nil
 }
 
 func agentCard(port int) protocol.AgentCard {
@@ -57,4 +94,12 @@ func agentCard(port int) protocol.AgentCard {
 		Version("0.0.1").
 		Skill("facilitate-discussion", "Refactor Java Projects", "Facilitate discussion on code refactoring").
 		Build()
+}
+
+func refactored() string {
+	return "public class Main {\n\tpublic static void main(String[] args) {\n\t\tSystem.out.println(\"Hello, World\");\n\t}\n"
+}
+
+func prefixed(template string) string {
+	return fmt.Sprintf("facilitator: %s", template)
 }

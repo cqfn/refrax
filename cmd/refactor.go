@@ -15,7 +15,7 @@ func newRefactorCmd(params *Params) *cobra.Command {
 		Short:   "refactor code",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.Debug("refactor command called with provider: %s", params.provider)
-			ref, err := client.Refactor("code refactoring...")
+			ref, err := client.Refactor(client.NewMockProject())
 			log.Debug("refactor result: %s", ref)
 			fmt.Println("Refrax says:", ref)
 			return err

@@ -25,6 +25,7 @@ func NewCustomClient(url string) Client {
 func (c *CustomClient) SendMessage(params MessageSendParams) (*JSONRPCResponse, error) {
 	req := JSONRPCRequest{
 		JSONRPC: "2.0",
+		ID:      "1", // Static ID for simplicity, can be changed to a unique ID generator
 		Method:  "message/send",
 		Params:  params,
 	}

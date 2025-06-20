@@ -1,5 +1,12 @@
 package protocol
 
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/cqfn/refrax/internal/log"
+)
+
 // JSON-RPC 2.0 standard error codes (per A2A specification)
 const (
 	// -32700: Invalid JSON payload
@@ -40,4 +47,59 @@ type JSONRPCError struct {
 	Code    int    `json:"code"`           // Error code indicating the type of error
 	Message string `json:"message"`        // Short description of the error
 	Data    any    `json:"data,omitempty"` // Optional additional information (any type)
+}
+
+func (r *JSONRPCResponse) UnmarshalJSON(data []byte) error {
+	log.Debug("Unmarshalling JSON-RPC response: %s", string(data))
+	type alias JSONRPCResponse
+	type temp struct {
+		Result json.RawMessage `json:"result,omitempty"`
+		*alias
+	}
+	aux := temp{
+		alias: (*alias)(r),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	if len(aux.Result) == 0 || string(aux.Result) == "null" {
+		r.Result = nil
+		return nil
+	}
+
+	var kind struct {
+		Kind string `json:"kind"`
+	}
+	if err := json.Unmarshal(aux.Result, &kind); err != nil {
+		return fmt.Errorf("failed to detect kind: %w", err)
+	}
+
+	log.Debug("Detected kind: %s", kind.Kind)
+
+	// Step 5: decode into appropriate type
+	switch kind.Kind {
+	case "message":
+		var msg Message
+		if err := json.Unmarshal(aux.Result, &msg); err != nil {
+			return fmt.Errorf("failed to unmarshal message: %w", err)
+		}
+		r.Result = msg
+	case "task":
+		var task Task
+		if err := json.Unmarshal(aux.Result, &task); err != nil {
+			return fmt.Errorf("failed to unmarshal task: %w", err)
+		}
+		r.Result = task
+	default:
+		// fallback: leave as generic map
+		var generic map[string]any
+		if err := json.Unmarshal(aux.Result, &generic); err != nil {
+			return fmt.Errorf("failed to unmarshal unknown result type: %w", err)
+		}
+		r.Result = generic
+	}
+
+	return nil
 }
