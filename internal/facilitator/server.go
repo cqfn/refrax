@@ -71,17 +71,9 @@ func (f *Facilitator) brainLess(m *protocol.Message) (*protocol.Message, error) 
 			log.Debug(prefixed("file content: %s"), content)
 		}
 	}
-	res := protocol.Message{
-		Kind: protocol.KindMessage,
-		Parts: []protocol.Part{
-			&protocol.FilePart{
-				Kind: protocol.PartKindFile,
-				File: protocol.FileWithBytes{
-					Bytes: base64.StdEncoding.EncodeToString([]byte(refactored())),
-				},
-			},
-		},
-	}
+	res := protocol.NewMessageBuilder().
+		Part(protocol.NewFileBytes([]byte(refactored()))).
+		Build()
 	log.Debug(prefixed("sending response: %s"), res)
 	return &res, nil
 }

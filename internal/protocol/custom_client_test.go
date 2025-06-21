@@ -14,7 +14,7 @@ func TestCustomClient_SendsMessage(t *testing.T) {
 	<-ready
 	client := NewCustomClient(fmt.Sprintf("http://localhost:%d", port))
 	message := MessageSendParams{
-		Message: tellJoke(),
+		Message: askJoke(),
 	}
 
 	resp, err := client.SendMessage(message)
@@ -22,7 +22,7 @@ func TestCustomClient_SendsMessage(t *testing.T) {
 	expected := &JSONRPCResponse{
 		ID:      "1",
 		JSONRPC: "2.0",
-		Result:  joke(),
+		Result:  tellJoke(),
 	}
 	require.NoError(t, err, "Failed to send message")
 	require.NotNil(t, resp, "Response should not be nil")
