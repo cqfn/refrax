@@ -49,7 +49,7 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 		ID:      float64(1),
 		Method:  "message/send",
 		Params: map[string]any{
-			"message":  tellJoke(),
+			"message":  askJoke(),
 			"metadata": map[string]any{},
 		},
 	}
@@ -66,7 +66,7 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 	expected := JSONRPCResponse{
 		ID:      "1",
 		JSONRPC: "2.0",
-		Result:  joke(),
+		Result:  tellJoke(),
 	}
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type header should be application/json")
 	assert.Equal(t, expected, response, "Server should return the expected joke message")
@@ -97,68 +97,28 @@ func closeResource(resource io.Closer, err *error) {
 }
 
 func jokeHandler(msg *Message) (*Message, error) {
-	// log.Debug("Received message: %s", msg.MessageID)
-	// if len(msg.Parts) == 0 || msg.Parts[0]["text"] != "tell me a joke" {
-	// 	return nil, fmt.Errorf("unexpected message content, we expected 'tell me a joke', got: '%v'", msg.Parts[0]["text"])
-	// }
-	// response := joke()
-	// return &response, nil
 	log.Debug("Received message: %s", msg.MessageID)
 	if len(msg.Parts) == 0 || msg.Parts[0].PartKind() != PartKindText || msg.Parts[0].(*TextPart).Text != "tell me a joke" {
 		return nil, fmt.Errorf("unexpected message content, we expected 'tell me a joke', got: '%v'", msg.Parts[0].(*TextPart).Text)
 	}
-	response := joke()
+	response := tellJoke()
 	return &response, nil
 }
 
-func tellJoke() Message {
-	// return Message{
-	// 	Role: "user",
-	// 	Parts: []map[string]any{
-	// 		{
-	// 			"kind": "text",
-	// 			"text": "tell me a joke",
-	// 		},
-	// 	},
-	// 	MessageID: "9229e770-767c-417b-a0b0-f0741243c589",
-	// 	Kind:  KindMessage,
-	// }
-	return Message{
-		Role: "user",
-		Parts: []Part{
-			&TextPart{
-				Kind: PartKindText,
-				Text: "tell me a joke",
-			},
-		},
-		MessageID: "9229e770-767c-417b-a0b0-f0741243c589",
-		Kind:      KindMessage,
-	}
+func askJoke() Message {
+	return NewMessageBuilder().
+		Role("user").
+		Part(NewText("tell me a joke")).
+		MessageID("9229e770-767c-417b-a0b0-f0741243c589").
+		Build()
 }
 
-func joke() Message {
-	// return Message{
-	// 	Role: "agent",
-	// 	Parts: []map[string]any{
-	// 		{
-	// 			"kind": "text",
-	// 			"text": "Why did the chicken cross the road? To get to the other side!",
-	// 		},
-	// 	},
-	// 	MessageID: "363422be-b0f9-4692-a24d-278670e7c7f1",
-	// 	Kind:  KindMessage,
-	// }
-	return Message{
-		Role: "agent",
-		Parts: []Part{
-			&TextPart{
-				Kind: PartKindText,
-				Text: "Why did the chicken cross the road? To get to the other side!",
-			},
-		},
-		MessageID: "363422be-b0f9-4692-a24d-278670e7c7f1",
-		Kind:      KindMessage,
-	}
+func tellJoke() Message {
+	return NewMessageBuilder().
+		Role("agent").
+		Part(NewText("Why did the chicken cross the road? To get to the other side!")).
+		MessageID("363422be-b0f9-4692-a24d-278670e7c7f1").
+		Build()
 }
 
 func freePort() (int, error) {

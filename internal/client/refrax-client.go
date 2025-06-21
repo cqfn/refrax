@@ -51,20 +51,12 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	for _, class := range all {
 		log.Debug("sending class %s for refactoring", class.Name())
 		resp, err := c.client.SendMessage(protocol.MessageSendParams{
-			Message: protocol.Message{
-				MessageID: "1",
-				Parts: protocol.Parts{
-					&protocol.TextPart{
-						Text: fmt.Sprintf("Refactor the class '%s'", class.Name()),
-						Kind: protocol.PartKindText,
-					}, &protocol.FilePart{
-						Kind: protocol.PartKindFile,
-						File: protocol.FileWithBytes{
-							Bytes: base64.StdEncoding.EncodeToString([]byte(class.Content())),
-						},
-					},
-				},
-			}})
+			Message: protocol.NewMessageBuilder().
+				MessageID("1").
+				Part(protocol.NewText(fmt.Sprintf("Refactor the class '%s'", class.Name()))).
+				Part(protocol.NewFileBytes([]byte(class.Content()))).
+				Build(),
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to send message for class %s: %w", class.Name(), err)
 		}
