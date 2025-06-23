@@ -14,7 +14,8 @@ import (
 func TestServer_AgentCard(t *testing.T) {
 	port, err := FreePort()
 	require.NoError(t, err, "expected no error getting free port")
-	server, err := NewCustomServer(mockCard(port), jokeHandler, port)
+	server := NewCustomServer(mockCard(port), port)
+	server.SetHandler(joke)
 	require.NoError(t, err, "expected no error creating server")
 	cserver := server.(*CustomServer)
 	require.NoError(t, err, "expected no error creating server")
@@ -34,7 +35,8 @@ func TestServer_AgentCard(t *testing.T) {
 func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
 	port, err := FreePort()
 	require.NoError(t, err, "expected no error getting free port")
-	server, err := NewCustomServer(mockCard(port), jokeHandler, port)
+	server := NewCustomServer(mockCard(port), port)
+	server.SetHandler(joke)
 	assert.NoError(t, err, "expected no error creating server")
 	cserver := server.(*CustomServer)
 	req, err := http.NewRequest(http.MethodPost, "/.well-known/agent-card.json", nil)

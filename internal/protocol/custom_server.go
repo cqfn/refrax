@@ -19,13 +19,13 @@ type CustomServer struct {
 	server  *http.Server
 }
 
-func NewCustomServer(card AgentCard, handler MessageHandler, port int) (Server, error) {
+func NewCustomServer(card AgentCard, port int) Server {
 	mux := http.NewServeMux()
 	server := &CustomServer{
 		mux:     mux,
 		card:    card,
 		port:    port,
-		handler: handler,
+		handler: LogRequest,
 		server: &http.Server{
 			Addr:    fmt.Sprintf(":%d", port),
 			Handler: mux,
@@ -33,7 +33,7 @@ func NewCustomServer(card AgentCard, handler MessageHandler, port int) (Server, 
 	}
 	mux.HandleFunc("/.well-known/agent-card.json", server.handleAgentCard)
 	mux.HandleFunc("/", server.handleJSONRPC)
-	return server, nil
+	return server
 }
 
 func (serv *CustomServer) SetHandler(handler MessageHandler) {
