@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/critic"
 	"github.com/cqfn/refrax/internal/facilitator"
 	"github.com/cqfn/refrax/internal/log"
@@ -12,26 +13,30 @@ import (
 )
 
 type RefraxClient struct {
-	client protocol.Client
+	provider string
+	token    string
+	client   protocol.Client
 }
 
-func NewRefraxClient() *RefraxClient {
+func NewRefraxClient(provider string, token string) *RefraxClient {
 	return &RefraxClient{
-		client: protocol.NewCustomClient("http://localhost:8080"),
+		client:   protocol.NewCustomClient("http://localhost:8080"),
+		provider: provider,
+		token:    token,
 	}
 }
 
-func Refactor(proj Project) (Project, error) {
-	return NewRefraxClient().Refactor(proj)
+func Refactor(provider string, token string, proj Project) (Project, error) {
+	return NewRefraxClient(provider, token).Refactor(proj)
 }
 
 func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
-	facilitator, err := facilitator.NewFacilitator("none", 8080)
+	facilitator, err := facilitator.NewFacilitator(brain.New(c.provider, c.token), 8080)
 	if err != nil {
 		return nil, err
 	}
-	critic, err := critic.NewCritic("none", 8081)
+	critic, err := critic.NewCritic(c.provider, 8081)
 	if err != nil {
 		return nil, err
 	}
