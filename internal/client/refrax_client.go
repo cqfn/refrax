@@ -34,7 +34,8 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for refactoring: %w", err)
 	}
-	facilitator, err := facilitator.NewFacilitator(brain.New(c.provider, c.token), fport)
+	ai := brain.New(c.provider, c.token)
+	facilitator, err := facilitator.NewFacilitator(ai, fport)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for refactoring: %w", err)
 	}
-	critic, err := critic.NewCritic(c.provider, cport)
+	critic, err := critic.NewCritic(ai, cport)
 	if err != nil {
 		return nil, err
 	}

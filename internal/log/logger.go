@@ -12,19 +12,19 @@ type Logger interface {
 var single Logger = NewZerolog(os.Stdout, "debug")
 
 func Info(msg string, args ...any) {
-	Get().Info(msg, args...)
+	Default().Info(msg, args...)
 }
 
 func Debug(msg string, args ...any) {
-	Get().Debug(msg, args...)
+	Default().Debug(msg, args...)
 }
 
 func Warn(msg string, args ...any) {
-	Get().Warn(msg, args...)
+	Default().Warn(msg, args...)
 }
 
 func Error(msg string, args ...any) {
-	Get().Error(msg, args...)
+	Default().Error(msg, args...)
 }
 
 func Set(logger Logger) {
@@ -34,7 +34,7 @@ func Set(logger Logger) {
 	single = logger
 }
 
-func Get() Logger {
+func Default() Logger {
 	if single == nil {
 		panic("logger is not set")
 	}

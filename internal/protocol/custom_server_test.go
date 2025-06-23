@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testAgentCard = AgentCard{
+var testCard = AgentCard{
 	Name:        "TestAgent",
 	Description: "This is a test agent",
 	URL:         "http://testagent.example.com",
@@ -76,7 +76,8 @@ func testServer(t *testing.T) (Server, int, chan struct{}) {
 	t.Helper()
 	port, err := FreePort()
 	require.NoError(t, err, "Failed to get a free port")
-	server, err := NewCustomServer(testAgentCard, jokeHandler, port)
+	server := NewCustomServer(testCard, port)
+	server.SetHandler(joke)
 	require.NoError(t, err, "Failed to create custom server")
 	ready := make(chan struct{})
 	go startServer(server, ready, &err)
@@ -95,7 +96,7 @@ func closeResource(resource io.Closer, err *error) {
 	}
 }
 
-func jokeHandler(msg *Message) (*Message, error) {
+func joke(msg *Message) (*Message, error) {
 	log.Debug("Received message: %s", msg.MessageID)
 	if len(msg.Parts) == 0 || msg.Parts[0].PartKind() != PartKindText || msg.Parts[0].(*TextPart).Text != "tell me a joke" {
 		return nil, fmt.Errorf("unexpected message content, we expected 'tell me a joke', got: '%v'", msg.Parts[0].(*TextPart).Text)
