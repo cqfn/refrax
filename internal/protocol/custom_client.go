@@ -3,7 +3,9 @@ package protocol
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 )
@@ -17,7 +19,7 @@ func NewCustomClient(url string) Client {
 	return &CustomClient{
 		url: url,
 		client: &http.Client{
-			Timeout: 5 * time.Second,
+			Timeout: 20 * time.Second,
 		},
 	}
 }
@@ -64,6 +66,10 @@ func (client *CustomClient) doRequest(req any, resp *JSONRPCResponse) error {
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpResp, err := client.client.Do(httpReq)
 	if err != nil {
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() {
+			return fmt.Errorf("request to %s timed out after %s", client.url, client.client.Timeout)
+		}
 		return fmt.Errorf("failed to send request '%v': %w", req, err)
 	}
 	defer func() {

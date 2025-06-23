@@ -4,30 +4,33 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
 )
 
 type Facilitator struct {
 	server protocol.Server
+	brain  brain.Brain
 }
 
-func NewFacilitator(ai string, port int) (*Facilitator, error) {
+func NewFacilitator(ai brain.Brain, port int) (*Facilitator, error) {
 	log.Debug(prefixed("preparing server on port %d with ai provider %s"), port, ai)
 	server, error := protocol.NewCustomServer(agentCard(port), protocol.LogRequest, port)
 	if error != nil {
 		return nil, fmt.Errorf("failed to create A2A server: %w", error)
 	}
-	res := &Facilitator{
+	facilitator := &Facilitator{
 		server: server,
+		brain:  ai,
 	}
-	server.SetHandler(res.brainLess)
-	return res, nil
+	server.SetHandler(facilitator.think)
+	return facilitator, nil
 }
 
-func StartServer(ai string, port int) error {
+func StartServer(ai string, token string, port int) error {
 	log.Debug(prefixed("starting facilitator server on port %d with ai provider %s"), port, ai)
-	facilitator, err := NewFacilitator(ai, port)
+	facilitator, err := NewFacilitator(brain.New(ai, token), port)
 	if err != nil {
 		return fmt.Errorf("failed to create facilitator: %w", err)
 	}
@@ -52,9 +55,10 @@ func (f *Facilitator) Close() error {
 	return nil
 }
 
-func (f *Facilitator) brainLess(m *protocol.Message) (*protocol.Message, error) {
+func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
 	log.Info(prefixed("received message id:  %s"), m.MessageID)
 	log.Debug(prefixed("message parts: %v"), m.Parts)
+	var java string
 	for _, part := range m.Parts {
 		partKind := part.PartKind()
 		if partKind == protocol.PartKindText {
@@ -68,11 +72,17 @@ func (f *Facilitator) brainLess(m *protocol.Message) (*protocol.Message, error) 
 			if err != nil {
 				return nil, err
 			}
+			java = string(content)
 			log.Debug(prefixed("file content: %s"), content)
 		}
 	}
+	prompt := fmt.Sprintf("Refactor the following Java code to improve its structure and readability:\n```java\n%s\n```", java)
+	answer, err := f.brain.Ask(prompt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
+	}
 	res := protocol.NewMessageBuilder().
-		Part(protocol.NewFileBytes([]byte(refactored()))).
+		Part(protocol.NewFileBytes([]byte(answer))).
 		Build()
 	log.Debug(prefixed("sending response: %s"), res)
 	return &res, nil
@@ -86,10 +96,6 @@ func agentCard(port int) protocol.AgentCard {
 		Version("0.0.1").
 		Skill("facilitate-discussion", "Refactor Java Projects", "Facilitate discussion on code refactoring").
 		Build()
-}
-
-func refactored() string {
-	return "public class Main {\n\tpublic static void main(String[] args) {\n\t\tSystem.out.println(\"Hello, World\");\n\t}\n"
 }
 
 func prefixed(template string) string {

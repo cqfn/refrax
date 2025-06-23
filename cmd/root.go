@@ -10,6 +10,7 @@ import (
 
 type Params struct {
 	provider string
+	token    string
 }
 
 func Execute() error {
@@ -27,6 +28,7 @@ func NewRootCmd(out io.Writer, err io.Writer) *cobra.Command {
 	}
 	var params Params
 	root.PersistentFlags().StringVarP(&params.provider, "ai", "a", "none", "AI provider to use (e.g., openai, deepseek, none, etc.)")
+	root.PersistentFlags().StringVarP(&params.token, "token", "t", "none", "Token for the AI provider (if required)")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(&params),
