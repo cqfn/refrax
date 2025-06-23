@@ -3,6 +3,7 @@ package client
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,6 +60,7 @@ func TestFilesystemProject_Classes_NonJavaFilesIgnored(t *testing.T) {
 }
 
 func TestFilesystemProject_Classes_ErrorReadingFile(t *testing.T) {
+	SkipOnWindows(t)
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "Class1.java")
 	require.NoError(t, os.WriteFile(filePath, []byte("class Class1 {}"), 0644))
@@ -73,6 +75,7 @@ func TestFilesystemProject_Classes_ErrorReadingFile(t *testing.T) {
 }
 
 func TestFilesystemProject_Classes_ErrorDuringTraversal(t *testing.T) {
+	SkipOnWindows(t)
 	tempDir := t.TempDir()
 	subDir := filepath.Join(tempDir, "subdir")
 	require.NoError(t, os.Mkdir(subDir, 0000)) // No permissions
@@ -116,3 +119,11 @@ func TestFilesystemJavaClass_SetContent_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, newContent, string(content))
 }
+
+func SkipOnWindows(t *testing.T) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping test on Windows")
+	}
+}
+
