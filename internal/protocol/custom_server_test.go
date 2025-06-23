@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"testing"
 
@@ -75,7 +74,7 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 
 func testServer(t *testing.T) (Server, int, chan struct{}) {
 	t.Helper()
-	port, err := freePort()
+	port, err := FreePort()
 	require.NoError(t, err, "Failed to get a free port")
 	server, err := NewCustomServer(testAgentCard, jokeHandler, port)
 	require.NoError(t, err, "Failed to create custom server")
@@ -119,14 +118,4 @@ func tellJoke() Message {
 		Part(NewText("Why did the chicken cross the road? To get to the other side!")).
 		MessageID("363422be-b0f9-4692-a24d-278670e7c7f1").
 		Build()
-}
-
-func freePort() (int, error) {
-	l, err := net.Listen("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
-	}
-	defer closeResource(l, &err)
-	port := l.Addr().(*net.TCPAddr).Port
-	return port, nil
 }

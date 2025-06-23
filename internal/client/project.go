@@ -7,7 +7,7 @@ type Project interface {
 type JavaClass interface {
 	Name() string
 	Content() string
-	SetContent(content string)
+	SetContent(content string) error
 }
 
 type InMemoryProject struct {
@@ -54,8 +54,9 @@ func (i *InMemoryProject) Classes() ([]JavaClass, error) {
 	return res, nil
 }
 
-func (i *InMemoryJavaClass) SetContent(content string) {
+func (i *InMemoryJavaClass) SetContent(content string) error {
 	i.content = content
+	return nil
 }
 
 func (i *InMemoryJavaClass) Content() string {

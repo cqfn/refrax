@@ -15,12 +15,10 @@ import (
 type RefraxClient struct {
 	provider string
 	token    string
-	client   protocol.Client
 }
 
 func NewRefraxClient(provider string, token string) *RefraxClient {
 	return &RefraxClient{
-		client:   protocol.NewCustomClient("http://localhost:8080"),
 		provider: provider,
 		token:    token,
 	}
@@ -32,11 +30,19 @@ func Refactor(provider string, token string, proj Project) (Project, error) {
 
 func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
-	facilitator, err := facilitator.NewFacilitator(brain.New(c.provider, c.token), 8080)
+	fport, err := protocol.FreePort()
+	if err != nil {
+		return nil, fmt.Errorf("failed to find free port for refactoring: %w", err)
+	}
+	facilitator, err := facilitator.NewFacilitator(brain.New(c.provider, c.token), fport)
 	if err != nil {
 		return nil, err
 	}
-	critic, err := critic.NewCritic(c.provider, 8081)
+	cport, err := protocol.FreePort()
+	if err != nil {
+		return nil, fmt.Errorf("failed to find free port for refactoring: %w", err)
+	}
+	critic, err := critic.NewCritic(c.provider, cport)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +50,13 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	cready := make(chan struct{})
 	go startServer(facilitator, fready, &err)
 	go startCriticServer(critic, cready, &err)
+	defer closeResource(critic, &err)
+	defer closeResource(facilitator, &err)
 
 	<-fready
 	<-cready
+
+	client := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", fport))
 
 	all, err := proj.Classes()
 	if err != nil {
@@ -55,7 +65,7 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Debug("found %d classes in the project: %v", len(all), all)
 	for _, class := range all {
 		log.Debug("sending class %s for refactoring", class.Name())
-		resp, err := c.client.SendMessage(protocol.MessageSendParams{
+		resp, err := client.SendMessage(protocol.MessageSendParams{
 			Message: protocol.NewMessageBuilder().
 				MessageID("1").
 				Part(protocol.NewText(fmt.Sprintf("Refactor the class '%s'", class.Name()))).
@@ -70,11 +80,12 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode refactored class %s: %w", class.Name(), err)
 		}
-		class.SetContent(string(decoded))
+		err = class.SetContent(string(decoded))
+		if err != nil {
+			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
+		}
 		log.Info("client refactored the class %s: %s", class.Name(), class.Content())
 	}
-	defer closeResource(critic, &err)
-	defer closeResource(facilitator, &err)
 	return proj, err
 }
 

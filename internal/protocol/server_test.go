@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,7 +12,9 @@ import (
 )
 
 func TestServer_AgentCard(t *testing.T) {
-	server, err := NewCustomServer(mockCard(), jokeHandler, 8080)
+	port, err := FreePort()
+	require.NoError(t, err, "expected no error getting free port")
+	server, err := NewCustomServer(mockCard(port), jokeHandler, port)
 	require.NoError(t, err, "expected no error creating server")
 	cserver := server.(*CustomServer)
 	require.NoError(t, err, "expected no error creating server")
@@ -25,11 +28,13 @@ func TestServer_AgentCard(t *testing.T) {
 	var card AgentCard
 	err = json.NewDecoder(rec.Body).Decode(&card)
 	require.NoError(t, err, "expected no error decoding response")
-	assert.Equal(t, mockCard(), card, "Expected agent card to match")
+	assert.Equal(t, mockCard(port), card, "Expected agent card to match")
 }
 
 func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
-	server, err := NewCustomServer(mockCard(), jokeHandler, 8080)
+	port, err := FreePort()
+	require.NoError(t, err, "expected no error getting free port")
+	server, err := NewCustomServer(mockCard(port), jokeHandler, port)
 	assert.NoError(t, err, "expected no error creating server")
 	cserver := server.(*CustomServer)
 	req, err := http.NewRequest(http.MethodPost, "/.well-known/agent-card.json", nil)
@@ -41,11 +46,11 @@ func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
 	assert.Equal(t, http.StatusMethodNotAllowed, rec.Code, "Expected status Method Not Allowed")
 }
 
-func mockCard() AgentCard {
+func mockCard(port int) AgentCard {
 	return Card().
 		Name("Test Agent").
 		Description("A test agent for unit tests").
-		URL("http://localhost:8080").
+		URL(fmt.Sprintf("http://localhost:%d", port)).
 		Version("0.0.1").
 		Skill("refactor-java", "Refactor Java Projects", "Refrax can refactor java projects").
 		Build()
