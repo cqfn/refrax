@@ -4,10 +4,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/critic"
 	"github.com/cqfn/refrax/internal/facilitator"
+	"github.com/cqfn/refrax/internal/fixer"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
 )
@@ -30,34 +32,44 @@ func Refactor(provider string, token string, proj Project) (Project, error) {
 
 func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
-	fport, err := protocol.FreePort()
-	if err != nil {
-		return nil, fmt.Errorf("failed to find free port for refactoring: %w", err)
-	}
 	ai := brain.New(c.provider, c.token)
-	facilitator, err := facilitator.NewFacilitator(ai, fport)
+
+	criticPort, err := protocol.FreePort()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
-	cport, err := protocol.FreePort()
+	critic := critic.NewCritic(ai, criticPort)
+
+	fixerPort, err := protocol.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find free port for refactoring: %w", err)
+		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
 	}
-	critic, err := critic.NewCritic(ai, cport)
+	fixer := fixer.NewFixer(ai, fixerPort)
+
+	facilitatorPort, err := protocol.FreePort()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
-	fready := make(chan struct{})
-	cready := make(chan struct{})
-	go startServer(facilitator, fready, &err)
-	go startCriticServer(critic, cready, &err)
+	facilitator := facilitator.NewFacilitator(ai, facilitatorPort, criticPort, fixerPort)
+
+	facilitatorReady := make(chan struct{})
+	criticReady := make(chan struct{})
+	fixerReady := make(chan struct{})
+
+	go startServer(facilitator, facilitatorReady, &err)
+	go startCriticServer(critic, criticReady, &err)
+	go startFixerServer(fixer, fixerReady, &err)
 	defer closeResource(critic, &err)
 	defer closeResource(facilitator, &err)
+	defer closeResource(fixer, &err)
 
-	<-fready
-	<-cready
+	<-facilitatorReady
+	<-criticReady
+	<-fixerReady
 
-	client := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", fport))
+	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
+	log.Info("begin refactoring")
+	facilitatorClient := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
 	all, err := proj.Classes()
 	if err != nil {
@@ -66,7 +78,7 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Debug("found %d classes in the project: %v", len(all), all)
 	for _, class := range all {
 		log.Debug("sending class %s for refactoring", class.Name())
-		resp, err := client.SendMessage(protocol.MessageSendParams{
+		resp, err := facilitatorClient.SendMessage(protocol.MessageSendParams{
 			Message: protocol.NewMessageBuilder().
 				MessageID("1").
 				Part(protocol.NewText(fmt.Sprintf("Refactor the class '%s'", class.Name()))).
@@ -76,18 +88,29 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to send message for class %s: %w", class.Name(), err)
 		}
+		log.Debug("received response for class %s: %s", class.Name(), resp)
 		refactored := resp.Result.(protocol.Message).Parts[0].(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
 		decoded, err := base64.StdEncoding.DecodeString(refactored)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode refactored class %s: %w", class.Name(), err)
 		}
-		err = class.SetContent(string(decoded))
+		err = class.SetContent(clean(string(decoded)))
 		if err != nil {
 			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
 		}
-		log.Info("client refactored the class %s: %s", class.Name(), class.Content())
 	}
+	log.Info("refactoring is finished")
 	return proj, err
+}
+
+func clean(s string) string {
+	return strings.TrimSpace(s)
+}
+
+func startFixerServer(fixer *fixer.Fixer, ready chan struct{}, err *error) {
+	if cerr := fixer.Start(ready); cerr != nil && *err == nil {
+		*err = cerr
+	}
 }
 
 func startServer(server *facilitator.Facilitator, ready chan struct{}, err *error) {

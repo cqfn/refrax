@@ -45,8 +45,7 @@ type MockBrain struct{}
 func TestNewCritic_Success(t *testing.T) {
 	brain := brain.NewMock()
 
-	critic, err := NewCritic(brain, 18081)
-	require.NoError(t, err)
+	critic := NewCritic(brain, 18081)
 	require.NotNil(t, critic)
 	assert.Equal(t, brain, critic.brain)
 }
@@ -55,8 +54,7 @@ func TestCriticStart_Success(t *testing.T) {
 	brain := brain.NewMock()
 	port, err := protocol.FreePort()
 	require.NoError(t, err)
-	critic, err := NewCritic(brain, port)
-	require.NoError(t, err)
+	critic := NewCritic(brain, port)
 	ready := make(chan struct{})
 
 	go func() { err = critic.Start(ready) }()
@@ -69,12 +67,11 @@ func TestCriticStart_Success(t *testing.T) {
 
 func TestCriticStart_ServerStartError(t *testing.T) {
 	brain := brain.NewMock()
-	critic, err := NewCritic(brain, 18081)
+	critic := NewCritic(brain, 18081)
 	critic.server = &MockServer{started: true}
-	require.NoError(t, err)
 	ready := make(chan struct{})
 
-	err = critic.Start(ready)
+	err := critic.Start(ready)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to start critic server")
@@ -83,11 +80,10 @@ func TestCriticStart_ServerStartError(t *testing.T) {
 func TestCriticClose_Success(t *testing.T) {
 	brain := brain.NewMock()
 	server := &MockServer{started: true}
-	critic, err := NewCritic(brain, 18081)
+	critic := NewCritic(brain, 18081)
 	critic.server = server
-	require.NoError(t, err)
 
-	err = critic.Close()
+	err := critic.Close()
 
 	require.NoError(t, err)
 	assert.True(t, server.closed)
@@ -96,11 +92,10 @@ func TestCriticClose_Success(t *testing.T) {
 func TestCriticClose_ServerNotStartedError(t *testing.T) {
 	brain := brain.NewMock()
 	server := &MockServer{}
-	critic, err := NewCritic(brain, 18081)
+	critic := NewCritic(brain, 18081)
 	critic.server = server
-	require.NoError(t, err)
 
-	err = critic.Close()
+	err := critic.Close()
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to stop critic server")
@@ -109,9 +104,8 @@ func TestCriticClose_ServerNotStartedError(t *testing.T) {
 func TestCriticThink_ReturnsMessage(t *testing.T) {
 	brain := brain.NewMock()
 	server := &MockServer{}
-	critic, err := NewCritic(brain, 18081)
+	critic := NewCritic(brain, 18081)
 	critic.server = server
-	require.NoError(t, err)
 	msg := protocol.NewMessageBuilder().
 		MessageID("msg-123").
 		Build()
@@ -119,5 +113,5 @@ func TestCriticThink_ReturnsMessage(t *testing.T) {
 	response, err := critic.think(&msg)
 
 	require.NoError(t, err)
-	assert.Equal(t, msg, *response)
+	assert.Equal(t, msg.MessageID, response.MessageID)
 }
