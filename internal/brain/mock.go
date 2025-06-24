@@ -26,7 +26,7 @@ func (b *MockBrain) Ask(question string) (string, error) {
 	if len(blocks) == 0 {
 		log.Info("mock-brain: no Java code found in the question, returning mock response")
 		return "mock response to: " + question, nil
-	} else if trimSpace(blocks[0]) == trimSpace(known) {
+	} else if strings.Contains(trimSpace(blocks[0]), trimSpace(known)) {
 		log.Info("mock-brain: known Java code found, returning refactored code")
 		return refactored, nil
 	} else {
@@ -35,7 +35,7 @@ func (b *MockBrain) Ask(question string) (string, error) {
 	}
 }
 
-func trimSpace(s string) any {
+func trimSpace(s string) string {
 	return strings.TrimSpace(s)
 }
 

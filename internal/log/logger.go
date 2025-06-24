@@ -9,7 +9,7 @@ type Logger interface {
 	Error(string, ...any)
 }
 
-var single Logger = NewZerolog(os.Stdout, "debug")
+var single Logger = NewZerolog(os.Stdout, "info")
 
 func Info(msg string, args ...any) {
 	Default().Info(msg, args...)

@@ -12,6 +12,7 @@ type Params struct {
 	provider string
 	token    string
 	mock     bool
+	debug    bool
 }
 
 func Execute() error {
@@ -19,18 +20,21 @@ func Execute() error {
 }
 
 func NewRootCmd(out io.Writer, err io.Writer) *cobra.Command {
+	var params Params
 	root := &cobra.Command{
 		Use:   "refrax",
 		Short: "Refrax is an AI-powered refactoring agent for Java code",
 		Long:  "Refrax is an AI-powered refactoring agent for Java code. It communicates using the A2A protocol",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			log.Set(log.NewZerolog(out, "debug"))
+			if params.debug {
+				log.Set(log.NewZerolog(out, "debug"))
+			}
 		},
 	}
-	var params Params
 	root.PersistentFlags().StringVarP(&params.provider, "ai", "a", "none", "AI provider to use (e.g., openai, deepseek, none, etc.)")
 	root.PersistentFlags().StringVarP(&params.token, "token", "t", "none", "Token for the AI provider (if required)")
 	root.PersistentFlags().BoolVar(&params.mock, "mock", false, "Use mock project")
+	root.PersistentFlags().BoolVarP(&params.debug, "debug", "d", false, "print debug logs")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(&params),
