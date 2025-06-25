@@ -3,3 +3,4 @@ refrax
 coverage.out
 .aider*
 tmp/
+.env
