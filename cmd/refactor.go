@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/cqfn/refrax/internal/client"
+	"github.com/cqfn/refrax/internal/env"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +22,15 @@ func newRefactorCmd(params *Params) *cobra.Command {
 			}
 			log.Debug("refactoring provider: %s", params.provider)
 			log.Debug("project path to refactor: %s", path)
-			ref, err := client.Refactor(params.provider, params.token, project(path, params))
+			var token string
+			if params.token != "" {
+				token = params.token
+			} else {
+				log.Info("token not provided, trying to find token in .env file")
+				token = env.Token(".env")
+			}
+			log.Debug("using provided token: %s...", mask(token))
+			ref, err := client.Refactor(params.provider, token, project(path, params))
 			log.Debug("refactor result: %s", ref)
 			return err
 		},
@@ -32,4 +43,13 @@ func project(path string, params *Params) client.Project {
 		return client.NewMockProject()
 	}
 	return client.NewFilesystemProject(path)
+}
+
+func mask(token string) string {
+	n := len(token)
+	if n == 0 {
+		return ""
+	}
+	visible := min(n, 3)
+	return token[:visible] + strings.Repeat("*", n-visible)
 }

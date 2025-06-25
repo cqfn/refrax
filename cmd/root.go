@@ -32,7 +32,7 @@ func NewRootCmd(out io.Writer, err io.Writer) *cobra.Command {
 		},
 	}
 	root.PersistentFlags().StringVarP(&params.provider, "ai", "a", "none", "AI provider to use (e.g., openai, deepseek, none, etc.)")
-	root.PersistentFlags().StringVarP(&params.token, "token", "t", "none", "Token for the AI provider (if required)")
+	root.PersistentFlags().StringVarP(&params.token, "token", "t", "", "Token for the AI provider (if required)")
 	root.PersistentFlags().BoolVar(&params.mock, "mock", false, "Use mock project")
 	root.PersistentFlags().BoolVarP(&params.debug, "debug", "d", false, "print debug logs")
 	root.AddCommand(
