@@ -32,6 +32,15 @@ func Refactor(provider string, token string, proj Project) (Project, error) {
 
 func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
+	classes, err := proj.Classes()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get classes from project %s: %w", proj, err)
+	}
+	if len(classes) == 0 {
+		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
+	}
+	log.Debug("found %d classes in the project: %v", len(classes), classes)
+
 	ai := brain.New(c.provider, c.token)
 
 	criticPort, err := protocol.FreePort()
@@ -71,12 +80,7 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Info("begin refactoring")
 	facilitatorClient := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
-	all, err := proj.Classes()
-	if err != nil {
-		return nil, err
-	}
-	log.Debug("found %d classes in the project: %v", len(all), all)
-	for _, class := range all {
+	for _, class := range classes {
 		log.Debug("sending class %s for refactoring", class.Name())
 		resp, err := facilitatorClient.SendMessage(protocol.MessageSendParams{
 			Message: protocol.NewMessageBuilder().

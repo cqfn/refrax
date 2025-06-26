@@ -1,5 +1,29 @@
 package test
 
+import (
+	"io"
+	"testing"
+
+	"github.com/cqfn/refrax/cmd"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestEndToEnd_Agents_FromCLI_WithoutAI_WithEmptyProject(t *testing.T) {
+	cmd := cmd.NewRootCmd(io.Discard, io.Discard)
+	cmd.SetArgs([]string{"refactor", "--ai=none"})
+
+	err := cmd.Execute()
+
+	require.Error(t, err, "expected command to fail with an empty project")
+	assert.Contains(
+		t,
+		err.Error(),
+		"no java classes found in the project [.], add java files to the appropriate directory",
+		"Expected the output to indicate no AI provider was used and no classes were found",
+	)
+}
+
 // func TestEndToEnd_Agents_FromCLI_WithoutAI_WithMockProject(t *testing.T) {
 // 	capture := &bytes.Buffer{}
 // 	output := io.MultiWriter(capture, os.Stdout)

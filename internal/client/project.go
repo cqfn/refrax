@@ -1,5 +1,10 @@
 package client
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Project interface {
 	Classes() ([]JavaClass, error)
 }
@@ -65,4 +70,15 @@ func (i *InMemoryJavaClass) Content() string {
 
 func (i *InMemoryJavaClass) Name() string {
 	return i.name
+}
+
+func (i *InMemoryProject) String() string {
+	var names []string
+	for name := range i.files {
+		names = append(names, name)
+	}
+	if len(names) == 0 {
+		return "[empty project]"
+	}
+	return fmt.Sprintf("[%s]", strings.Join(names, ", "))
 }

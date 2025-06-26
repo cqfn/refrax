@@ -40,6 +40,10 @@ func (p *FilesystemProject) Classes() ([]JavaClass, error) {
 	return classes, nil
 }
 
+func (p *FilesystemProject) String() string {
+	return fmt.Sprintf("[%s]", p.path)
+}
+
 type FilesystemJavaClass struct {
 	name    string
 	content string
