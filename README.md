@@ -9,12 +9,27 @@
 ## Installation
 
 ### Releases
+Download the latest stable version from the [releases page](https://github.com/cqfn/refrax/releases). Pre-built binaries are available for macOS, Windows, and Linux.
 
-Download the latest stable version from the [releases page](https://github.com/cqfn/refrax/releases). Pre-built binaries are available for MacOS, Windows, and Linux.
+### Using Go
 
-### From Sources
+If you have Go 1.24.1 or later installed, you can run:
 
-You need to have Go 1.24.1 or later installed on your system.
+```bash
+go install github.com/cqfn/refrax@latest
+```
+
+To install a specific version, use:
+
+```bash
+go install github.com/cqfn/refrax@v0.0.1
+```
+
+[Releases page](https://github.com/cqfn/refrax/releases).
+
+### From Source
+
+Ensure that Go 1.24.1 or later is installed on your system.
 
 1. Clone the repository:
 
