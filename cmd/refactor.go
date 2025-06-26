@@ -27,7 +27,7 @@ func newRefactorCmd(params *Params) *cobra.Command {
 				token = params.token
 			} else {
 				log.Info("token not provided, trying to find token in .env file")
-				token = env.Token(".env")
+				token = env.Token(".env", params.provider)
 			}
 			log.Debug("using provided token: %s...", mask(token))
 			ref, err := client.Refactor(params.provider, token, project(path, params))
