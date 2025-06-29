@@ -30,7 +30,7 @@ func newRefactorCmd(params *Params) *cobra.Command {
 				token = env.Token(".env", params.provider)
 			}
 			log.Debug("using provided token: %s...", mask(token))
-			ref, err := client.Refactor(params.provider, token, project(path, params))
+			ref, err := client.Refactor(params.provider, token, project(path, params), params.stats)
 			log.Debug("refactor result: %s", ref)
 			return err
 		},
