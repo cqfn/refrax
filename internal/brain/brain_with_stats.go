@@ -26,6 +26,11 @@ func (b *BrainWithStats) Ask(question string) (string, error) {
 	return result, err
 }
 
+// @todo #21:35min Move `PrintStats` method to the more properly organized abstraction.
+//  Currently, we needed it in order to aggregate all the messages in the `stats` map, and then
+//  print it. Since there is no `PrintStats` method in original `Brain`, it looks ugly when we call this
+//  function on `Brain` instance in `refrax_client.go`. We should organize more proper abstraction
+//  around the aggregation and printing of stats.
 func (b *BrainWithStats) PrintStats() {
 	b.log.Info("Total messages asked: %d", len(b.stats))
 	for q,d := range b.stats {
