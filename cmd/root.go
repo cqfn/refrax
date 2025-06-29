@@ -13,6 +13,7 @@ type Params struct {
 	token    string
 	mock     bool
 	debug    bool
+	stats    bool
 }
 
 func Execute() error {
@@ -35,6 +36,7 @@ func NewRootCmd(out io.Writer, err io.Writer) *cobra.Command {
 	root.PersistentFlags().StringVarP(&params.token, "token", "t", "", "Token for the AI provider (if required)")
 	root.PersistentFlags().BoolVar(&params.mock, "mock", false, "Use mock project")
 	root.PersistentFlags().BoolVarP(&params.debug, "debug", "d", false, "print debug logs")
+	root.PersistentFlags().BoolVar(&params.stats, "stats", false, "Print internal interaction statistics")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(&params),
