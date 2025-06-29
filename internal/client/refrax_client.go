@@ -27,11 +27,11 @@ func NewRefraxClient(provider string, token string) *RefraxClient {
 	}
 }
 
-func Refactor(provider string, token string, proj Project, stats bool) (Project, error) {
-	return NewRefraxClient(provider, token).Refactor(proj, stats)
+func Refactor(provider string, token string, proj Project, stats bool, log log.Logger) (Project, error) {
+	return NewRefraxClient(provider, token).Refactor(proj, stats, log)
 }
 
-func (c *RefraxClient) Refactor(proj Project, stats bool) (Project, error) {
+func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
@@ -44,7 +44,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool) (Project, error) {
 
 	var ai brain.Brain
 	if stats {
-		ai = brain.NewBrainWithStats(brain.New(c.provider, c.token), make(map[string]time.Duration))
+		ai = brain.NewBrainWithStats(brain.New(c.provider, c.token), make(map[string]time.Duration), log)
 	} else {
 		ai = brain.New(c.provider, c.token)
 	}

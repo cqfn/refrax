@@ -11,10 +11,11 @@ const questionLength = 64
 type BrainWithStats struct {
 	origin Brain
 	stats map[string]time.Duration
+	log log.Logger
 }
 
-func NewBrainWithStats(brain Brain, stats map[string]time.Duration) Brain {
-	return &BrainWithStats{brain, stats}
+func NewBrainWithStats(brain Brain, stats map[string]time.Duration, log log.Logger) Brain {
+	return &BrainWithStats{brain, stats, log}
 }
 
 func (b *BrainWithStats) Ask(question string) (string, error) {
@@ -26,11 +27,11 @@ func (b *BrainWithStats) Ask(question string) (string, error) {
 }
 
 func (b *BrainWithStats) PrintStats() {
-	log.Info("Total messages asked: %d", len(b.stats))
+	b.log.Info("Total messages asked: %d", len(b.stats))
 	for q,d := range b.stats {
 		if len(q) > questionLength {
 			q = q[:questionLength] + "..."
 		}
-		log.Info("Brain finished asking %q in %s", q, d)
+		b.log.Info("Brain finished asking %q in %s", q, d)
 	}
 }
