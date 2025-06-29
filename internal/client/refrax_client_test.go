@@ -15,7 +15,7 @@ func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
 	client := NewRefraxClient("none", "none")
 	origin := NewInMemoryProject(map[string]string{})
 
-	proj, err := client.Refactor(origin)
+	proj, err := client.Refactor(origin, false)
 
 	assert.Equal(t, origin, proj, "Refactoring an empty project should return the same project")
 	assert.Error(t, err, "Expected an error when refactoring an empty project")
