@@ -18,14 +18,10 @@ func NewBrainWithStats(brain Brain, stats map[string]time.Duration) Brain {
 }
 
 func (b *BrainWithStats) Ask(question string) (string, error) {
-	// append each statement into list and then print it in the end
-	// message count, for each message calculate its processing time
-	// log.Info("Brain starts asking...")
 	start := time.Now()
 	result, err := b.origin.Ask(question);
 	duration := time.Since(start)
 	b.stats[question] = duration
-	// log.Info("Brain finished asking in %s", duration)
 	return result, err
 }
 
@@ -35,6 +31,6 @@ func (b *BrainWithStats) PrintStats() {
 		if len(q) > questionLength {
 			q = q[:questionLength] + "..."
 		}
-		log.Info("Question: %q took %s", q, d)
+		log.Info("Brain finished asking %q in %s", q, d)
 	}
 }

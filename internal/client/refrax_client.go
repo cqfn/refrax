@@ -110,7 +110,6 @@ func (c *RefraxClient) Refactor(proj Project, stats bool) (Project, error) {
 		}
 	}
 	log.Info("refactoring is finished")
-	// print them somehow here
 	if withStats, ok := ai.(*brain.BrainWithStats); ok {
 		withStats.PrintStats()
 	}
