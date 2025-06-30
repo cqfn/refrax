@@ -8,21 +8,21 @@ import (
 
 const questionLength = 64
 
-type BrainWithStats struct {
+type MetricBrain struct {
 	origin Brain
-	stats map[string]time.Duration
+	stats[] time.Duration
 	log log.Logger
 }
 
-func NewBrainWithStats(brain Brain, stats map[string]time.Duration, log log.Logger) Brain {
-	return &BrainWithStats{brain, stats, log}
+func NewMetricBrain(brain Brain, log log.Logger) Brain {
+	return &MetricBrain{brain, []time.Duration{}, log}
 }
 
-func (b *BrainWithStats) Ask(question string) (string, error) {
+func (b *MetricBrain) Ask(question string) (string, error) {
 	start := time.Now()
 	result, err := b.origin.Ask(question);
 	duration := time.Since(start)
-	b.stats[question] = duration
+	b.stats = append(b.stats, duration)
 	return result, err
 }
 
@@ -31,12 +31,9 @@ func (b *BrainWithStats) Ask(question string) (string, error) {
 //  print it. Since there is no `PrintStats` method in original `Brain`, it looks ugly when we call this
 //  function on `Brain` instance in `refrax_client.go`. We should organize more proper abstraction
 //  around the aggregation and printing of stats.
-func (b *BrainWithStats) PrintStats() {
+func (b *MetricBrain) PrintStats() {
 	b.log.Info("Total messages asked: %d", len(b.stats))
-	for q,d := range b.stats {
-		if len(q) > questionLength {
-			q = q[:questionLength] + "..."
-		}
-		b.log.Info("Brain finished asking %q in %s", q, d)
+	for i,d := range b.stats {
+		b.log.Info("Brain finished asking question #%d in %s", i+1, d)
 	}
 }

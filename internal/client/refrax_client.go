@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/critic"
@@ -44,7 +43,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 
 	var ai brain.Brain
 	if stats {
-		ai = brain.NewBrainWithStats(brain.New(c.provider, c.token), make(map[string]time.Duration), log)
+		ai = brain.NewMetricBrain(brain.New(c.provider, c.token), log)
 	} else {
 		ai = brain.New(c.provider, c.token)
 	}
@@ -110,7 +109,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 		}
 	}
 	log.Info("refactoring is finished")
-	if withStats, ok := ai.(*brain.BrainWithStats); ok {
+	if withStats, ok := ai.(*brain.MetricBrain); ok {
 		withStats.PrintStats()
 	}
 	return proj, err
