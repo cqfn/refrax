@@ -26,11 +26,11 @@ func NewRefraxClient(provider string, token string) *RefraxClient {
 	}
 }
 
-func Refactor(provider string, token string, proj Project) (Project, error) {
-	return NewRefraxClient(provider, token).Refactor(proj)
+func Refactor(provider string, token string, proj Project, stats bool, log log.Logger) (Project, error) {
+	return NewRefraxClient(provider, token).Refactor(proj, stats, log)
 }
 
-func (c *RefraxClient) Refactor(proj Project) (Project, error) {
+func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
@@ -41,7 +41,12 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	}
 	log.Debug("found %d classes in the project: %v", len(classes), classes)
 
-	ai := brain.New(c.provider, c.token)
+	var ai brain.Brain
+	if stats {
+		ai = brain.NewMetricBrain(brain.New(c.provider, c.token), log)
+	} else {
+		ai = brain.New(c.provider, c.token)
+	}
 
 	criticPort, err := protocol.FreePort()
 	if err != nil {
@@ -104,6 +109,9 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		}
 	}
 	log.Info("refactoring is finished")
+	if withStats, ok := ai.(*brain.MetricBrain); ok {
+		withStats.PrintStats()
+	}
 	return proj, err
 }
 
