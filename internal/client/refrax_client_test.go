@@ -27,7 +27,8 @@ func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
 func TestRefraxClient_PrintsStatsIfEnabled(t *testing.T) {
 	client := NewRefraxClient("mock", "ABC")
 	logger := log.NewMock();
-	client.Refactor(SingleClassProject("Foo.java", "abstract class Foo {}"), true, logger)
+	_, err := client.Refactor(SingleClassProject("Foo.java", "abstract class Foo {}"), true, logger)
+	assert.NoError(t, err)
 	assert.True(t, logMessageFoundWithText(logger, "Total messages asked"), "Expected total messages asked to be logged")
 	assert.True(t, logMessageFoundWithText(logger, "Brain finished asking"), "Expected interaction stats to be logged")
 }

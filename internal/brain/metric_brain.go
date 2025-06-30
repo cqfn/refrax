@@ -6,8 +6,6 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 )
 
-const questionLength = 64
-
 type MetricBrain struct {
 	origin Brain
 	stats[] time.Duration
