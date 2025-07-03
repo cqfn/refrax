@@ -31,6 +31,10 @@ func Refactor(provider string, token string, proj Project, stats bool, log log.L
 	return NewRefraxClient(provider, token).Refactor(proj, stats, log)
 }
 
+// @todo #2:45min Implement support for Aibolit with multiple classes.
+//  As for now, we check only the first class, and return imperfections result. Instead, we need to support
+//  multiple files instead. Let's implement such Aibolit struct, that will be able to manage whole project, instead
+//  of single Java file. Also see this related issue: https://github.com/cqfn/refrax/issues/28.
 func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
@@ -54,7 +58,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
 	critic := critic.NewCritic(
-		ai, criticPort, aibolit.NewSanitizedAibolit(aibolit.NewDefaultAibolit("Foo.java")),
+		ai, criticPort, aibolit.NewSanitizedAibolit(aibolit.NewDefaultAibolit(classes[0].Name())),
 	)
 
 	fixerPort, err := protocol.FreePort()
