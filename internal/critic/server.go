@@ -8,6 +8,7 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
+	"github.com/cqfn/refrax/internal/aibolit"
 )
 
 type Critic struct {
@@ -29,7 +30,7 @@ Identify possible improvements or flaws such as:
 * redundant code,
 * non-idiomatic patterns.
 
-Keep in mind the following imperfections with Java code, identified by automated static analysis system
+Keep in mind the following imperfections with Java code, identified by automated static analysis system:
 
 {{imperfections}}
 
@@ -90,7 +91,10 @@ func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {
 	}
 	c.log.Info("received messsage #%s, '%s', number of attached files: %d", m.MessageID, task, 1)
 	c.log.Info("asking ai to find flaws in the code...")
-	replacer := strings.NewReplacer("{{code}}", java, "{{imperfections}}", string(c.imperfections))
+	replacer := strings.NewReplacer(
+		"{{code}}", java,
+	 	"{{imperfections}}", aibolit.NewAibolitResponse(string(c.imperfections)).Sanitized(),
+	)
 	answer, err := c.brain.Ask(replacer.Replace(prompt))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
