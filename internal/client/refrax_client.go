@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
@@ -31,6 +32,9 @@ func Refactor(provider string, token string, proj Project, stats bool, log log.L
 }
 
 func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Project, error) {
+	cmd := exec.Command("aibolit", "check", "--filenames", "Foo.java")
+	result, _ := cmd.CombinedOutput()
+    log.Debug("Identified refactoring opportunities with aibolit: \n%s", result)
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
