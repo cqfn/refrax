@@ -15,6 +15,7 @@ type Critic struct {
 	brain  brain.Brain
 	log    log.Logger
 	port   int
+	imperfections[] byte
 }
 
 const prompt = `Analyze the following Java code:
@@ -28,10 +29,14 @@ Identify possible improvements or flaws such as:
 * redundant code,
 * non-idiomatic patterns.
 
+Keep in mind the following imperfections with Java code, identified by automated static analysis system
+
+{{imperfections}}
+
 Respond with a plain list of suggestions, one per line. Do not include any explanations, summaries, or extra text.
 `
 
-func NewCritic(ai brain.Brain, port int) *Critic {
+func NewCritic(ai brain.Brain, port int, imperfections[] byte) *Critic {
 	logger := log.NewPrefixed("critic", log.Default())
 	server := protocol.NewCustomServer(agentCard(port), port)
 	critic := &Critic{
@@ -39,6 +44,7 @@ func NewCritic(ai brain.Brain, port int) *Critic {
 		brain:  ai,
 		log:    logger,
 		port:   port,
+		imperfections: imperfections,
 	}
 	server.SetHandler(critic.think)
 	critic.log.Debug("preparing the Critic server on port %d with ai provider %s", port, ai)
@@ -84,7 +90,8 @@ func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {
 	}
 	c.log.Info("received messsage #%s, '%s', number of attached files: %d", m.MessageID, task, 1)
 	c.log.Info("asking ai to find flaws in the code...")
-	answer, err := c.brain.Ask(strings.Replace(prompt, "{{code}}", java, 1))
+	replacer := strings.NewReplacer("{{code}}", java, "{{imperfections}}", string(c.imperfections))
+	answer, err := c.brain.Ask(replacer.Replace(prompt))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
 	}

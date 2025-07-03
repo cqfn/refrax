@@ -33,8 +33,9 @@ func Refactor(provider string, token string, proj Project, stats bool, log log.L
 
 func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Project, error) {
 	cmd := exec.Command("aibolit", "check", "--filenames", "Foo.java")
-	result, _ := cmd.CombinedOutput()
-    log.Debug("Identified refactoring opportunities with aibolit: \n%s", result)
+	opportunities, _ := cmd.CombinedOutput()
+    log.Debug("Identified refactoring opportunities with aibolit: \n%s", opportunities)
+    // pass result to prompt
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
@@ -56,7 +57,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
-	critic := critic.NewCritic(ai, criticPort)
+	critic := critic.NewCritic(ai, criticPort, opportunities)
 
 	fixerPort, err := protocol.FreePort()
 	if err != nil {
