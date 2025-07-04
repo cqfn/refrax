@@ -63,8 +63,6 @@ Ensure that Go 1.24.1 or later is installed on your system.
 - `--token, -t`: Token for the AI provider.
 - `--debug, -d`: Enable debug logging.
 
-Also, make sure you have [aibolit] installed.
-
 ## Authentication
 
 Some operations in Refrax require AI authentication using an API token. You can provide the token using one of the following methods:
@@ -108,5 +106,3 @@ If multiple sources are provided, the following priority order is applied (highe
 ## License
 
 Licensed under the [MIT](LICENSE.txt) License.
-
-[aibolit]: https://github.com/cqfn/aibolit
