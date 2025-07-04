@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/cqfn/refrax/internal/aibolit"
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +45,7 @@ type MockBrain struct{}
 func TestNewCritic_Success(t *testing.T) {
 	brain := brain.NewMock()
 
-	critic := NewCritic(brain, 18081, aibolit.NewMockAibolitEmpty())
+	critic := NewCritic(brain, 18081, NewMockToolEmpty())
 	require.NotNil(t, critic)
 	assert.Equal(t, brain, critic.brain)
 }
@@ -55,7 +54,7 @@ func TestCriticStart_Success(t *testing.T) {
 	brain := brain.NewMock()
 	port, err := protocol.FreePort()
 	require.NoError(t, err)
-	critic := NewCritic(brain, port, aibolit.NewMockAibolitEmpty())
+	critic := NewCritic(brain, port, NewMockToolEmpty())
 	ready := make(chan struct{})
 
 	go func() { err = critic.Start(ready) }()
@@ -68,7 +67,7 @@ func TestCriticStart_Success(t *testing.T) {
 
 func TestCriticStart_ServerStartError(t *testing.T) {
 	brain := brain.NewMock()
-	critic := NewCritic(brain, 18081, aibolit.NewMockAibolitEmpty())
+	critic := NewCritic(brain, 18081, NewMockToolEmpty())
 	critic.server = &MockServer{started: true}
 	ready := make(chan struct{})
 
@@ -81,7 +80,7 @@ func TestCriticStart_ServerStartError(t *testing.T) {
 func TestCriticClose_Success(t *testing.T) {
 	brain := brain.NewMock()
 	server := &MockServer{started: true}
-	critic := NewCritic(brain, 18081, aibolit.NewMockAibolitEmpty())
+	critic := NewCritic(brain, 18081, NewMockToolEmpty())
 	critic.server = server
 
 	err := critic.Close()
@@ -93,7 +92,7 @@ func TestCriticClose_Success(t *testing.T) {
 func TestCriticClose_ServerNotStartedError(t *testing.T) {
 	brain := brain.NewMock()
 	server := &MockServer{}
-	critic := NewCritic(brain, 18081, aibolit.NewMockAibolitEmpty())
+	critic := NewCritic(brain, 18081, NewMockToolEmpty())
 	critic.server = server
 
 	err := critic.Close()
@@ -105,7 +104,7 @@ func TestCriticClose_ServerNotStartedError(t *testing.T) {
 func TestCriticThink_ReturnsMessage(t *testing.T) {
 	brain := brain.NewMock()
 	server := &MockServer{}
-	critic := NewCritic(brain, 18081, aibolit.NewMockAibolitEmpty())
+	critic := NewCritic(brain, 18081, NewMockToolEmpty())
 	critic.server = server
 	msg := protocol.NewMessageBuilder().
 		MessageID("msg-123").

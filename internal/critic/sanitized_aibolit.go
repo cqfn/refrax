@@ -1,4 +1,4 @@
-package aibolit
+package critic
 
 import (
 	"regexp"
@@ -6,10 +6,10 @@ import (
 )
 
 type SanitizedAibolit struct {
-	origin Aibolit
+	origin Tool
 }
 
-func NewSanitizedAibolit(aibolit Aibolit) Aibolit {
+func NewSanitizedAibolit(aibolit Tool) Tool {
 	return &SanitizedAibolit{aibolit}
 }
 

@@ -1,4 +1,4 @@
-package aibolit
+package critic
 
 import (
 	"strings"
@@ -20,6 +20,6 @@ func TestSanitizedAibolit_Sanitizes_Response(t *testing.T) {
 	lines = append(lines, expected...)
 	assert.Equal(
 		t, strings.Join(expected, "\n"),
-		NewSanitizedAibolit(NewMockAibolit(strings.Join(lines, "\n"))).Imperfections(),
+		NewSanitizedAibolit(NewMockTool(strings.Join(lines, "\n"))).Imperfections(),
 	)
 }

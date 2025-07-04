@@ -8,7 +8,6 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
-	"github.com/cqfn/refrax/internal/aibolit"
 )
 
 type Critic struct {
@@ -16,7 +15,7 @@ type Critic struct {
 	brain  brain.Brain
 	log    log.Logger
 	port   int
-	aibolit aibolit.Aibolit
+	tool   Tool
 }
 
 const prompt = `Analyze the following Java code:
@@ -37,7 +36,7 @@ Keep in mind the following imperfections with Java code, identified by automated
 Respond with a plain list of suggestions, one per line. Do not include any explanations, summaries, or extra text.
 `
 
-func NewCritic(ai brain.Brain, port int, aibolit aibolit.Aibolit) *Critic {
+func NewCritic(ai brain.Brain, port int, tool Tool) *Critic {
 	logger := log.NewPrefixed("critic", log.Default())
 	server := protocol.NewCustomServer(agentCard(port), port)
 	critic := &Critic{
@@ -45,7 +44,7 @@ func NewCritic(ai brain.Brain, port int, aibolit aibolit.Aibolit) *Critic {
 		brain:  ai,
 		log:    logger,
 		port:   port,
-		aibolit: aibolit,
+		tool: 	tool,
 	}
 	server.SetHandler(critic.think)
 	critic.log.Debug("preparing the Critic server on port %d with ai provider %s", port, ai)
@@ -93,7 +92,7 @@ func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Info("asking ai to find flaws in the code...")
 	replacer := strings.NewReplacer(
 		"{{code}}", java,
-		"{{imperfections}}", c.aibolit.Imperfections(),
+		"{{imperfections}}", c.tool.Imperfections(),
 	)
 	answer, err := c.brain.Ask(replacer.Replace(prompt))
 	if err != nil {

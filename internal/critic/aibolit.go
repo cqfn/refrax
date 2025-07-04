@@ -1,4 +1,4 @@
-package aibolit
+package critic
 
 import (
 	"os/exec"
@@ -6,15 +6,15 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 )
 
-type DefaultAibolit struct {
+type Aibolit struct {
 	filename string
 }
 
-func NewDefaultAibolit(filename string) Aibolit {
-	return &DefaultAibolit{filename}
+func NewAibolit(filename string) Tool {
+	return &Aibolit{filename}
 }
 
-func (a* DefaultAibolit) Imperfections() string {
+func (a* Aibolit) Imperfections() string {
 	cmd := exec.Command("aibolit", "check", "--filenames", "Foo.java")
 	opportunities, _ := cmd.CombinedOutput()
     log.Debug("Identified refactoring opportunities with aibolit: \n%s", opportunities)

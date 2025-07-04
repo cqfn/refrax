@@ -6,7 +6,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/cqfn/refrax/internal/aibolit"
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/critic"
 	"github.com/cqfn/refrax/internal/facilitator"
@@ -54,7 +53,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
 	critic := critic.NewCritic(
-		ai, criticPort, aibolit.NewSanitizedAibolit(aibolit.NewDefaultAibolit(classes[0].Name())),
+		ai, criticPort, critic.NewSanitizedAibolit(critic.NewAibolit(classes[0].Name())),
 	)
 
 	fixerPort, err := protocol.FreePort()
