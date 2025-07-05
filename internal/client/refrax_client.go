@@ -52,7 +52,10 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
-	critic := critic.NewCritic(ai, criticPort)
+	critic := critic.NewCritic(
+		ai, criticPort,
+		critic.NewCombinedTool(critic.NewSanitizedAibolit(critic.NewAibolit(classes[0].Name()))),
+	)
 
 	fixerPort, err := protocol.FreePort()
 	if err != nil {

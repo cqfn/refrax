@@ -82,7 +82,7 @@ export DEEPSEEK_TOKEN=your-token-here
 refrax start facilitator
 ```
 
-✅ The `DEEPSEEK_TOKEN` variable is the recommended option.  
+✅ The `DEEPSEEK_TOKEN` variable is the recommended option.
 ⚠️ The `TOKEN` variable is still supported but deprecated.
 
 ### `.env` File
@@ -106,4 +106,3 @@ If multiple sources are provided, the following priority order is applied (highe
 ## License
 
 Licensed under the [MIT](LICENSE.txt) License.
-
