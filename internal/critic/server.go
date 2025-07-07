@@ -90,10 +90,9 @@ func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {
 	}
 	c.log.Info("received messsage #%s, '%s', number of attached files: %d", m.MessageID, task, 1)
 	c.log.Info("asking ai to find flaws in the code...")
-	imperfections := NewCombinedTool(c.tool...).Imperfections()
 	replacer := strings.NewReplacer(
 		"{{code}}", java,
-		"{{imperfections}}", imperfections,
+		"{{imperfections}}", NewCombinedTool(c.tool...).Imperfections(),
 	)
 	answer, err := c.brain.Ask(replacer.Replace(prompt))
 	if err != nil {
