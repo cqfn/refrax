@@ -54,7 +54,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 	}
 	critic := critic.NewCritic(
 		ai, criticPort,
-		critic.NewCombinedTool(critic.NewAibolit(classes[0].Name())),
+		critic.NewAibolit(classes[0].Name()),
 	)
 
 	fixerPort, err := protocol.FreePort()
