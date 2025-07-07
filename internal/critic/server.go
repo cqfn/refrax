@@ -15,7 +15,7 @@ type Critic struct {
 	brain  brain.Brain
 	log    log.Logger
 	port   int
-	tool   Tool
+	tool   []Tool
 }
 
 const prompt = `Analyze the following Java code:
@@ -36,7 +36,7 @@ Keep in mind the following imperfections with Java code, identified by automated
 Respond with a plain list of suggestions, one per line. Do not include any explanations, summaries, or extra text.
 `
 
-func NewCritic(ai brain.Brain, port int, tool Tool) *Critic {
+func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 	logger := log.NewPrefixed("critic", log.Default())
 	server := protocol.NewCustomServer(agentCard(port), port)
 	critic := &Critic{
@@ -44,7 +44,7 @@ func NewCritic(ai brain.Brain, port int, tool Tool) *Critic {
 		brain:  ai,
 		log:    logger,
 		port:   port,
-		tool: 	tool,
+		tool:   tool,
 	}
 	server.SetHandler(critic.think)
 	critic.log.Debug("preparing the Critic server on port %d with ai provider %s", port, ai)
@@ -92,7 +92,7 @@ func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Info("asking ai to find flaws in the code...")
 	replacer := strings.NewReplacer(
 		"{{code}}", java,
-		"{{imperfections}}", c.tool.Imperfections(),
+		"{{imperfections}}", NewCombinedTool(c.tool...).Imperfections(),
 	)
 	answer, err := c.brain.Ask(replacer.Replace(prompt))
 	if err != nil {

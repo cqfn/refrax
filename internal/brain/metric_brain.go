@@ -8,8 +8,8 @@ import (
 
 type MetricBrain struct {
 	origin Brain
-	stats[] time.Duration
-	log log.Logger
+	stats  []time.Duration
+	log    log.Logger
 }
 
 func NewMetricBrain(brain Brain, log log.Logger) Brain {
@@ -18,7 +18,7 @@ func NewMetricBrain(brain Brain, log log.Logger) Brain {
 
 func (b *MetricBrain) Ask(question string) (string, error) {
 	start := time.Now()
-	result, err := b.origin.Ask(question);
+	result, err := b.origin.Ask(question)
 	duration := time.Since(start)
 	b.stats = append(b.stats, duration)
 	return result, err
@@ -31,7 +31,7 @@ func (b *MetricBrain) Ask(question string) (string, error) {
 //  around the aggregation and printing of stats.
 func (b *MetricBrain) PrintStats() {
 	b.log.Info("Total messages asked: %d", len(b.stats))
-	for i,d := range b.stats {
+	for i, d := range b.stats {
 		b.log.Info("Brain finished asking question #%d in %s", i+1, d)
 	}
 }
