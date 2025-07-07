@@ -21,9 +21,9 @@ func Execute() error {
 }
 
 // @todo #2:45min Add new parameter `--tools` for constructing needed tool for the critic.
-//	Currently, we create Aibolit, but it would be great to have such option. Examples of such tools
-//	are: `aibolit`, `none`, etc. We should be able to pass multiple tools, for instance:
-//	`--tools=aibolit,qulice`.
+//  Currently, we create Aibolit, but it would be great to have such option. Examples of such tools
+//  are: `aibolit`, `none`, etc. We should be able to pass multiple tools, for instance:
+//  `--tools=aibolit,qulice`.
 func NewRootCmd(out io.Writer, err io.Writer) *cobra.Command {
 	var params Params
 	root := &cobra.Command{
