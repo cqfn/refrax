@@ -16,18 +16,20 @@ import (
 
 type RefraxClient struct {
 	provider string
+	playbook string
 	token    string
 }
 
-func NewRefraxClient(provider string, token string) *RefraxClient {
+func NewRefraxClient(provider string, token string, playbook string) *RefraxClient {
 	return &RefraxClient{
 		provider: provider,
 		token:    token,
+		playbook: playbook,
 	}
 }
 
-func Refactor(provider string, token string, proj Project, stats bool, log log.Logger) (Project, error) {
-	return NewRefraxClient(provider, token).Refactor(proj, stats, log)
+func Refactor(provider string, token string, proj Project, stats bool, log log.Logger, playbook string) (Project, error) {
+	return NewRefraxClient(provider, token, playbook).Refactor(proj, stats, log)
 }
 
 func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Project, error) {
@@ -40,21 +42,19 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
 	log.Debug("found %d classes in the project: %v", len(classes), classes)
-
 	var ai brain.Brain
+	mind := brain.New(c.provider, c.token, c.playbook)
 	if stats {
-		ai = brain.NewMetricBrain(brain.New(c.provider, c.token), log)
+		ai = brain.NewMetricBrain(mind, log)
 	} else {
-		ai = brain.New(c.provider, c.token)
+		ai = mind
 	}
-
 	criticPort, err := protocol.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
 	critic := critic.NewCritic(
 		ai, criticPort,
-		critic.NewAibolit(classes[0].Name()),
 	)
 
 	fixerPort, err := protocol.FreePort()

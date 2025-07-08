@@ -13,7 +13,7 @@ func TestAsk_ValidQuestion(t *testing.T) {
 	response, err := brain.Ask(question)
 
 	require.NoError(t, err)
-	require.Equal(t, "mock response to: What is the capital of France?", response)
+	require.Equal(t, question, response)
 }
 
 func TestAsk_EmptyQuestion(t *testing.T) {

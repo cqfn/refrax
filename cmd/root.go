@@ -11,6 +11,7 @@ import (
 type Params struct {
 	provider string
 	token    string
+	playbook string
 	mock     bool
 	debug    bool
 	stats    bool
@@ -21,9 +22,10 @@ func Execute() error {
 }
 
 // @todo #2:45min Add new parameter `--tools` for constructing needed tool for the critic.
-//  Currently, we create Aibolit, but it would be great to have such option. Examples of such tools
-//  are: `aibolit`, `none`, etc. We should be able to pass multiple tools, for instance:
-//  `--tools=aibolit,qulice`.
+//
+//	Currently, we create Aibolit, but it would be great to have such option. Examples of such tools
+//	are: `aibolit`, `none`, etc. We should be able to pass multiple tools, for instance:
+//	`--tools=aibolit,qulice`.
 func NewRootCmd(out io.Writer, err io.Writer) *cobra.Command {
 	var params Params
 	root := &cobra.Command{
@@ -38,6 +40,7 @@ func NewRootCmd(out io.Writer, err io.Writer) *cobra.Command {
 	}
 	root.PersistentFlags().StringVarP(&params.provider, "ai", "a", "none", "AI provider to use (e.g., openai, deepseek, none, etc.)")
 	root.PersistentFlags().StringVarP(&params.token, "token", "t", "", "Token for the AI provider (if required)")
+	root.PersistentFlags().StringVar(&params.playbook, "playbook", "", "Path to a user-defined YAML playbook for AI integration.")
 	root.PersistentFlags().BoolVar(&params.mock, "mock", false, "Use mock project")
 	root.PersistentFlags().BoolVarP(&params.debug, "debug", "d", false, "print debug logs")
 	root.PersistentFlags().BoolVar(&params.stats, "stats", false, "Print internal interaction statistics")

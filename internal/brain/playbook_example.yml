@@ -1,0 +1,22 @@
+name: qa-basic-test
+qa:
+  - question: |
+      What should I rename the variable `tmp` to?
+    answer: |
+      You can rename `tmp` to `userID` for better clarity.
+
+  - question: |
+      Should I add a null check for `user.getName()`?
+    answer: |
+      Yes, you should check if `user` is null before calling `getName()` to avoid a NullPointerException.
+
+  - question: |
+      Is there a simpler way to write this loop?
+    answer: |
+      Yes, consider using a `forEach` method or a stream to simplify the loop.
+
+  - question: |
+      Can I inline the variable `result` that is used only once?
+    answer: |
+      Yes, since `result` is only used once, inlining it would simplify the code.
+

@@ -4,11 +4,15 @@ type Brain interface {
 	Ask(question string) (string, error)
 }
 
-func New(provider, token string) Brain {
+func New(provider, token string, playbook ...string) Brain {
 	switch provider {
 	case "deepseek":
 		return NewDeepSeek(token)
 	default:
-		return NewMock()
+		if len(playbook) == 0 {
+			return NewMock()
+		} else {
+			return NewMock(playbook[0])
+		}
 	}
 }
