@@ -12,5 +12,5 @@ func TestMetricBrain_Ask_DelegatesToOrigin(t *testing.T) {
 	brain := NewMetricBrain(NewMock(), log.NewMock())
 	response, err := brain.Ask(claim)
 	assert.NoError(t, err)
-	assert.Equal(t, "mock response to: "+claim, response)
+	assert.Equal(t, claim, response)
 }
