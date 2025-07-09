@@ -18,7 +18,7 @@ type Facilitator struct {
 	fixerPort  int
 }
 
-func NewFacilitator(ai brain.Brain, port int, criticPort int, fixerPort int) *Facilitator {
+func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitator {
 	logger := log.NewPrefixed("facilitator", log.Default())
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
 	server := protocol.NewCustomServer(agentCard(port), port)
@@ -97,7 +97,7 @@ func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
 		Part(filePartResult).
 		Build()
 	f.log.Debug("sending response: %s", res)
-	return &res, nil
+	return res, nil
 }
 
 func (f *Facilitator) AskFixer(id string, suggestions []string, file *protocol.FilePart) (*protocol.JSONRPCResponse, error) {
@@ -131,7 +131,7 @@ func (f *Facilitator) AskCritic(id string, file *protocol.FilePart) (*protocol.J
 	)
 }
 
-func agentCard(port int) protocol.AgentCard {
+func agentCard(port int) *protocol.AgentCard {
 	return protocol.Card().
 		Name("Facilitator Agent").
 		Description("An agent that facilitates talk between critic and fixer").

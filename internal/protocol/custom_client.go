@@ -84,11 +84,11 @@ func (client *CustomClient) doRequest(req any, resp *JSONRPCResponse) error {
 	if err := json.NewDecoder(httpResp.Body).Decode(&rawResp); err != nil {
 		return fmt.Errorf("failed to decode response: %w", err)
 	}
-	copy(&rawResp, resp)
+	copyResp(&rawResp, resp)
 	return nil
 }
 
-func copy(from *JSONRPCResponse, to *JSONRPCResponse) {
+func copyResp(from, to *JSONRPCResponse) {
 	to.JSONRPC = from.JSONRPC
 	to.ID = from.ID
 	to.Result = from.Result

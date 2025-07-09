@@ -60,7 +60,7 @@ func (b *AgentCardBuilder) DefaultOutputModes(modes []string) *AgentCardBuilder 
 }
 
 func (b *AgentCardBuilder) Skill(id, name, description string) *AgentCardBuilder {
-	var skill = AgentSkill{
+	skill := AgentSkill{
 		Name:        name,
 		Description: description,
 	}
@@ -73,6 +73,6 @@ func (b *AgentCardBuilder) Skills(skills []AgentSkill) *AgentCardBuilder {
 	return b
 }
 
-func (b *AgentCardBuilder) Build() AgentCard {
-	return *b.card
+func (b *AgentCardBuilder) Build() *AgentCard {
+	return b.card
 }

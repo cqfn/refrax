@@ -31,7 +31,7 @@ qa:
 func TestNewYAMLPlaybook_Success(t *testing.T) {
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "playbook_example.yml")
-	err := os.WriteFile(filePath, []byte(content), 0644)
+	err := os.WriteFile(filePath, []byte(content), 0o644)
 	require.NoError(t, err)
 
 	pb, err := NewYAMLPlaybook(filePath)
@@ -62,7 +62,7 @@ func TestNewYAMLPlaybook_InvalidYAML(t *testing.T) {
 		"  - question: \"What should I rename the variable 'tmp' to?\"",
 		"    answer: [\"This should fail because it's not a string\"]",
 	}, "\n")
-	err := os.WriteFile(filePath, []byte(content), 0644)
+	err := os.WriteFile(filePath, []byte(content), 0o644)
 	require.NoError(t, err)
 
 	pb, err := NewYAMLPlaybook(filePath)
@@ -79,7 +79,7 @@ func TestYAMLPlaybook_Ask_QuestionNotFound(t *testing.T) {
 		"      What should I rename the variable `tmp` to?\n" +
 		"    answer: |\n" +
 		"      You can rename `tmp` to `userID` for better clarity.\n"
-	err := os.WriteFile(path, []byte(content), 0644)
+	err := os.WriteFile(path, []byte(content), 0o644)
 	require.NoError(t, err)
 
 	pb, err := NewYAMLPlaybook(path)

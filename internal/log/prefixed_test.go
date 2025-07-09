@@ -9,7 +9,7 @@ import (
 
 func TestNewPrefixed(t *testing.T) {
 	mock := NewMock()
-	prefix := "test-prefix"
+	prefix := "prefix"
 	prefixed := NewPrefixed(prefix, mock)
 	require.NotNil(t, prefixed)
 

@@ -1,0 +1,51 @@
+version: "2"
+linters:
+  enable:
+    - dupl
+    - gochecknoinits
+    - gocritic
+    - gocyclo
+    # @todo #43:60min Enable 'gosec' linter
+    #  We need to fix all the security issues and enable this check
+    #  Youu can enable it using '-gosec' entry right below
+    # - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - prealloc
+    # @todo #43:60min Enable 'revive' linter
+    #  We need to fix all the issues identified by 'revive' linter
+    #  and then enable it using the following entry below
+    # - revive
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - goconst
+  settings:
+     goconst:
+       min-len: 2
+       min-occurrences: 2
+     gocritic:
+       disabled-checks:
+         - wrapperFunc
+         - hugeParam
+         - rangeValCopy
+         - singleCaseSwitch
+         - ifElseChain
+       enabled-tags:
+        - performance
+        - style
+        - experimental
+     govet:
+       enable:
+         - shadow
+     lll:
+       line-length: 140
+     misspell:
+       locale: US
+formatters:
+  enable:
+    - gci
+    - gofumpt

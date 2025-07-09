@@ -19,11 +19,11 @@ type CustomServer struct {
 	server  *http.Server
 }
 
-func NewCustomServer(card AgentCard, port int) Server {
+func NewCustomServer(card *AgentCard, port int) Server {
 	mux := http.NewServeMux()
 	server := &CustomServer{
 		mux:     mux,
-		card:    card,
+		card:    *card,
 		port:    port,
 		handler: LogRequest,
 		server: &http.Server{
@@ -137,7 +137,7 @@ func toString(v any) string {
 
 func (s *CustomServer) handleMessageSend(w http.ResponseWriter, params *MessageSendParams, id string) error {
 	msg := params.Message
-	udpadted, err := s.handler(&msg)
+	udpadted, err := s.handler(msg)
 	if err != nil {
 		return err
 	}

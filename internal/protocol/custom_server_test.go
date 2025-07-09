@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"testing"
 
@@ -23,25 +22,25 @@ var testCard = AgentCard{
 func TestCustomServer_AgentCard(t *testing.T) {
 	var err error
 	serv, port, ready := testServer(t)
-	defer closeResource(serv, &err)
 	<-ready
 
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/.well-known/agent-card.json", port))
 
 	require.NoError(t, err)
-	defer closeResource(resp.Body, &err)
+	err = serv.Close()
+	require.NoError(t, err, "Failed to close server")
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	var result AgentCard
 	err = json.NewDecoder(resp.Body).Decode(&result)
-	log.Debug("Agent card response: %v", result)
 	require.NoError(t, err)
+	err = resp.Body.Close()
+	require.NoError(t, err, "Failed to close response body")
 	require.Equal(t, "TestAgent", result.Name, "Agent name does not match")
 }
 
 func TestCustomServer_SendsMessage(t *testing.T) {
 	var err error
 	serv, port, ready := testServer(t)
-	defer closeResource(serv, &err)
 	<-ready
 	request := JSONRPCRequest{
 		JSONRPC: "2.0",
@@ -58,42 +57,36 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 	resp, err := http.Post(fmt.Sprintf("http://localhost:%d/", port), "application/json", bytes.NewBuffer(body))
 
 	require.NoError(t, err)
-	defer closeResource(resp.Body, &err)
+	err = serv.Close()
+	require.NoError(t, err, "Failed to close server")
 	var response JSONRPCResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	require.NoError(t, err, "Failed to decode response body")
+	err = resp.Body.Close()
+	require.NoError(t, err, "Failed to close response body")
 	expected := JSONRPCResponse{
 		ID:      "1",
 		JSONRPC: "2.0",
-		Result:  tellJoke(),
+		Result:  *tellJoke(),
 	}
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type header should be application/json")
 	assert.Equal(t, expected, response, "Server should return the expected joke message")
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func testServer(t *testing.T) (Server, int, chan struct{}) {
+func testServer(t *testing.T) (server Server, port int, ready chan struct{}) {
 	t.Helper()
 	port, err := FreePort()
 	require.NoError(t, err, "Failed to get a free port")
-	server := NewCustomServer(testCard, port)
+	server = NewCustomServer(&testCard, port)
 	server.SetHandler(joke)
 	require.NoError(t, err, "Failed to create custom server")
-	ready := make(chan struct{})
-	go startServer(server, ready, &err)
+	ready = make(chan struct{})
+	go func() {
+		err := server.Start(ready)
+		require.NoError(t, err, "Failed to start custom server")
+	}()
 	return server, port, ready
-}
-
-func startServer(server Server, ready chan struct{}, err *error) {
-	if cerr := server.Start(ready); cerr != nil && *err == nil {
-		*err = cerr
-	}
-}
-
-func closeResource(resource io.Closer, err *error) {
-	if cerr := resource.Close(); cerr != nil && *err == nil {
-		*err = cerr
-	}
 }
 
 func joke(msg *Message) (*Message, error) {
@@ -102,10 +95,10 @@ func joke(msg *Message) (*Message, error) {
 		return nil, fmt.Errorf("unexpected message content, we expected 'tell me a joke', got: '%v'", msg.Parts[0].(*TextPart).Text)
 	}
 	response := tellJoke()
-	return &response, nil
+	return response, nil
 }
 
-func askJoke() Message {
+func askJoke() *Message {
 	return NewMessageBuilder().
 		Role("user").
 		Part(NewText("tell me a joke")).
@@ -113,7 +106,7 @@ func askJoke() Message {
 		Build()
 }
 
-func tellJoke() Message {
+func tellJoke() *Message {
 	return NewMessageBuilder().
 		Role("agent").
 		Part(NewText("Why did the chicken cross the road? To get to the other side!")).

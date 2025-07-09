@@ -94,7 +94,7 @@ func (c *Fixer) think(m *protocol.Message) (*protocol.Message, error) {
 		MessageID(m.MessageID).
 		Part(protocol.NewFileBytes([]byte(clean(answer)))).
 		Build()
-	return &message, nil
+	return message, nil
 }
 
 func clean(answer string) string {
@@ -102,7 +102,7 @@ func clean(answer string) string {
 	return strings.ReplaceAll(answer, "```", "")
 }
 
-func agentCard(port int) protocol.AgentCard {
+func agentCard(port int) *protocol.AgentCard {
 	return protocol.Card().
 		Name("Fixer Agent").
 		Description("Fixer Description").

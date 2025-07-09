@@ -12,16 +12,16 @@ import (
 type TrpcServer struct {
 	server server.A2AServer
 	port   int
-	card   AgentCard
+	card   *AgentCard
 }
 
-func NewTrpcServer(card AgentCard, port int) (Server, error) {
+func NewTrpcServer(card *AgentCard, port int) (Server, error) {
 	processor := &myTaskProcessor{}
 	taskManager, err := taskmanager.NewMemoryTaskManager(processor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create task manager: %w", err)
 	}
-	serv, err := server.NewA2AServer(agentCard(card), taskManager)
+	serv, err := server.NewA2AServer(*agentCard(card), taskManager)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create A2A server: %w", err)
 	}
@@ -50,8 +50,8 @@ func (s *TrpcServer) Close() error {
 	return nil
 }
 
-func agentCard(card AgentCard) server.AgentCard {
-	return server.AgentCard{
+func agentCard(card *AgentCard) *server.AgentCard {
+	return &server.AgentCard{
 		Name:             card.Name,
 		Description:      &card.Description,
 		URL:              card.URL,
@@ -70,7 +70,8 @@ func agentCard(card AgentCard) server.AgentCard {
 		DefaultOutputModes: card.DefaultOutputModes,
 		Skills: func() []server.AgentSkill {
 			var skills []server.AgentSkill
-			for _, skill := range card.Skills {
+			for i := range card.Skills {
+				skill := &card.Skills[i]
 				skills = append(skills, server.AgentSkill{
 					Name:        skill.Name,
 					Description: &skill.Description,
@@ -92,8 +93,7 @@ func boolean(b *bool) bool {
 	return *b
 }
 
-type myTaskProcessor struct {
-}
+type myTaskProcessor struct{}
 
 func (p *myTaskProcessor) Process(
 	ctx context.Context,

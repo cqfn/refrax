@@ -32,9 +32,9 @@ func TestSetAndGetLogger(t *testing.T) {
 	mock := &MockLogger{}
 	Set(mock)
 
-	initialised := Default()
+	initialized := Default()
 
-	assert.Equal(t, mock, initialised, "Expected retrieved logger to be the mock logger")
+	assert.Equal(t, mock, initialized, "Expected retrieved logger to be the mock logger")
 }
 
 func TestSetLoggerNilPanics(t *testing.T) {

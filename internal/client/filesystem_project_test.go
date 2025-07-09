@@ -22,8 +22,8 @@ func TestFilesystemProject_Classes_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	first := filepath.Join(tempDir, "Class1.java")
 	second := filepath.Join(tempDir, "Class2.java")
-	require.NoError(t, os.WriteFile(first, []byte("class Class1 {}"), 0644))
-	require.NoError(t, os.WriteFile(second, []byte("class Class2 {}"), 0644))
+	require.NoError(t, os.WriteFile(first, []byte("class Class1 {}"), 0o644))
+	require.NoError(t, os.WriteFile(second, []byte("class Class2 {}"), 0o644))
 	project := NewFilesystemProject(tempDir)
 
 	classes, err := project.Classes()
@@ -49,7 +49,7 @@ func TestFilesystemProject_Classes_EmptyDirectory(t *testing.T) {
 func TestFilesystemProject_Classes_NonJavaFilesIgnored(t *testing.T) {
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "NotAJavaFile.txt")
-	require.NoError(t, os.WriteFile(filePath, []byte("Some content"), 0644))
+	require.NoError(t, os.WriteFile(filePath, []byte("Some content"), 0o644))
 
 	project := NewFilesystemProject(tempDir)
 
@@ -63,8 +63,8 @@ func TestFilesystemProject_Classes_ErrorReadingFile(t *testing.T) {
 	SkipOnWindows(t)
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "Class1.java")
-	require.NoError(t, os.WriteFile(filePath, []byte("class Class1 {}"), 0644))
-	require.NoError(t, os.Chmod(filePath, 0222)) // Write-only
+	require.NoError(t, os.WriteFile(filePath, []byte("class Class1 {}"), 0o644))
+	require.NoError(t, os.Chmod(filePath, 0o222)) // Write-only
 
 	project := NewFilesystemProject(tempDir)
 
@@ -78,14 +78,14 @@ func TestFilesystemProject_Classes_ErrorDuringTraversal(t *testing.T) {
 	SkipOnWindows(t)
 	tempDir := t.TempDir()
 	subDir := filepath.Join(tempDir, "subdir")
-	require.NoError(t, os.Mkdir(subDir, 0000)) // No permissions
+	require.NoError(t, os.Mkdir(subDir, 0o000)) // No permissions
 	project := NewFilesystemProject(tempDir)
 
 	classes, err := project.Classes()
 
 	assert.Nil(t, classes)
 	assert.Error(t, err)
-	require.NoError(t, os.Chmod(subDir, 0755))
+	require.NoError(t, os.Chmod(subDir, 0o755))
 }
 
 func TestFilesystemJavaClass_Name(t *testing.T) {
@@ -103,7 +103,7 @@ func TestFilesystemJavaClass_Content(t *testing.T) {
 func TestFilesystemJavaClass_SetContent_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "TestClass.java")
-	require.NoError(t, os.WriteFile(filePath, []byte("class TestClass {}"), 0644))
+	require.NoError(t, os.WriteFile(filePath, []byte("class TestClass {}"), 0o644))
 	class := &FilesystemJavaClass{
 		name:    "TestClass",
 		content: "class TestClass {}",

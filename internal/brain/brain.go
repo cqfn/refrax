@@ -4,9 +4,11 @@ type Brain interface {
 	Ask(question string) (string, error)
 }
 
+const deepseek = "deepseek"
+
 func New(provider, token string, playbook ...string) Brain {
 	switch provider {
-	case "deepseek":
+	case deepseek:
 		return NewDeepSeek(token)
 	default:
 		if len(playbook) == 0 {

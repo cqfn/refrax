@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func Token(path string, provider string) string {
+func Token(path, provider string) string {
 	switch provider {
 	case "deepseek":
 		return find(path, "DEEPSEEK_TOKEN")
@@ -18,7 +18,7 @@ func Token(path string, provider string) string {
 	}
 }
 
-func find(path string, variable string) string {
+func find(path, variable string) string {
 	envs, err := godotenv.Read(path)
 	if err != nil {
 		log.Info(".env file not found at %s, using default environment settings and parameters", path)

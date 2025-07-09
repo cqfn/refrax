@@ -11,7 +11,7 @@ import (
 func TestJSONRPCResponse_UnmarshalMessage(t *testing.T) {
 	before := JSONRPCResponse{
 		ID: float64(1),
-		Result: NewMessageBuilder().
+		Result: *NewMessageBuilder().
 			MessageID("363422be-b0f9-4692-a24d-278670e7c7f1").
 			Role("agent").
 			Part(NewText("Why did the chicken cross the road? To get to the other side!")).

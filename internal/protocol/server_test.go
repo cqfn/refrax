@@ -19,7 +19,7 @@ func TestServer_AgentCard(t *testing.T) {
 	require.NoError(t, err, "expected no error creating server")
 	cserver := server.(*CustomServer)
 	require.NoError(t, err, "expected no error creating server")
-	req, err := http.NewRequest(http.MethodGet, "/.well-known/agent-card.json", nil)
+	req, err := http.NewRequest(http.MethodGet, "/.well-known/agent-card.json", http.NoBody)
 	require.NoError(t, err, "could not create request")
 	rec := httptest.NewRecorder()
 
@@ -29,7 +29,7 @@ func TestServer_AgentCard(t *testing.T) {
 	var card AgentCard
 	err = json.NewDecoder(rec.Body).Decode(&card)
 	require.NoError(t, err, "expected no error decoding response")
-	assert.Equal(t, mockCard(port), card, "Expected agent card to match")
+	assert.Equal(t, *mockCard(port), card, "Expected agent card to match")
 }
 
 func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
@@ -39,7 +39,7 @@ func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
 	server.SetHandler(joke)
 	assert.NoError(t, err, "expected no error creating server")
 	cserver := server.(*CustomServer)
-	req, err := http.NewRequest(http.MethodPost, "/.well-known/agent-card.json", nil)
+	req, err := http.NewRequest(http.MethodPost, "/.well-known/agent-card.json", http.NoBody)
 	require.NoError(t, err, "expected no error creating request")
 	rec := httptest.NewRecorder()
 
@@ -48,7 +48,7 @@ func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
 	assert.Equal(t, http.StatusMethodNotAllowed, rec.Code, "Expected status Method Not Allowed")
 }
 
-func mockCard(port int) AgentCard {
+func mockCard(port int) *AgentCard {
 	return Card().
 		Name("Test Agent").
 		Description("A test agent for unit tests").

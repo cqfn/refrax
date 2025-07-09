@@ -50,13 +50,13 @@ func (d *DeepSeek) Ask(question string) (string, error) {
 	return d.send("You are a helpful assistant.", question)
 }
 
-func (d *DeepSeek) send(systemPrompt string, userPrompt string) (answer string, err error) {
-	content := trimmed(userPrompt)
-	log.Debug("DeepSeek: sending request with system promt: '%s' and userPrompt: '%s'", systemPrompt, content)
+func (d *DeepSeek) send(system, user string) (answer string, err error) {
+	content := trimmed(user)
+	log.Debug("DeepSeek: sending request with system promt: '%s' and userPrompt: '%s'", system, content)
 	body := deepseekReq{
 		Model: d.model,
 		Messages: []deepseekMsg{
-			{Role: "system", Content: systemPrompt},
+			{Role: "system", Content: system},
 			{Role: "user", Content: content},
 		},
 		Stream: false,
@@ -76,7 +76,7 @@ func (d *DeepSeek) send(systemPrompt string, userPrompt string) (answer string, 
 		return "", fmt.Errorf("error making request to deepseek api: %w", err)
 	}
 	defer func() {
-		if cerr := resp.Body.Close(); err != nil {
+		if cerr := resp.Body.Close(); cerr != nil {
 			err = fmt.Errorf("error closing response body: %w", cerr)
 		}
 	}()
@@ -85,7 +85,7 @@ func (d *DeepSeek) send(systemPrompt string, userPrompt string) (answer string, 
 		return "", fmt.Errorf("API error: %s", content)
 	}
 	var parsed deepseekResp
-	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
+	if err = json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
 		return "", fmt.Errorf("error decoding response: %w", err)
 	}
 	if len(parsed.Choices) == 0 {
