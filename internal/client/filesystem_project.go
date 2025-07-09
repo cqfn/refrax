@@ -60,7 +60,7 @@ func (c *FilesystemJavaClass) Content() string {
 
 func (c *FilesystemJavaClass) SetContent(content string) error {
 	c.content = content
-	err := os.WriteFile(c.path, []byte(content), 0644)
+	err := os.WriteFile(c.path, []byte(content), 0o644)
 	if err != nil {
 		return fmt.Errorf("error writing content to file %s: %w", c.path, err)
 	}

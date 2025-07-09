@@ -43,18 +43,18 @@ func (m *MockServer) SetHandler(handler protocol.MessageHandler) {
 type MockBrain struct{}
 
 func TestNewCritic_Success(t *testing.T) {
-	brain := brain.NewMock()
+	ai := brain.NewMock()
 
-	critic := NewCritic(brain, 18081)
+	critic := NewCritic(ai, 18081)
 	require.NotNil(t, critic)
-	assert.Equal(t, brain, critic.brain)
+	assert.Equal(t, ai, critic.brain)
 }
 
 func TestCriticStart_Success(t *testing.T) {
-	brain := brain.NewMock()
+	ai := brain.NewMock()
 	port, err := protocol.FreePort()
 	require.NoError(t, err)
-	critic := NewCritic(brain, port)
+	critic := NewCritic(ai, port)
 	ready := make(chan struct{})
 
 	go func() { err = critic.Start(ready) }()
@@ -66,8 +66,8 @@ func TestCriticStart_Success(t *testing.T) {
 }
 
 func TestCriticStart_ServerStartError(t *testing.T) {
-	brain := brain.NewMock()
-	critic := NewCritic(brain, 18081)
+	ai := brain.NewMock()
+	critic := NewCritic(ai, 18081)
 	critic.server = &MockServer{started: true}
 	ready := make(chan struct{})
 
@@ -78,9 +78,9 @@ func TestCriticStart_ServerStartError(t *testing.T) {
 }
 
 func TestCriticClose_Success(t *testing.T) {
-	brain := brain.NewMock()
+	ai := brain.NewMock()
 	server := &MockServer{started: true}
-	critic := NewCritic(brain, 18081)
+	critic := NewCritic(ai, 18081)
 	critic.server = server
 
 	err := critic.Close()
@@ -90,9 +90,9 @@ func TestCriticClose_Success(t *testing.T) {
 }
 
 func TestCriticClose_ServerNotStartedError(t *testing.T) {
-	brain := brain.NewMock()
+	ai := brain.NewMock()
 	server := &MockServer{}
-	critic := NewCritic(brain, 18081, NewMockToolEmpty())
+	critic := NewCritic(ai, 18081, NewMockToolEmpty())
 	critic.server = server
 
 	err := critic.Close()
@@ -102,15 +102,15 @@ func TestCriticClose_ServerNotStartedError(t *testing.T) {
 }
 
 func TestCriticThink_ReturnsMessage(t *testing.T) {
-	brain := brain.NewMock()
+	ai := brain.NewMock()
 	server := &MockServer{}
-	critic := NewCritic(brain, 18081, NewMockToolEmpty())
+	critic := NewCritic(ai, 18081, NewMockToolEmpty())
 	critic.server = server
 	msg := protocol.NewMessageBuilder().
 		MessageID("msg-123").
 		Build()
 
-	response, err := critic.think(&msg)
+	response, err := critic.think(msg)
 
 	require.NoError(t, err)
 	assert.Equal(t, msg.MessageID, response.MessageID)

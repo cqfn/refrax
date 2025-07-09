@@ -20,12 +20,12 @@ type Message struct {
 }
 
 type MessageBuilder struct {
-	msg Message
+	msg *Message
 }
 
 func NewMessageBuilder() *MessageBuilder {
 	return &MessageBuilder{
-		msg: Message{
+		msg: &Message{
 			Kind: KindMessage,
 		},
 	}
@@ -74,6 +74,6 @@ func (b *MessageBuilder) ContextID(contextID string) *MessageBuilder {
 	return b
 }
 
-func (b *MessageBuilder) Build() Message {
+func (b *MessageBuilder) Build() *Message {
 	return b.msg
 }

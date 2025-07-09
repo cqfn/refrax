@@ -7,10 +7,9 @@ import (
 )
 
 func TestNew_WithDeepSeekProvider_ReturnsDeepSeekBrain(t *testing.T) {
-	provider := "deepseek"
 	token := "valid_token"
 
-	result := New(provider, token)
+	result := New(deepseek, token)
 
 	_, ok := result.(*DeepSeek)
 	require.True(t, ok, "Expected result to be of type DeepSeek")

@@ -46,7 +46,7 @@ func echoServer(t *testing.T) *httptest.Server {
 		w.WriteHeader(http.StatusOK)
 		message := strings.ReplaceAll(request.Messages[1].Content, "\n", "\\n")
 		message = strings.ReplaceAll(message, "\"", "'")
-		resp := fmt.Sprintf(`{"choices":[{"message":{"content":"%s"}}]}`, message)
+		resp := fmt.Sprintf(`{"choices":[{"message":{"content":%q}}]}`, message)
 		_, err = w.Write([]byte(resp))
 		require.NoError(t, err, "Failed to write response")
 	}))

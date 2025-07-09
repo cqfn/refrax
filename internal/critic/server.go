@@ -107,7 +107,7 @@ func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {
 	}
 	res := builder.Build()
 	c.log.Debug("sending response: %s", res)
-	return &res, nil
+	return res, nil
 }
 
 func parseAnswer(answer string) []string {
@@ -122,7 +122,7 @@ func parseAnswer(answer string) []string {
 	return suggestions
 }
 
-func agentCard(port int) protocol.AgentCard {
+func agentCard(port int) *protocol.AgentCard {
 	return protocol.Card().
 		Name("Critic Agent").
 		Description("Critic Description").

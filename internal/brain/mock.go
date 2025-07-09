@@ -24,15 +24,15 @@ func (b *MockBrain) Ask(question string) (string, error) {
 }
 
 func (b *MockBrain) Playbook() (Playbook, error) {
-	if len(b.playbooks) == 0 {
+	switch len(b.playbooks) {
+	case 0:
 		return &echoPlaybook{}, nil
-	} else if len(b.playbooks) == 1 {
+	case 1:
 		if b.playbooks[0] != "" {
 			return NewYAMLPlaybook(b.playbooks[0])
-		} else {
-			return &echoPlaybook{}, nil
 		}
-	} else {
+		return &echoPlaybook{}, nil
+	default:
 		return nil, fmt.Errorf("mock brain supports only one playbook at a time")
 	}
 }

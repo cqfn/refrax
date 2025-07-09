@@ -9,7 +9,8 @@ import (
 
 func TestTrpcServer_Creates_Successfully(t *testing.T) {
 	port := 16745
-	server, err := NewTrpcServer(mockCard(port), port)
+	card := mockCard(port)
+	server, err := NewTrpcServer(card, port)
 
 	require.NoError(t, err, "should create a new TRPC server without error")
 	assert.NotNil(t, server, "server should not be nil")

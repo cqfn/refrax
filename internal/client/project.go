@@ -73,7 +73,7 @@ func (i *InMemoryJavaClass) Name() string {
 }
 
 func (i *InMemoryProject) String() string {
-	var names []string
+	names := make([]string, 0, len(i.files))
 	for name := range i.files {
 		names = append(names, name)
 	}

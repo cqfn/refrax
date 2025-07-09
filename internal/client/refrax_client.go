@@ -20,7 +20,7 @@ type RefraxClient struct {
 	token    string
 }
 
-func NewRefraxClient(provider string, token string, playbook string) *RefraxClient {
+func NewRefraxClient(provider, token, playbook string) *RefraxClient {
 	return &RefraxClient{
 		provider: provider,
 		token:    token,
@@ -28,12 +28,12 @@ func NewRefraxClient(provider string, token string, playbook string) *RefraxClie
 	}
 }
 
-func Refactor(provider string, token string, proj Project, stats bool, log log.Logger, playbook string) (Project, error) {
-	return NewRefraxClient(provider, token, playbook).Refactor(proj, stats, log)
+func Refactor(provider, token string, proj Project, stats bool, logger log.Logger, playbook string) (Project, error) {
+	return NewRefraxClient(provider, token, playbook).Refactor(proj, stats, logger)
 }
 
-func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Project, error) {
-	log.Debug("starting refactoring for project %s", proj)
+func (c *RefraxClient) Refactor(proj Project, stats bool, logger log.Logger) (Project, error) {
+	logger.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get classes from project %s: %w", proj, err)
@@ -41,11 +41,11 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 	if len(classes) == 0 {
 		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
-	log.Debug("found %d classes in the project: %v", len(classes), classes)
+	logger.Debug("found %d classes in the project: %v", len(classes), classes)
 	var ai brain.Brain
 	mind := brain.New(c.provider, c.token, c.playbook)
 	if stats {
-		ai = brain.NewMetricBrain(mind, log)
+		ai = brain.NewMetricBrain(mind, logger)
 	} else {
 		ai = mind
 	}
@@ -53,7 +53,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
-	critic := critic.NewCritic(
+	ctc := critic.NewCritic(
 		ai, criticPort,
 	)
 
@@ -61,36 +61,52 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
 	}
-	fixer := fixer.NewFixer(ai, fixerPort)
+	fxr := fixer.NewFixer(ai, fixerPort)
 
 	facilitatorPort, err := protocol.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
-	facilitator := facilitator.NewFacilitator(ai, facilitatorPort, criticPort, fixerPort)
+	fclttor := facilitator.NewFacilitator(ai, facilitatorPort, criticPort, fixerPort)
 
 	facilitatorReady := make(chan struct{})
 	criticReady := make(chan struct{})
 	fixerReady := make(chan struct{})
 
-	go startServer(facilitator, facilitatorReady, &err)
-	go startCriticServer(critic, criticReady, &err)
-	go startFixerServer(fixer, fixerReady, &err)
-	defer closeResource(critic, &err)
-	defer closeResource(facilitator, &err)
-	defer closeResource(fixer, &err)
+	go func() {
+		faerr := fclttor.Start(facilitatorReady)
+		if faerr != nil {
+			panic(fmt.Sprintf("failed to start facilitator server: %v", faerr))
+		}
+	}()
+	go func() {
+		cerr := ctc.Start(criticReady)
+		if cerr != nil {
+			panic(fmt.Sprintf("failed to start critic server: %v", cerr))
+		}
+	}()
+	go func() {
+		ferr := fxr.Start(fixerReady)
+		if ferr != nil {
+			panic(fmt.Sprintf("failed to start fixer server: %v", ferr))
+		}
+	}()
+	defer closeResource(ctc)
+	defer closeResource(fclttor)
+	defer closeResource(fxr)
 
 	<-facilitatorReady
 	<-criticReady
 	<-fixerReady
 
-	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
-	log.Info("begin refactoring")
+	logger.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
+	logger.Info("begin refactoring")
 	facilitatorClient := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
 	for _, class := range classes {
-		log.Debug("sending class %s for refactoring", class.Name())
-		resp, err := facilitatorClient.SendMessage(protocol.MessageSendParams{
+		logger.Debug("sending class %s for refactoring", class.Name())
+		var resp *protocol.JSONRPCResponse
+		resp, err = facilitatorClient.SendMessage(protocol.MessageSendParams{
 			Message: protocol.NewMessageBuilder().
 				MessageID("1").
 				Part(protocol.NewText(fmt.Sprintf("Refactor the class '%s'", class.Name()))).
@@ -100,9 +116,10 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 		if err != nil {
 			return nil, fmt.Errorf("failed to send message for class %s: %w", class.Name(), err)
 		}
-		log.Debug("received response for class %s: %s", class.Name(), resp)
+		logger.Debug("received response for class %s: %s", class.Name(), resp)
 		refactored := resp.Result.(protocol.Message).Parts[0].(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
-		decoded, err := base64.StdEncoding.DecodeString(refactored)
+		var decoded []byte
+		decoded, err = base64.StdEncoding.DecodeString(refactored)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode refactored class %s: %w", class.Name(), err)
 		}
@@ -111,7 +128,8 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, log log.Logger) (Proje
 			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
 		}
 	}
-	log.Info("refactoring is finished")
+	logger.Info("refactoring is finished")
+
 	if withStats, ok := ai.(*brain.MetricBrain); ok {
 		withStats.PrintStats()
 	}
@@ -122,26 +140,8 @@ func clean(s string) string {
 	return strings.TrimSpace(s)
 }
 
-func startFixerServer(fixer *fixer.Fixer, ready chan struct{}, err *error) {
-	if cerr := fixer.Start(ready); cerr != nil && *err == nil {
-		*err = cerr
-	}
-}
-
-func startServer(server *facilitator.Facilitator, ready chan struct{}, err *error) {
-	if cerr := server.Start(ready); cerr != nil && *err == nil {
-		*err = cerr
-	}
-}
-
-func startCriticServer(server *critic.Critic, ready chan struct{}, err *error) {
-	if cerr := server.Start(ready); cerr != nil && *err == nil {
-		*err = cerr
-	}
-}
-
-func closeResource(resource io.Closer, err *error) {
-	if cerr := resource.Close(); cerr != nil && *err == nil {
-		*err = cerr
+func closeResource(resource io.Closer) {
+	if cerr := resource.Close(); cerr != nil {
+		panic(fmt.Sprintf("failed to close resource: %v", cerr))
 	}
 }

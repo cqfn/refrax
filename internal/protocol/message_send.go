@@ -1,7 +1,7 @@
 package protocol
 
 type MessageSendParams struct {
-	Message       Message                   `json:"message"`                 // Required
+	Message       *Message                  `json:"message"`                 // Required
 	Configuration *MessageSendConfiguration `json:"configuration,omitempty"` // Optional
 	Metadata      map[string]any            `json:"metadata,omitempty"`      // Optional key-value extension metadata
 }
@@ -14,7 +14,7 @@ type MessageSendConfiguration struct {
 }
 
 type MessageSendParamsBuilder struct {
-	message       Message
+	message       *Message
 	configuration *MessageSendConfiguration
 	metadata      map[string]any
 }
@@ -23,7 +23,7 @@ func NewMessageSendParamsBuilder() *MessageSendParamsBuilder {
 	return &MessageSendParamsBuilder{}
 }
 
-func (b *MessageSendParamsBuilder) Message(msg Message) *MessageSendParamsBuilder {
+func (b *MessageSendParamsBuilder) Message(msg *Message) *MessageSendParamsBuilder {
 	b.message = msg
 	return b
 }

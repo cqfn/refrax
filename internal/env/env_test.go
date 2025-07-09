@@ -14,7 +14,7 @@ func TestToken_LoadsTokenFromEnvFile(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, ".env")
 	content := "TOKEN=test-token"
-	err := os.WriteFile(file, []byte(content), 0644)
+	err := os.WriteFile(file, []byte(content), 0o644)
 	require.NoError(t, err)
 
 	token := Token(file, "otherprovider")
@@ -32,7 +32,7 @@ func TestToken_EnvVariableNotSetReturnsEmptyString(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, ".env")
 	content := "OTHER_VAR=other-value"
-	err := os.WriteFile(file, []byte(content), 0644)
+	err := os.WriteFile(file, []byte(content), 0o644)
 	require.NoError(t, err)
 
 	token := Token(file, "otherprovider")
@@ -44,7 +44,7 @@ func TestToken_HandlesInvalidEnvFileGracefully(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, ".env")
 	content := "\x00TOKEN=test-token"
-	err := os.WriteFile(file, []byte(content), 0644)
+	err := os.WriteFile(file, []byte(content), 0o644)
 	require.NoError(t, err)
 
 	token := Token(file, "unknown")
@@ -55,7 +55,7 @@ func TestToken_HandlesInvalidEnvFileGracefully(t *testing.T) {
 func TestToken_EmptyEnvFileUsesDefaultEnv(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, ".env")
-	err := os.WriteFile(file, []byte(""), 0644)
+	err := os.WriteFile(file, []byte(""), 0o644)
 	require.NoError(t, err)
 
 	token := Token(file, "unknown")
@@ -67,7 +67,7 @@ func TestProviderToken_DeepseekTokenPresent(t *testing.T) {
 	tmp := t.TempDir()
 	deepseek := "deepseek-token-value"
 	env := filepath.Join(tmp, ".env")
-	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s", deepseek), 0644)
+	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s", deepseek), 0o644)
 	require.NoError(t, err)
 
 	result := Token(env, "deepseek")
@@ -79,7 +79,7 @@ func TestProviderToken_DefaultTokenPresent(t *testing.T) {
 	tmp := t.TempDir()
 	token := "default-token-value"
 	env := filepath.Join(tmp, ".env")
-	err := os.WriteFile(env, fmt.Appendf(nil, "TOKEN=%s", token), 0644)
+	err := os.WriteFile(env, fmt.Appendf(nil, "TOKEN=%s", token), 0o644)
 	require.NoError(t, err)
 
 	result := Token(env, "otherprovider")
@@ -102,10 +102,10 @@ func TestProviderToken_DefaultTokenAbsent(t *testing.T) {
 
 func TestProviderToken_DeepseekTokenIgnoredWhenDefaultTokenExists(t *testing.T) {
 	tmp := t.TempDir()
-	deepseek := "deepseek-token-value"
-	token := "default-token-value"
+	deepseek := "deepseek-token-val"
+	token := "default-token-val"
 	env := filepath.Join(tmp, ".env")
-	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s\nTOKEN=%s\n", deepseek, token), 0644)
+	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s\nTOKEN=%s\n", deepseek, token), 0o644)
 	require.NoError(t, err)
 
 	result := Token(env, "deepseek")
@@ -115,10 +115,10 @@ func TestProviderToken_DeepseekTokenIgnoredWhenDefaultTokenExists(t *testing.T) 
 
 func TestProviderToken_DefaultTokenUsedWhenDeepseekNotRequested(t *testing.T) {
 	tmp := t.TempDir()
-	deepseek := "deepseek-token-value"
-	token := "default-token-value"
+	deepseek := "deepseek-token"
+	token := "default-token"
 	env := filepath.Join(tmp, ".env")
-	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s\nTOKEN=%s\n", deepseek, token), 0644)
+	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s\nTOKEN=%s\n", deepseek, token), 0o644)
 	require.NoError(t, err)
 
 	result := Token(env, "otherprovider")
