@@ -2,14 +2,17 @@ package critic
 
 import "strings"
 
+// CombinedTool represents a tool that combines multiple tools into one.
 type CombinedTool struct {
 	tools []Tool
 }
 
+// NewCombinedTool creates a new CombinedTool instance with the provided tools.
 func NewCombinedTool(tls ...Tool) Tool {
 	return &CombinedTool{tls}
 }
 
+// Imperfections gathers and returns the imperfections from all combined tools.
 func (c *CombinedTool) Imperfections() string {
 	var result strings.Builder
 	for pos, t := range c.tools {

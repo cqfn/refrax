@@ -17,10 +17,12 @@ type yamlPlaybook struct {
 	QA   []qa   `yaml:"qa"`
 }
 
+// YAMLPlaybook represents a playbook loaded from a YAML file.
 type YAMLPlaybook struct {
 	data map[string]string
 }
 
+// NewYAMLPlaybook loads a YAML playbook from the specified file path and returns a YAMLPlaybook instance.
 func NewYAMLPlaybook(filePath string) (*YAMLPlaybook, error) {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -38,6 +40,8 @@ func NewYAMLPlaybook(filePath string) (*YAMLPlaybook, error) {
 	return &YAMLPlaybook{data: data}, nil
 }
 
+// Ask retrieves the answer to a given question from the playbook.
+// If the question is not found, it returns a default "not found" message.
 func (p *YAMLPlaybook) Ask(question string) string {
 	if answer, exists := p.data[normalise(question)]; exists {
 		return answer

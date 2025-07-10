@@ -5,16 +5,18 @@ import (
 	"fmt"
 )
 
+// FileWithBytes represents a file with its content encoded in base64.
 type FileWithBytes struct {
 	Bytes string `json:"bytes"` // Required: base64-encoded content
 }
 
+// FileWithURI represents a file referenced by its URI.
 type FileWithURI struct {
 	URI string `json:"uri"` // Required: URI to the file
 }
 
+// UnmarshalJSON unmarshals a JSON representation of FilePart, detecting its file type.
 func (p *FilePart) UnmarshalJSON(data []byte) error {
-	// Define an alias to avoid recursion and parse the base part
 	type Alias FilePart
 	aux := &struct {
 		File json.RawMessage `json:"file"`
@@ -22,18 +24,13 @@ func (p *FilePart) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(p),
 	}
-
 	if err := json.Unmarshal(data, aux); err != nil {
 		return err
 	}
-
-	// Probe the file kind
 	var probe map[string]json.RawMessage
 	if err := json.Unmarshal(aux.File, &probe); err != nil {
 		return err
 	}
-
-	// Detect and decode the actual file content
 	switch {
 	case probe["bytes"] != nil:
 		var fwb FileWithBytes
@@ -50,6 +47,5 @@ func (p *FilePart) UnmarshalJSON(data []byte) error {
 	default:
 		return fmt.Errorf("unknown file format in FilePart")
 	}
-
 	return nil
 }

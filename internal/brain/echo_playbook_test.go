@@ -11,7 +11,7 @@ func TestNewEchoPlaybook_ReturnsInstance(t *testing.T) {
 	ep := NewEchoPlaybook()
 
 	require.NotNil(t, ep, "expected NewEchoPlaybook to return a non-nil instance")
-	assert.IsType(t, &echoPlaybook{}, ep, "expected NewEchoPlaybook to return a pointer to echoPlaybook")
+	assert.IsType(t, &EchoPlaybook{}, ep, "expected NewEchoPlaybook to return a pointer to echoPlaybook")
 }
 
 func TestEchoPlaybook_Ask_ReturnsSameString(t *testing.T) {

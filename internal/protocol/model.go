@@ -1,10 +1,11 @@
+// Package protocol A2A Agent Card.
 // Current version: 0.2.2
 package protocol
 
+// AgentCard represents the A2A Agent Card as defined in the A2A specification.
 // SecurityScheme isn't implemented yet, but should be defined as per the A2A spec.
 // Check docs for it:
 // https://google-a2a.github.io/A2A/latest/specification/#553-securityscheme-object
-
 type AgentCard struct {
 	Name                              string                `json:"name"`
 	Description                       string                `json:"description"`
@@ -22,11 +23,13 @@ type AgentCard struct {
 	SupportsAuthenticatedExtendedCard *bool                 `json:"supportsAuthenticatedExtendedCard,omitempty"`
 }
 
+// AgentProvider represents the organization and URL of the agent provider.
 type AgentProvider struct {
 	Organization string `json:"organization"`
 	URL          string `json:"url"`
 }
 
+// AgentCapabilities defines the capabilities of the agent as per the A2A specification.
 type AgentCapabilities struct {
 	Streaming              *bool            `json:"streaming,omitempty"`
 	PushNotifications      *bool            `json:"pushNotifications,omitempty"`
@@ -34,13 +37,15 @@ type AgentCapabilities struct {
 	Extensions             []AgentExtension `json:"extensions,omitempty"`
 }
 
+// AgentExtension represents an extension that can be used by the agent.
 type AgentExtension struct {
-	URI         string                 `json:"uri"`
-	Description *string                `json:"description,omitempty"`
-	Required    *bool                  `json:"required,omitempty"`
-	Params      map[string]interface{} `json:"params,omitempty"`
+	URI         string         `json:"uri"`
+	Description *string        `json:"description,omitempty"`
+	Required    *bool          `json:"required,omitempty"`
+	Params      map[string]any `json:"params,omitempty"`
 }
 
+// AgentSkill represents a skill that the agent can perform.
 type AgentSkill struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`

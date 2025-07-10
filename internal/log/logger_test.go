@@ -12,19 +12,19 @@ type MockLogger struct {
 	buf bytes.Buffer
 }
 
-func (m *MockLogger) Info(msg string, args ...any) {
+func (m *MockLogger) Info(msg string, _ ...any) {
 	m.buf.WriteString("INFO: " + msg)
 }
 
-func (m *MockLogger) Debug(msg string, args ...any) {
+func (m *MockLogger) Debug(msg string, _ ...any) {
 	m.buf.WriteString("DEBUG: " + msg)
 }
 
-func (m *MockLogger) Warn(msg string, args ...any) {
+func (m *MockLogger) Warn(msg string, _ ...any) {
 	m.buf.WriteString("WARN: " + msg)
 }
 
-func (m *MockLogger) Error(msg string, args ...any) {
+func (m *MockLogger) Error(msg string, _ ...any) {
 	m.buf.WriteString("ERROR: " + msg)
 }
 

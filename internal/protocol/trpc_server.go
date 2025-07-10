@@ -9,12 +9,13 @@ import (
 	"trpc.group/trpc-go/trpc-a2a-go/taskmanager"
 )
 
-type TrpcServer struct {
+type trpcServer struct {
 	server server.A2AServer
 	port   int
 	card   *AgentCard
 }
 
+// NewTrpcServer is an interface for a TRPC server that handles A2A communication.
 func NewTrpcServer(card *AgentCard, port int) (Server, error) {
 	processor := &myTaskProcessor{}
 	taskManager, err := taskmanager.NewMemoryTaskManager(processor)
@@ -25,14 +26,16 @@ func NewTrpcServer(card *AgentCard, port int) (Server, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create A2A server: %w", err)
 	}
-	return &TrpcServer{card: card, server: *serv, port: port}, nil
+	return &trpcServer{card: card, server: *serv, port: port}, nil
 }
 
-func (s *TrpcServer) SetHandler(handler MessageHandler) {
+// SetHandler sets the message handler for the TRPC server.
+func (s *trpcServer) SetHandler(_ MessageHandler) {
 	panic("unimplemented")
 }
 
-func (s *TrpcServer) Start(ready chan<- struct{}) error {
+// Start starts the TRPC server and listens on the specified port, while signaling readiness.
+func (s *trpcServer) Start(ready chan<- struct{}) error {
 	port := fmt.Sprintf(":%d\n", s.port)
 	if ready != nil {
 		close(ready)
@@ -43,7 +46,8 @@ func (s *TrpcServer) Start(ready chan<- struct{}) error {
 	return nil
 }
 
-func (s *TrpcServer) Close() error {
+// Close stops the TRPC server gracefully.
+func (s *trpcServer) Close() error {
 	if err := s.server.Stop(context.Background()); err != nil {
 		return fmt.Errorf("failed to stop A2A server: %w", err)
 	}
@@ -96,10 +100,10 @@ func boolean(b *bool) bool {
 type myTaskProcessor struct{}
 
 func (p *myTaskProcessor) Process(
-	ctx context.Context,
-	taskID string,
-	message protocol.Message,
-	handle taskmanager.TaskHandle,
+	_ context.Context,
+	_ string,
+	_ protocol.Message,
+	_ taskmanager.TaskHandle,
 ) error {
 	return nil
 }

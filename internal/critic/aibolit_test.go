@@ -12,7 +12,7 @@ type mockRunner struct {
 	err    error
 }
 
-func (m *mockRunner) Run(name string, args ...string) ([]byte, error) {
+func (m *mockRunner) Run(_ string, _ ...string) ([]byte, error) {
 	return []byte(m.output), m.err
 }
 

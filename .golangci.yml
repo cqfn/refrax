@@ -14,10 +14,7 @@ linters:
     - misspell
     - nakedret
     - prealloc
-    # @todo #43:60min Enable 'revive' linter
-    #  We need to fix all the issues identified by 'revive' linter
-    #  and then enable it using the following entry below
-    # - revive
+    - revive
     - staticcheck
     - unconvert
     - unparam

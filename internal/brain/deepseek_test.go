@@ -54,7 +54,7 @@ func echoServer(t *testing.T) *httptest.Server {
 
 func errorServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err := w.Write([]byte(`{"error":"Internal Server Error"}`))
 		require.NoError(t, err, "Failed to write error response")

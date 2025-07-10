@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Params holds the configuration parameters for Refrax commands.
 type Params struct {
 	provider string
 	token    string
@@ -17,23 +18,24 @@ type Params struct {
 	stats    bool
 }
 
+// Execute runs the root command and returns any error encountered.
 func Execute() error {
 	return NewRootCmd(os.Stdout, os.Stderr).Execute()
 }
 
+// NewRootCmd creates and returns the root command for Refrax.
 // Command line interface for Refrax.
-//
 // @todo #2:45min Add new parameter `--tools` for constructing needed tool for the critic.
 // Currently, we create Aibolit, but it would be great to have such option. Examples of such tools
 // are: `aibolit`, `none`, etc. We should be able to pass multiple tools, for instance:
 // `--tools=aibolit,qulice`.
-func NewRootCmd(out, err io.Writer) *cobra.Command {
+func NewRootCmd(out, _ io.Writer) *cobra.Command {
 	var params Params
 	root := &cobra.Command{
 		Use:   "refrax",
 		Short: "Refrax is an AI-powered refactoring agent for Java code",
 		Long:  "Refrax is an AI-powered refactoring agent for Java code. It communicates using the A2A protocol",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		PersistentPreRun: func(_ *cobra.Command, _ []string) {
 			if params.debug {
 				log.Set(log.NewZerolog(out, "debug"))
 			}
