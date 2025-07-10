@@ -1,3 +1,4 @@
+// Refrax entry point.
 package main
 
 import (

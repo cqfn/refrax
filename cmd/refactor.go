@@ -1,3 +1,4 @@
+// Package cmd provides command-line interface functionality for the refrax tool.
 package cmd
 
 import (
@@ -15,7 +16,7 @@ func newRefactorCmd(params *Params) *cobra.Command {
 		Short:   "refactor code in the given directory (defaults to current)",
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"r"},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			path := "."
 			if len(args) > 0 {
 				path = args[0]

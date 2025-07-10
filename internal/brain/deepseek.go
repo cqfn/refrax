@@ -12,6 +12,7 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 )
 
+// DeepSeek represents a client for interacting with the DeepSeek API.
 type DeepSeek struct {
 	token string
 	url   string
@@ -37,6 +38,7 @@ type deepseekMsg struct {
 	Content string `json:"content"`
 }
 
+// NewDeepSeek creates a new DeepSeek instance with the provided API key.
 func NewDeepSeek(apiKey string) Brain {
 	return &DeepSeek{
 		token: apiKey,
@@ -45,6 +47,7 @@ func NewDeepSeek(apiKey string) Brain {
 	}
 }
 
+// Ask sends a question to the DeepSeek API and retrieves an answer.
 func (d *DeepSeek) Ask(question string) (string, error) {
 	log.Debug("DeepSeek: asking question: %s", question)
 	return d.send("You are a helpful assistant.", question)

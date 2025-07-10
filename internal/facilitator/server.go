@@ -1,3 +1,5 @@
+// Package facilitator provides functionality for facilitating interactions between
+// critic and fixer agents in a code refactoring process.
 package facilitator
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/cqfn/refrax/internal/protocol"
 )
 
+// Facilitator facilitates communication between the critic and fixer agents.
 type Facilitator struct {
 	server     protocol.Server
 	brain      brain.Brain
@@ -18,6 +21,7 @@ type Facilitator struct {
 	fixerPort  int
 }
 
+// NewFacilitator creates a new instance of Facilitator to manage communication between agents.
 func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitator {
 	logger := log.NewPrefixed("facilitator", log.Default())
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
@@ -34,6 +38,7 @@ func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitato
 	return facilitator
 }
 
+// Start starts the facilitator server and prepares it for handling requests.
 func (f *Facilitator) Start(ready chan<- struct{}) error {
 	f.log.Info("starting facilitator server on port %d...", f.port)
 	if err := f.server.Start(ready); err != nil {
@@ -42,6 +47,7 @@ func (f *Facilitator) Start(ready chan<- struct{}) error {
 	return nil
 }
 
+// Close stops the facilitator server and releases resources.
 func (f *Facilitator) Close() error {
 	f.log.Info("stopping facilitator server...")
 	if err := f.server.Close(); err != nil {
@@ -100,6 +106,7 @@ func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
 	return res, nil
 }
 
+// AskFixer sends the suggestions and file to the fixer agent for processing.
 func (f *Facilitator) AskFixer(id string, suggestions []string, file *protocol.FilePart) (*protocol.JSONRPCResponse, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.fixerPort)
 	log.Debug("asking fixer (%s) to apply suggestions...", address)
@@ -114,6 +121,7 @@ func (f *Facilitator) AskFixer(id string, suggestions []string, file *protocol.F
 	return fixer.SendMessage(protocol.NewMessageSendParamsBuilder().Message(msg).Build())
 }
 
+// AskCritic sends a file to the critic agent for linting and analysis.
 func (f *Facilitator) AskCritic(id string, file *protocol.FilePart) (*protocol.JSONRPCResponse, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.criticPort)
 	f.log.Info("asking critic (%s) to lint the class...", address)

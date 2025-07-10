@@ -10,12 +10,14 @@ import (
 	"time"
 )
 
+// CustomClient represents a client for interacting with a custom API.
 type CustomClient struct {
 	url    string
 	client *http.Client
 }
 
-func NewCustomClient(url string) Client {
+// NewCustomClient creates a new instance of CustomClient with a specified URL.
+func NewCustomClient(url string) *CustomClient {
 	return &CustomClient{
 		url: url,
 		client: &http.Client{
@@ -24,6 +26,7 @@ func NewCustomClient(url string) Client {
 	}
 }
 
+// SendMessage sends a message using the custom API and returns the JSON-RPC response.
 func (c *CustomClient) SendMessage(params MessageSendParams) (*JSONRPCResponse, error) {
 	req := JSONRPCRequest{
 		JSONRPC: "2.0",
@@ -42,33 +45,37 @@ func (c *CustomClient) SendMessage(params MessageSendParams) (*JSONRPCResponse, 
 	return &resp, nil
 }
 
+// CancelTask is a placeholder for canceling a task.
 func (c *CustomClient) CancelTask() {
 	panic("unimplemented")
 }
 
+// GetTask is a placeholder for retrieving a task.
 func (c *CustomClient) GetTask() {
 	panic("unimplemented")
 }
 
+// StreamMessage is a placeholder for streaming a message.
 func (c *CustomClient) StreamMessage() {
 	panic("unimplemented")
 }
 
-func (client *CustomClient) doRequest(req any, resp *JSONRPCResponse) error {
+// doRequest sends a JSON-RPC request to the server and decodes the response.
+func (c *CustomClient) doRequest(req any, resp *JSONRPCResponse) error {
 	body, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request %v: %w", req, err)
 	}
-	httpReq, err := http.NewRequest("POST", client.url, bytes.NewBuffer(body))
+	httpReq, err := http.NewRequest("POST", c.url, bytes.NewBuffer(body))
 	if err != nil {
-		return fmt.Errorf("failed to create POST request for %s: %w", client.url, err)
+		return fmt.Errorf("failed to create POST request for %s: %w", c.url, err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpResp, err := client.client.Do(httpReq)
+	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
-			return fmt.Errorf("request to %s timed out after %s", client.url, client.client.Timeout)
+			return fmt.Errorf("request to %s timed out after %s", c.url, c.client.Timeout)
 		}
 		return fmt.Errorf("failed to send request '%v': %w", req, err)
 	}
@@ -88,6 +95,7 @@ func (client *CustomClient) doRequest(req any, resp *JSONRPCResponse) error {
 	return nil
 }
 
+// copyResp copies the content of one JSONRPCResponse to another.
 func copyResp(from, to *JSONRPCResponse) {
 	to.JSONRPC = from.JSONRPC
 	to.ID = from.ID

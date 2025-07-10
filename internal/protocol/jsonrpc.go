@@ -29,6 +29,7 @@ const (
 	ErrCodeServerErrorEnd   = -32000
 )
 
+// JSONRPCRequest represents a request in the JSON-RPC protocol.
 type JSONRPCRequest struct {
 	JSONRPC string `json:"jsonrpc"`          // MUST be "2.0"
 	Method  string `json:"method"`           // e.g., "message/send"
@@ -36,6 +37,7 @@ type JSONRPCRequest struct {
 	ID      any    `json:"id,omitempty"`     // string, number (int), or nil
 }
 
+// JSONRPCResponse represents a response to a JSON-RPC request.
 type JSONRPCResponse struct {
 	JSONRPC string        `json:"jsonrpc"`          // MUST be "2.0"
 	ID      any           `json:"id"`               // Same type as in request (string, int, or null)
@@ -43,12 +45,14 @@ type JSONRPCResponse struct {
 	Error   *JSONRPCError `json:"error,omitempty"`  // Present only on failure
 }
 
+// JSONRPCError represents an error in a JSON-RPC response.
 type JSONRPCError struct {
 	Code    int    `json:"code"`           // Error code indicating the type of error
 	Message string `json:"message"`        // Short description of the error
 	Data    any    `json:"data,omitempty"` // Optional additional information (any type)
 }
 
+// UnmarshalJSON implements custom unmarshalling for JSON-RPC responses.
 func (r *JSONRPCResponse) UnmarshalJSON(data []byte) error {
 	log.Debug("Unmarshalling JSON-RPC response: %s", string(data))
 	type alias JSONRPCResponse
@@ -59,26 +63,20 @@ func (r *JSONRPCResponse) UnmarshalJSON(data []byte) error {
 	aux := temp{
 		alias: (*alias)(r),
 	}
-
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-
 	if len(aux.Result) == 0 || string(aux.Result) == "null" {
 		r.Result = nil
 		return nil
 	}
-
 	var kind struct {
 		Kind string `json:"kind"`
 	}
 	if err := json.Unmarshal(aux.Result, &kind); err != nil {
 		return fmt.Errorf("failed to detect kind: %w", err)
 	}
-
 	log.Debug("Detected kind: %s", kind.Kind)
-
-	// Step 5: decode into appropriate type
 	switch kind.Kind {
 	case "message":
 		var msg Message
@@ -93,13 +91,11 @@ func (r *JSONRPCResponse) UnmarshalJSON(data []byte) error {
 		}
 		r.Result = task
 	default:
-		// fallback: leave as generic map
 		var generic map[string]any
 		if err := json.Unmarshal(aux.Result, &generic); err != nil {
 			return fmt.Errorf("failed to unmarshal unknown result type: %w", err)
 		}
 		r.Result = generic
 	}
-
 	return nil
 }

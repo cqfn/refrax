@@ -1,5 +1,6 @@
 package protocol
 
+// Artifact represents an object with various attributes and metadata.
 type Artifact struct {
 	ArtifactID  string           `json:"artifactId"`            // Required: unique identifier
 	Name        *string          `json:"name,omitempty"`        // Optional: human-readable name

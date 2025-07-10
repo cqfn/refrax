@@ -1,3 +1,4 @@
+// Package fixer provides functionality for fixing Java code based on suggestions.
 package fixer
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/cqfn/refrax/internal/protocol"
 )
 
+// Fixer is a server that fixes Java code based on suggestions provided.
 type Fixer struct {
 	server protocol.Server
 	brain  brain.Brain
@@ -29,6 +31,7 @@ Do not rename class names.
 Return only the corrected Java code.
 Do not include explanations, comments, or any extra text.`
 
+// NewFixer creates a new Fixer instance with the provided AI brain and port.
 func NewFixer(ai brain.Brain, port int) *Fixer {
 	logger := log.NewPrefixed("fixer", log.Default())
 	server := protocol.NewCustomServer(agentCard(port), port)
@@ -43,6 +46,7 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 	return fixer
 }
 
+// Start begins the Fixer server and signals readiness through the provided channel.
 func (c *Fixer) Start(ready chan<- struct{}) error {
 	c.log.Info("starting fixer server on port %d...", c.port)
 	if err := c.server.Start(ready); err != nil {
@@ -51,6 +55,7 @@ func (c *Fixer) Start(ready chan<- struct{}) error {
 	return nil
 }
 
+// Close gracefully stops the Fixer server.
 func (c *Fixer) Close() error {
 	c.log.Info("stopping fixer server...")
 	if err := c.server.Close(); err != nil {

@@ -30,7 +30,7 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithEmptyProject(t *testing.T) {
 }
 
 func TestEndToEnd_Agents_FromCLI_WithoutAI_WithMockProject(t *testing.T) {
-	capture := Buff()
+	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
 	command.SetArgs([]string{"refactor", "--ai=none", "--mock", "--debug"})
@@ -46,7 +46,7 @@ func TestEndToEnd_JavaRefactor_InlineVariable_WithoutAI(t *testing.T) {
 	const before = "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n\n"
 	const expected = "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World\");\n    }\n}"
 	jclass := setupJava(t, before)
-	capture := Buff()
+	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
 	playbook := filepath.Join("test_data", "refactor.yml")
@@ -75,7 +75,7 @@ func assertContent(t *testing.T, path, expected string) {
 	assert.Equal(t, expected, string(content), "File content does not match expected content")
 }
 
-func Buff() *safeBuffer {
+func buff() *safeBuffer {
 	return &safeBuffer{buf: &bytes.Buffer{}}
 }
 

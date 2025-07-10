@@ -10,6 +10,7 @@ import (
 	"github.com/cqfn/refrax/internal/protocol"
 )
 
+// Critic represents the main struct responsible for analyzing code critiques.
 type Critic struct {
 	server protocol.Server
 	brain  brain.Brain
@@ -36,6 +37,7 @@ Keep in mind the following imperfections with Java code, identified by automated
 Respond with a plain list of suggestions, one per line. Do not include any explanations, summaries, or extra text.
 `
 
+// NewCritic creates and initializes a new instance of Critic.
 func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 	logger := log.NewPrefixed("critic", log.Default())
 	server := protocol.NewCustomServer(agentCard(port), port)
@@ -51,6 +53,7 @@ func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 	return critic
 }
 
+// Start starts the Critic server and signals readiness via the provided channel.
 func (c *Critic) Start(ready chan<- struct{}) error {
 	c.log.Info("starting critic server on port %d...", c.port)
 	if err := c.server.Start(ready); err != nil {
@@ -59,6 +62,7 @@ func (c *Critic) Start(ready chan<- struct{}) error {
 	return nil
 }
 
+// Close gracefully shuts down the Critic server.
 func (c *Critic) Close() error {
 	c.log.Info("stopping critic server...")
 	if err := c.server.Close(); err != nil {

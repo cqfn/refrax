@@ -11,7 +11,7 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 )
 
-type CustomServer struct {
+type customServer struct {
 	mux     *http.ServeMux
 	card    AgentCard
 	handler MessageHandler
@@ -19,13 +19,14 @@ type CustomServer struct {
 	server  *http.Server
 }
 
+// NewCustomServer creates a new instance of a custom server that handles A2A requests
 func NewCustomServer(card *AgentCard, port int) Server {
 	mux := http.NewServeMux()
-	server := &CustomServer{
+	server := &customServer{
 		mux:     mux,
 		card:    *card,
 		port:    port,
-		handler: LogRequest,
+		handler: logRequest,
 		server: &http.Server{
 			Addr:    fmt.Sprintf(":%d", port),
 			Handler: mux,
@@ -36,49 +37,47 @@ func NewCustomServer(card *AgentCard, port int) Server {
 	return server
 }
 
-func (serv *CustomServer) SetHandler(handler MessageHandler) {
+// SetHandler sets the message handler for the custom server.
+func (serv *customServer) SetHandler(handler MessageHandler) {
 	serv.handler = handler
 }
 
-func LogRequest(message *Message) (*Message, error) {
-	log.Debug("server received the following message: %s", message.MessageID)
-	return message, nil
-}
-
-func (c *CustomServer) Start(ready chan<- struct{}) error {
-	log.Debug("starting custom a2a server on port %d...", c.port)
-	address := fmt.Sprintf(":%d", c.port)
+// Start starts the custom server and listens on the specified port, while signaling readiness.
+func (serv *customServer) Start(ready chan<- struct{}) error {
+	log.Debug("starting custom a2a server on port %d...", serv.port)
+	address := fmt.Sprintf(":%d", serv.port)
 	l, err := net.Listen("tcp", address)
 	if err != nil {
-		return fmt.Errorf("failed to listen on port %d: %w", c.port, err)
+		return fmt.Errorf("failed to listen on port %d: %w", serv.port, err)
 	}
 	close(ready)
-	if err := http.Serve(l, c.mux); err != nil {
-		return fmt.Errorf("failed to start server on port %d: %w", c.port, err)
+	if err := http.Serve(l, serv.mux); err != nil {
+		return fmt.Errorf("failed to start server on port %d: %w", serv.port, err)
 	}
 	return nil
 }
 
-func (c *CustomServer) Close() error {
-	log.Debug("stopping custom a2a server on port %d...", c.port)
+// Close stops the custom server gracefully, allowing for a timeout.
+func (serv *customServer) Close() error {
+	log.Debug("stopping custom a2a server on port %d...", serv.port)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	return c.server.Shutdown(ctx)
+	return serv.server.Shutdown(ctx)
 }
 
-func (c *CustomServer) handleAgentCard(w http.ResponseWriter, r *http.Request) {
+func (serv *customServer) handleAgentCard(w http.ResponseWriter, r *http.Request) {
 	log.Debug("request for agent card received: %s", r.URL.Path)
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(c.card); err != nil {
+	if err := json.NewEncoder(w).Encode(serv.card); err != nil {
 		http.Error(w, "failed to encode agent card", http.StatusInternalServerError)
 	}
 }
 
-func (s *CustomServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) {
+func (serv *customServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) {
 	log.Debug("JSON-RPC request received: %s", r.URL.Path)
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -104,7 +103,7 @@ func (s *CustomServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) {
 	log.Debug("handling JSON-RPC request: %s, params: %v", req.Method, params)
 	switch req.Method {
 	case "message/send":
-		if err := s.handleMessageSend(w, &params, toString(req.ID)); err != nil {
+		if err := serv.handleMessageSend(w, &params, toString(req.ID)); err != nil {
 			msg := fmt.Sprintf("failed to handle message send: %v", err)
 			sendError(w, toString(req.ID), ErrCodeInternalError, msg)
 			return
@@ -118,6 +117,16 @@ func (s *CustomServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) {
 	default:
 		sendError(w, req.ID.(string), ErrCodeMethodNotFound, "method not found")
 	}
+}
+
+func (serv *customServer) handleMessageSend(w http.ResponseWriter, params *MessageSendParams, id string) error {
+	msg := params.Message
+	udpadted, err := serv.handler(msg)
+	if err != nil {
+		return err
+	}
+	log.Debug("message handler returned: %s", udpadted.MessageID)
+	return serv.sendResponse(w, id, udpadted)
 }
 
 func toString(v any) string {
@@ -135,17 +144,7 @@ func toString(v any) string {
 	}
 }
 
-func (s *CustomServer) handleMessageSend(w http.ResponseWriter, params *MessageSendParams, id string) error {
-	msg := params.Message
-	udpadted, err := s.handler(msg)
-	if err != nil {
-		return err
-	}
-	log.Debug("message handler returned: %s", udpadted.MessageID)
-	return s.sendResponse(w, id, udpadted)
-}
-
-func (s *CustomServer) sendResponse(w http.ResponseWriter, id string, result any) error {
+func (serv *customServer) sendResponse(w http.ResponseWriter, id string, result any) error {
 	response := JSONRPCResponse{
 		JSONRPC: "2.0",
 		ID:      id,
@@ -175,4 +174,9 @@ func errorResposne(id string, code int, message string) JSONRPCResponse {
 			Message: message,
 		},
 	}
+}
+
+func logRequest(message *Message) (*Message, error) {
+	log.Debug("server received the following message: %s", message.MessageID)
+	return message, nil
 }

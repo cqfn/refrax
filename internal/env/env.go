@@ -1,3 +1,4 @@
+// Package env provides utilities for environment variable management.
 package env
 
 import (
@@ -7,6 +8,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Token retrieves the token for the specified provider from the given .env file path.
+// If the token is not found in the .env file, it falls back to the system environment variables.
 func Token(path, provider string) string {
 	switch provider {
 	case "deepseek":

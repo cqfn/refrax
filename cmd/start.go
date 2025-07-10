@@ -10,7 +10,7 @@ func newStartCmd() *cobra.Command {
 		Short:   "Starts a particular agent like fixer, critic, or facilitator",
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"st"},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			panic("start command is not implemented yet")
 		},
 	}

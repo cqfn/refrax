@@ -1,5 +1,6 @@
 package protocol
 
+// Task represents a task in the A2A protocol.
 type Task struct {
 	ID        string         `json:"id"`                  // Required: task ID
 	ContextID string         `json:"contextId"`           // Required: contextual alignment

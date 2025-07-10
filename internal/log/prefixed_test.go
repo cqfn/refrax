@@ -10,10 +10,10 @@ import (
 func TestNewPrefixed(t *testing.T) {
 	mock := NewMock()
 	prefix := "prefix"
-	prefixed := NewPrefixed(prefix, mock)
-	require.NotNil(t, prefixed)
+	pref := NewPrefixed(prefix, mock)
+	require.NotNil(t, pref)
 
-	typed, ok := prefixed.(*Prefixed)
+	typed, ok := pref.(*prefixed)
 	require.True(t, ok)
 	assert.Equal(t, prefix, typed.prefix)
 	assert.Equal(t, mock, typed.original)
@@ -22,9 +22,9 @@ func TestNewPrefixed(t *testing.T) {
 func TestPrefixed_Info(t *testing.T) {
 	mock := NewMock()
 	prefix := "test-prefix"
-	prefixedLogger := NewPrefixed(prefix, mock)
+	pref := NewPrefixed(prefix, mock)
 
-	prefixedLogger.Info("info message")
+	pref.Info("info message")
 
 	require.Len(t, mock.Messages, 1)
 	assert.Equal(t, "mock info: test-prefix: info message", mock.Messages[0])
@@ -33,9 +33,9 @@ func TestPrefixed_Info(t *testing.T) {
 func TestPrefixed_Debug(t *testing.T) {
 	mock := NewMock()
 	prefix := "debug-prefix"
-	prefixedLogger := NewPrefixed(prefix, mock)
+	pref := NewPrefixed(prefix, mock)
 
-	prefixedLogger.Debug("debug message")
+	pref.Debug("debug message")
 
 	require.Len(t, mock.Messages, 1)
 	assert.Equal(t, "mock debug: debug-prefix: debug message", mock.Messages[0])
@@ -44,9 +44,9 @@ func TestPrefixed_Debug(t *testing.T) {
 func TestPrefixed_Warn(t *testing.T) {
 	mock := NewMock()
 	prefix := "warn-prefix"
-	prefixed := NewPrefixed(prefix, mock)
+	pref := NewPrefixed(prefix, mock)
 
-	prefixed.Warn("warn message")
+	pref.Warn("warn message")
 
 	require.Len(t, mock.Messages, 1)
 	assert.Equal(t, "mock warn: warn-prefix: warn message", mock.Messages[0])
@@ -55,9 +55,9 @@ func TestPrefixed_Warn(t *testing.T) {
 func TestPrefixed_Error(t *testing.T) {
 	mock := NewMock()
 	prefix := "error-prefix"
-	prefixedLogger := NewPrefixed(prefix, mock)
+	pref := NewPrefixed(prefix, mock)
 
-	prefixedLogger.Error("error message")
+	pref.Error("error message")
 
 	require.Len(t, mock.Messages, 1)
 	assert.Equal(t, "mock error: error-prefix: error message", mock.Messages[0])
@@ -66,12 +66,12 @@ func TestPrefixed_Error(t *testing.T) {
 func TestPrefixed_WithArgs(t *testing.T) {
 	mock := NewMock()
 	prefix := "arg-prefix"
-	prefixed := NewPrefixed(prefix, mock)
+	pref := NewPrefixed(prefix, mock)
 
-	prefixed.Info("message with args: %s, %d", "arg1", 42)
-	prefixed.Debug("debug with args: %s, %t", "arg2", true)
-	prefixed.Warn("warn with args: %s", "arg3")
-	prefixed.Error("error with args: %s %.2f", "arg4", 3.14)
+	pref.Info("message with args: %s, %d", "arg1", 42)
+	pref.Debug("debug with args: %s, %t", "arg2", true)
+	pref.Warn("warn with args: %s", "arg3")
+	pref.Error("error with args: %s %.2f", "arg4", 3.14)
 
 	// Assert each message was logged with the correct prefix
 	require.Len(t, mock.Messages, 4)

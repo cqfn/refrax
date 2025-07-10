@@ -1,11 +1,14 @@
 package brain
 
-type echoPlaybook struct{}
+// EchoPlaybook represents a playbook that echoes back the question asked.
+type EchoPlaybook struct{}
 
-func NewEchoPlaybook() *echoPlaybook {
-	return &echoPlaybook{}
+// NewEchoPlaybook creates a new instance of EchoPlaybook.
+func NewEchoPlaybook() *EchoPlaybook {
+	return &EchoPlaybook{}
 }
 
-func (e *echoPlaybook) Ask(question string) string {
+// Ask echoes back the provided question.
+func (e *EchoPlaybook) Ask(question string) string {
 	return question
 }

@@ -14,12 +14,14 @@ import (
 	"github.com/cqfn/refrax/internal/protocol"
 )
 
+// RefraxClient represents a client used for refactoring projects.
 type RefraxClient struct {
 	provider string
 	playbook string
 	token    string
 }
 
+// NewRefraxClient creates a new instance of RefraxClient.
 func NewRefraxClient(provider, token, playbook string) *RefraxClient {
 	return &RefraxClient{
 		provider: provider,
@@ -28,10 +30,12 @@ func NewRefraxClient(provider, token, playbook string) *RefraxClient {
 	}
 }
 
+// Refactor initializes the refactoring process for the given project.
 func Refactor(provider, token string, proj Project, stats bool, logger log.Logger, playbook string) (Project, error) {
 	return NewRefraxClient(provider, token, playbook).Refactor(proj, stats, logger)
 }
 
+// Refactor performs refactoring on the given project using the RefraxClient.
 func (c *RefraxClient) Refactor(proj Project, stats bool, logger log.Logger) (Project, error) {
 	logger.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
