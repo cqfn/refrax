@@ -7,3 +7,5 @@ tmp-copy/
 .env
 *.cast
 .idea/
+out/
+

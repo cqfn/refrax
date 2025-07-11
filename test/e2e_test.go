@@ -10,13 +10,14 @@ import (
 	"testing"
 
 	"github.com/cqfn/refrax/cmd"
+	"github.com/cqfn/refrax/internal/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEndToEnd_Agents_FromCLI_WithoutAI_WithEmptyProject(t *testing.T) {
 	command := cmd.NewRootCmd(io.Discard, io.Discard)
-	command.SetArgs([]string{"refactor", "--ai=none"})
+	command.SetArgs([]string{"refactor", "--ai=none", t.TempDir()})
 
 	err := command.Execute()
 
@@ -24,7 +25,7 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithEmptyProject(t *testing.T) {
 	assert.Contains(
 		t,
 		err.Error(),
-		"no java classes found in the project [.], add java files to the appropriate directory",
+		"no java classes found in the project",
 		"Expected the output to indicate no AI provider was used and no classes were found",
 	)
 }
@@ -33,7 +34,7 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithMockProject(t *testing.T) {
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	command.SetArgs([]string{"refactor", "--ai=none", "--mock", "--debug"})
+	command.SetArgs([]string{"refactor", "--ai=none", "--mock", "--debug", t.TempDir()})
 
 	err := command.Execute()
 
@@ -45,11 +46,11 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithMockProject(t *testing.T) {
 func TestEndToEnd_JavaRefactor_InlineVariable_WithoutAI(t *testing.T) {
 	const before = "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n\n"
 	const expected = "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World\");\n    }\n}"
-	jclass := setupJava(t, before)
+	jclass := setupJava(t, t.TempDir(), "Main.java", before)
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	playbook := filepath.Join("test_data", "refactor.yml")
+	playbook := filepath.Join("test_data", "playbooks", "refactor.yml")
 	command.SetArgs([]string{"refactor", "--ai=none", "--debug", fmt.Sprintf("--playbook=%s", playbook), jclass})
 
 	err := command.Execute()
@@ -59,11 +60,39 @@ func TestEndToEnd_JavaRefactor_InlineVariable_WithoutAI(t *testing.T) {
 	assertContent(t, jclass, expected)
 }
 
-func setupJava(t *testing.T, code string) string {
-	t.Helper()
+func TestEndToEnd_JavaRefactor_ManyJavaFilesProject(t *testing.T) {
 	tmp := t.TempDir()
-	java := filepath.Join(tmp, "Main.java")
-	err := os.WriteFile(java, []byte(code), 0o600)
+	main, err := os.ReadFile(filepath.Join("test_data", "java", "person", "src", "com", "example", "MainApp.java"))
+	require.NoError(t, err, "Expected to read test file content without error")
+	setupJava(t, filepath.Join(tmp, "person", "src", "com", "example"), "MainApp.java", string(main))
+
+	person, err := os.ReadFile(filepath.Join("test_data", "java", "person", "src", "com", "example", "model", "Person.java"))
+	require.NoError(t, err, "Expected to read test file content without error")
+	setupJava(t, filepath.Join(tmp, "person", "src", "com", "example", "model"), "Person.java", string(person))
+
+	service, err := os.ReadFile(filepath.Join("test_data", "java", "person", "src", "com", "example", "service", "GreetingService.java"))
+	require.NoError(t, err, "Expected to read test file content without error")
+	setupJava(t, filepath.Join(tmp, "person", "src", "com", "example", "service"), "GreetingService.java", string(service))
+
+	capture := buff()
+	output := io.MultiWriter(capture, os.Stdout)
+	command := cmd.NewRootCmd(output, io.Discard)
+	playbook := filepath.Join("test_data", "playbooks", "refactor.yml")
+	command.SetArgs([]string{"refactor", "--ai=none", "--debug", fmt.Sprintf("--playbook=%s", playbook), tmp})
+
+	err = command.Execute()
+
+	require.NoError(t, err, "Expected command to execute without error")
+}
+
+func setupJava(t *testing.T, path, name, code string) string {
+	t.Helper()
+	full := filepath.Clean(path)
+	err := os.MkdirAll(full, 0o700)
+	log.Info("create test directories at %s", full)
+	require.NoError(t, err, "Expected to create test directories correctly")
+	java := filepath.Join(full, name)
+	err = os.WriteFile(java, []byte(code), 0o600)
 	require.NoError(t, err, "Expected to write mock project file without error")
 	return java
 }

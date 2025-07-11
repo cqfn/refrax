@@ -120,6 +120,21 @@ func TestFilesystemJavaClass_SetContent_Success(t *testing.T) {
 	assert.Equal(t, newContent, string(content))
 }
 
+func TestFilesystemProject_Classes_FindsHierarchy(t *testing.T) {
+	tmp := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(tmp, "parent"), 0o700))
+	require.NoError(t, os.MkdirAll(filepath.Join(tmp, "child"), 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(tmp, "parent", "Parent.java"), []byte("class Parent {}"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(tmp, "child", "Child.java"), []byte("class Child extends Parent {}"), 0o600))
+	project := NewFilesystemProject(tmp)
+	classes, err := project.Classes()
+	require.NoError(t, err)
+	assert.Len(t, classes, 2)
+	names := []string{classes[0].Name(), classes[1].Name()}
+	assert.Contains(t, names, "Parent")
+	assert.Contains(t, names, "Child")
+}
+
 func SkipOnWindows(t *testing.T) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
