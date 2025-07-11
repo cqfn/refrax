@@ -63,14 +63,14 @@ func setupJava(t *testing.T, code string) string {
 	t.Helper()
 	tmp := t.TempDir()
 	java := filepath.Join(tmp, "Main.java")
-	err := os.WriteFile(java, []byte(code), 0o644)
+	err := os.WriteFile(java, []byte(code), 0o600)
 	require.NoError(t, err, "Expected to write mock project file without error")
 	return java
 }
 
 func assertContent(t *testing.T, path, expected string) {
 	t.Helper()
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(filepath.Clean(path))
 	require.NoError(t, err, "Expected to read file content without error")
 	assert.Equal(t, expected, string(content), "File content does not match expected content")
 }

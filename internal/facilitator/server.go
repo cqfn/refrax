@@ -5,6 +5,7 @@ package facilitator
 import (
 	"encoding/base64"
 	"fmt"
+	"net/http"
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
@@ -41,10 +42,11 @@ func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitato
 // Start starts the facilitator server and prepares it for handling requests.
 func (f *Facilitator) Start(ready chan<- struct{}) error {
 	f.log.Info("starting facilitator server on port %d...", f.port)
-	if err := f.server.Start(ready); err != nil {
+	var err error
+	if err = f.server.Start(ready); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start facilitator server: %w", err)
 	}
-	return nil
+	return err
 }
 
 // Close stops the facilitator server and releases resources.

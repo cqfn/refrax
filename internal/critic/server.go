@@ -3,6 +3,7 @@ package critic
 import (
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
@@ -56,10 +57,11 @@ func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 // Start starts the Critic server and signals readiness via the provided channel.
 func (c *Critic) Start(ready chan<- struct{}) error {
 	c.log.Info("starting critic server on port %d...", c.port)
-	if err := c.server.Start(ready); err != nil {
+	var err error
+	if err = c.server.Start(ready); err != nil && http.ErrServerClosed != err {
 		return fmt.Errorf("failed to start critic server: %w", err)
 	}
-	return nil
+	return err
 }
 
 // Close gracefully shuts down the Critic server.

@@ -5,10 +5,7 @@ linters:
     - gochecknoinits
     - gocritic
     - gocyclo
-    # @todo #43:60min Enable 'gosec' linter
-    #  We need to fix all the security issues and enable this check
-    #  Youu can enable it using '-gosec' entry right below
-    # - gosec
+    - gosec
     - govet
     - ineffassign
     - misspell

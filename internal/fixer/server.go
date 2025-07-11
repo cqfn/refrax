@@ -4,6 +4,7 @@ package fixer
 import (
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
@@ -34,6 +35,7 @@ Do not include explanations, comments, or any extra text.`
 // NewFixer creates a new Fixer instance with the provided AI brain and port.
 func NewFixer(ai brain.Brain, port int) *Fixer {
 	logger := log.NewPrefixed("fixer", log.Default())
+	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
 	server := protocol.NewCustomServer(agentCard(port), port)
 	fixer := &Fixer{
 		server: server,
@@ -49,10 +51,11 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 // Start begins the Fixer server and signals readiness through the provided channel.
 func (c *Fixer) Start(ready chan<- struct{}) error {
 	c.log.Info("starting fixer server on port %d...", c.port)
-	if err := c.server.Start(ready); err != nil {
+	var err error
+	if err = c.server.Start(ready); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start fixer server: %w", err)
 	}
-	return nil
+	return err
 }
 
 // Close gracefully stops the Fixer server.

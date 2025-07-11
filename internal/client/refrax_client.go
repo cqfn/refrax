@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
@@ -57,9 +58,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, logger log.Logger) (Pr
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
-	ctc := critic.NewCritic(
-		ai, criticPort,
-	)
+	ctc := critic.NewCritic(ai, criticPort)
 
 	fixerPort, err := protocol.FreePort()
 	if err != nil {
@@ -79,22 +78,23 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, logger log.Logger) (Pr
 
 	go func() {
 		faerr := fclttor.Start(facilitatorReady)
-		if faerr != nil {
+		if faerr != nil && faerr != http.ErrServerClosed {
 			panic(fmt.Sprintf("failed to start facilitator server: %v", faerr))
 		}
 	}()
 	go func() {
-		cerr := ctc.Start(criticReady)
-		if cerr != nil {
-			panic(fmt.Sprintf("failed to start critic server: %v", cerr))
-		}
-	}()
-	go func() {
 		ferr := fxr.Start(fixerReady)
-		if ferr != nil {
+		if ferr != nil && ferr != http.ErrServerClosed {
 			panic(fmt.Sprintf("failed to start fixer server: %v", ferr))
 		}
 	}()
+	go func() {
+		cerr := ctc.Start(criticReady)
+		if cerr != nil && cerr != http.ErrServerClosed {
+			panic(fmt.Sprintf("failed to start critic server: %v", cerr))
+		}
+	}()
+
 	defer closeResource(ctc)
 	defer closeResource(fclttor)
 	defer closeResource(fxr)

@@ -26,7 +26,7 @@ func (p *FilesystemProject) Classes() ([]JavaClass, error) {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".java") {
-			content, readErr := os.ReadFile(path)
+			content, readErr := os.ReadFile(filepath.Clean(path))
 			if readErr != nil {
 				return readErr
 			}
@@ -69,7 +69,7 @@ func (c *FilesystemJavaClass) Content() string {
 // SetContent updates the content of the Java class file and writes it to the filesystem.
 func (c *FilesystemJavaClass) SetContent(content string) error {
 	c.content = content
-	err := os.WriteFile(c.path, []byte(content), 0o644)
+	err := os.WriteFile(c.path, []byte(content), 0o600)
 	if err != nil {
 		return fmt.Errorf("error writing content to file %s: %w", c.path, err)
 	}
