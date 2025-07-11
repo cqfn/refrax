@@ -28,8 +28,9 @@ func NewCustomServer(card *AgentCard, port int) Server {
 		port:    port,
 		handler: logRequest,
 		server: &http.Server{
-			Addr:    fmt.Sprintf(":%d", port),
-			Handler: mux,
+			Addr:              fmt.Sprintf(":%d", port),
+			Handler:           mux,
+			ReadHeaderTimeout: 5 * time.Second,
 		},
 	}
 	mux.HandleFunc("/.well-known/agent-card.json", server.handleAgentCard)
@@ -51,10 +52,10 @@ func (serv *customServer) Start(ready chan<- struct{}) error {
 		return fmt.Errorf("failed to listen on port %d: %w", serv.port, err)
 	}
 	close(ready)
-	if err := http.Serve(l, serv.mux); err != nil {
+	if err = serv.server.Serve(l); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start server on port %d: %w", serv.port, err)
 	}
-	return nil
+	return err
 }
 
 // Close stops the custom server gracefully, allowing for a timeout.

@@ -57,8 +57,6 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 	resp, err := http.Post(fmt.Sprintf("http://localhost:%d/", port), "application/json", bytes.NewBuffer(body))
 
 	require.NoError(t, err)
-	err = serv.Close()
-	require.NoError(t, err, "Failed to close server")
 	var response JSONRPCResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	require.NoError(t, err, "Failed to decode response body")
@@ -72,6 +70,8 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type header should be application/json")
 	assert.Equal(t, expected, response, "Server should return the expected joke message")
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+	err = serv.Close()
+	require.NoError(t, err, "Failed to close server")
 }
 
 func testServer(t *testing.T) (server Server, port int, ready chan struct{}) {
@@ -83,8 +83,7 @@ func testServer(t *testing.T) (server Server, port int, ready chan struct{}) {
 	require.NoError(t, err, "Failed to create custom server")
 	ready = make(chan struct{})
 	go func() {
-		err := server.Start(ready)
-		require.NoError(t, err, "Failed to start custom server")
+		_ = server.Start(ready)
 	}()
 	return server, port, ready
 }

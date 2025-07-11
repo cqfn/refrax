@@ -2,6 +2,7 @@ package brain
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -24,7 +25,7 @@ type YAMLPlaybook struct {
 
 // NewYAMLPlaybook loads a YAML playbook from the specified file path and returns a YAMLPlaybook instance.
 func NewYAMLPlaybook(filePath string) (*YAMLPlaybook, error) {
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(filepath.Clean(filePath))
 	if err != nil {
 		return nil, err
 	}
