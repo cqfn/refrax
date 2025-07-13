@@ -85,6 +85,23 @@ func TestEndToEnd_JavaRefactor_ManyJavaFilesProject(t *testing.T) {
 	require.NoError(t, err, "Expected command to execute without error")
 }
 
+func TestEndToEnd_OuputOption_CopiesProject(t *testing.T) {
+	tmp := t.TempDir()
+	project := filepath.Join("test_data", "java", "person")
+
+	capture := buff()
+	output := io.MultiWriter(capture, os.Stdout)
+	command := cmd.NewRootCmd(output, io.Discard)
+	command.SetArgs([]string{"refactor", "--ai=none", "--debug", "--output=" + tmp, project})
+
+	err := command.Execute()
+
+	require.NoError(t, err, "Expected command to execute without error")
+	assert.FileExists(t, filepath.Join(tmp, "src", "com", "example", "MainApp.java"), "Expected MainApp.java to be copied to output directory")
+	assert.FileExists(t, filepath.Join(tmp, "src", "com", "example", "model", "Person.java"), "Expected Person.java to be copied to output directory")
+	assert.FileExists(t, filepath.Join(tmp, "src", "com", "example", "service", "GreetingService.java"), "Expected GreetingService.java to be copied to output directory")
+}
+
 func setupJava(t *testing.T, path, name, code string) string {
 	t.Helper()
 	full := filepath.Clean(path)
