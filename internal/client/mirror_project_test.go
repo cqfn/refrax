@@ -54,3 +54,21 @@ func TestMirrorProject_Classes(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, classes)
 }
+
+func TestNewMirrorProject_OverwritesExistingDirectory(t *testing.T) {
+	originalDir := t.TempDir()
+	originalFile := filepath.Join(originalDir, "Original.java")
+	require.NoError(t, os.WriteFile(originalFile, []byte("original content"), 0o600))
+
+	mirrorDir := t.TempDir()
+	conflictingFile := filepath.Join(mirrorDir, "Original.java")
+	require.NoError(t, os.WriteFile(conflictingFile, []byte("conflicting content"), 0o600))
+
+	orig := NewFilesystemProject(originalDir)
+	_, err := NewMirrorProject(orig, mirrorDir)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(filepath.Clean(filepath.Join(mirrorDir, "Original.java")))
+	require.NoError(t, err)
+	require.Equal(t, "original content", string(data))
+}

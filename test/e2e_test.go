@@ -6,10 +6,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/cqfn/refrax/cmd"
+	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,7 +52,7 @@ func TestEndToEnd_JavaRefactor_InlineVariable_WithoutAI(t *testing.T) {
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	playbook := filepath.Join("test_data", "playbooks", "refactor.yml")
+	playbook := filepath.Join("test_data", "playbooks", "plain_main.yml")
 	command.SetArgs([]string{"refactor", "--ai=none", "--debug", fmt.Sprintf("--playbook=%s", playbook), jclass})
 
 	err := command.Execute()
@@ -64,25 +66,30 @@ func TestEndToEnd_JavaRefactor_ManyJavaFilesProject(t *testing.T) {
 	tmp := t.TempDir()
 	main, err := os.ReadFile(filepath.Join("test_data", "java", "person", "src", "com", "example", "MainApp.java"))
 	require.NoError(t, err, "Expected to read test file content without error")
-	setupJava(t, filepath.Join(tmp, "person", "src", "com", "example"), "MainApp.java", string(main))
+	mainFile := setupJava(t, filepath.Join(tmp, "person", "src", "com", "example"), "MainApp.java", string(main))
 
 	person, err := os.ReadFile(filepath.Join("test_data", "java", "person", "src", "com", "example", "model", "Person.java"))
 	require.NoError(t, err, "Expected to read test file content without error")
-	setupJava(t, filepath.Join(tmp, "person", "src", "com", "example", "model"), "Person.java", string(person))
+	personFile := setupJava(t, filepath.Join(tmp, "person", "src", "com", "example", "model"), "Person.java", string(person))
 
 	service, err := os.ReadFile(filepath.Join("test_data", "java", "person", "src", "com", "example", "service", "GreetingService.java"))
 	require.NoError(t, err, "Expected to read test file content without error")
-	setupJava(t, filepath.Join(tmp, "person", "src", "com", "example", "service"), "GreetingService.java", string(service))
+	serviseFile := setupJava(t, filepath.Join(tmp, "person", "src", "com", "example", "service"), "GreetingService.java", string(service))
 
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	playbook := filepath.Join("test_data", "playbooks", "refactor.yml")
+	playbook := filepath.Join("test_data", "playbooks", "person.yml")
 	command.SetArgs([]string{"refactor", "--ai=none", "--debug", fmt.Sprintf("--playbook=%s", playbook), tmp})
 
 	err = command.Execute()
 
 	require.NoError(t, err, "Expected command to execute without error")
+	pb, err := brain.NewYAMLPlaybook(playbook)
+	require.NoError(t, err, "Expected to load playbook without error")
+	assertContent(t, mainFile, clean(pb.Ask("Fix 'MainApp'")))
+	assertContent(t, personFile, clean(pb.Ask("Fix 'Person'")))
+	assertContent(t, serviseFile, clean(pb.Ask("Fix 'GreetingService'")))
 }
 
 func TestEndToEnd_OuputOption_CopiesProject(t *testing.T) {
@@ -118,7 +125,7 @@ func assertContent(t *testing.T, path, expected string) {
 	t.Helper()
 	content, err := os.ReadFile(filepath.Clean(path))
 	require.NoError(t, err, "Expected to read file content without error")
-	assert.Equal(t, expected, string(content), "File content does not match expected content")
+	assert.Equal(t, strings.TrimSpace(expected), strings.TrimSpace(string(content)), "File content does not match expected content")
 }
 
 func buff() *safeBuffer {
@@ -140,4 +147,9 @@ func (s *safeBuffer) String() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.buf.String()
+}
+
+func clean(answer string) string {
+	answer = strings.ReplaceAll(answer, "```java", "")
+	return strings.ReplaceAll(answer, "```", "")
 }

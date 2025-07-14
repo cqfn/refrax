@@ -1,0 +1,13 @@
+name: qa-basic-test
+qa:
+  - question: |
+      Fix 'Main' code
+
+    answer: |
+      ```java
+      public class Main {
+          public static void main(String[] args) {
+              System.out.println("Hello, World");
+          }
+      }
+      ```

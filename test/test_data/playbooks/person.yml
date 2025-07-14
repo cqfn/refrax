@@ -1,0 +1,76 @@
+name: person-project-refactoring
+qa:
+  - question: |
+      Fix 'MainApp'
+
+    answer: |
+      ```java
+      package com.example;
+      
+      import com.example.model.Person;
+      import com.example.service.GreetingService;
+      
+      public class MainApp {
+          public static void main(String[] args) {
+              Person person = new Person("Alice");
+              GreetingService service = new GreetingService();
+              String greeting = service.greet(person);
+              System.out.println(greeting);
+              System.out.println("Counter check passed.");
+          }
+      }
+      ```
+  - question: |
+      Fix 'Person'      
+
+    answer: |
+      ```java
+      package com.example.model;
+      
+      public class Person {
+          private String name;
+      
+          public Person(String name) {
+              this.name = name;
+          }
+      
+          public String getName() {
+              if (name != null && !name.isEmpty()) {
+                  return name;
+              } else {
+                  return "Unnamed";
+              }
+          }
+      }
+      ```
+  - question: |
+      Fix 'GreetingService'      
+
+    answer: |
+      ```java
+      package com.example.service;
+      
+      import com.example.model.Person;
+      import java.util.List;
+      import java.util.ArrayList;
+      
+      public class GreetingService {
+      
+          private String prefix = "Hello, ";
+      
+          public String greet(Person person) {
+              StringBuilder sb = new StringBuilder();
+              String name = person.getName();
+              sb.append(prefix);
+              sb.append(name);
+              sb.append(prefix);
+              sb.append(name);
+              return sb.toString();
+          }
+      
+          // Legacy method kept for compatibility
+          public void printGreeting(Person person) {
+              System.out.println(greet(person));
+          }
+      }
+      ```
