@@ -57,6 +57,26 @@ Ensure that Go 1.24.1 or later is installed on your system.
 - `refrax refactor [path]`: Refactor Java code in the specified directory (defaults to current directory).
 - `refrax start [agent]`: Start the server for agents like fixer, critic, or facilitator.
 
+### Example
+
+You can try refactoring the testing project located in this repository. To do so, you will need to clone the repository:
+
+```
+git clone https://github.com/cqfn/refrax.git
+```
+
+Then, run the following command:
+
+```sh
+refrax refactor --output="./out" --ai=deepseek refrax/test/test_data/java/person
+```
+
+Or, if you are already in the `refrax` folder, simply run:
+
+```
+refrax refactor --output="./out" --ai=deepseek test/test_data/java/person
+```
+
 ## Configuration
 
 - `--ai, -a`: Specify the AI provider (e.g., deepseek).

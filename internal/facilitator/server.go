@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
@@ -63,10 +64,12 @@ func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
 	f.log.Debug("received message: #%s", m.MessageID)
 	var file *protocol.FilePart
 	var task string
+	var class string
 	for _, part := range m.Parts {
 		partKind := part.PartKind()
 		if partKind == protocol.PartKindText {
 			task = part.(*protocol.TextPart).Text
+			class = className(task)
 			f.log.Debug("received task: %s", task)
 		}
 		if partKind == protocol.PartKindFile {
@@ -95,7 +98,7 @@ func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
 	}
 	f.log.Info("received %d suggestions from critic", len(suggestions))
 
-	fixed, err := f.AskFixer(m.MessageID, suggestions, file)
+	fixed, err := f.AskFixer(m.MessageID, suggestions, class, file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ask fixer: %w", err)
 	}
@@ -109,12 +112,13 @@ func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
 }
 
 // AskFixer sends the suggestions and file to the fixer agent for processing.
-func (f *Facilitator) AskFixer(id string, suggestions []string, file *protocol.FilePart) (*protocol.JSONRPCResponse, error) {
+func (f *Facilitator) AskFixer(id string, suggestions []string, class string, file *protocol.FilePart) (*protocol.JSONRPCResponse, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.fixerPort)
 	log.Debug("asking fixer (%s) to apply suggestions...", address)
 	fixer := protocol.NewCustomClient(address)
 	builder := protocol.NewMessageBuilder().
 		MessageID(id).
+		Part(protocol.NewText(fmt.Sprintf("class_name:%s", class))).
 		Part(protocol.NewText("apply all the following suggestions"))
 	for _, suggestion := range suggestions {
 		builder.Part(protocol.NewText(suggestion))
@@ -149,4 +153,13 @@ func agentCard(port int) *protocol.AgentCard {
 		Version("0.0.1").
 		Skill("facilitate-discussion", "Refactor Java Projects", "Facilitate discussion on code refactoring").
 		Build()
+}
+
+func className(task string) string {
+	begin := strings.Index(task, "'") + 1
+	end := begin + strings.Index(task[begin:], "'")
+	if begin >= end || begin < 0 || end < 0 {
+		return ""
+	}
+	return task[begin:end]
 }

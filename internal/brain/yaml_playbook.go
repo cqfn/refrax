@@ -44,8 +44,11 @@ func NewYAMLPlaybook(filePath string) (*YAMLPlaybook, error) {
 // Ask retrieves the answer to a given question from the playbook.
 // If the question is not found, it returns a default "not found" message.
 func (p *YAMLPlaybook) Ask(question string) string {
-	if answer, exists := p.data[normalise(question)]; exists {
-		return answer
+	nq := normalise(question)
+	for k, v := range p.data {
+		if strings.Contains(nq, k) || strings.Contains(k, nq) {
+			return v
+		}
 	}
 	return "Question not found in the playbook"
 }

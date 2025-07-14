@@ -20,17 +20,14 @@ type Fixer struct {
 	port   int
 }
 
-const prompt = `Fix the following Java code based on the listed suggestions.
-
-Code:
-%s
-
-Suggestions:
-%s
-
-Do not rename class names.
-Return only the corrected Java code.
-Do not include explanations, comments, or any extra text.`
+const prompt = "Fix '%s' code based on the listed suggestions.\n\n" +
+	"Code:\n" +
+	"```java\n%s\n\n```" +
+	"\n\nSuggestions:\n" +
+	"```suggestion\n%s\n\n```" +
+	"Do not rename class names.\n" +
+	"Return only the corrected Java code.\n" +
+	"Do not include explanations, comments, or any extra text.\n\n"
 
 // NewFixer creates a new Fixer instance with the provided AI brain and port.
 func NewFixer(ai brain.Brain, port int) *Fixer {
@@ -73,11 +70,16 @@ func (c *Fixer) think(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Info("trying to fix Java code...")
 	var code string
 	var suggestions []string
+	var class string
 	for _, part := range m.Parts {
 		if part.PartKind() == protocol.PartKindText {
-			suggestion := part.(*protocol.TextPart).Text
-			if suggestion != "" {
-				suggestions = append(suggestions, suggestion)
+			msg := part.(*protocol.TextPart).Text
+			if msg != "" {
+				if strings.HasPrefix(msg, "class_name:") {
+					class = strings.TrimSpace(strings.TrimPrefix(msg, "class_name:"))
+				} else {
+					suggestions = append(suggestions, msg)
+				}
 			}
 		} else if part.PartKind() == protocol.PartKindFile {
 			codePart := part.(*protocol.FilePart)
@@ -89,7 +91,7 @@ func (c *Fixer) think(m *protocol.Message) (*protocol.Message, error) {
 		}
 	}
 	all := strings.Join(suggestions, "\n")
-	question := fmt.Sprintf(prompt, code, all)
+	question := fmt.Sprintf(prompt, class, code, all)
 	c.log.Info("asking AI to fix java code...")
 	c.log.Debug("asking AI: %s", question)
 	answer, err := c.brain.Ask(question)
