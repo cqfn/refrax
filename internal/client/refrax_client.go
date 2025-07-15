@@ -32,12 +32,12 @@ func NewRefraxClient(provider, token, playbook string) *RefraxClient {
 }
 
 // Refactor initializes the refactoring process for the given project.
-func Refactor(provider, token string, proj Project, stats bool, logger log.Logger, playbook string) (Project, error) {
-	return NewRefraxClient(provider, token, playbook).Refactor(proj, stats, logger)
+func Refactor(provider, token string, proj Project, stats bool, format, soutput string, logger log.Logger, playbook string) (Project, error) {
+	return NewRefraxClient(provider, token, playbook).Refactor(proj, stats, format, soutput, logger)
 }
 
 // Refactor performs refactoring on the given project using the RefraxClient.
-func (c *RefraxClient) Refactor(proj Project, stats bool, logger log.Logger) (Project, error) {
+func (c *RefraxClient) Refactor(proj Project, stats bool, format, soutput string, logger log.Logger) (Project, error) {
 	logger.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
@@ -49,8 +49,20 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, logger log.Logger) (Pr
 	logger.Debug("found %d classes in the project: %v", len(classes), classes)
 	var ai brain.Brain
 	mind := brain.New(c.provider, c.token, c.playbook)
+	var swriter brain.StatsWriter
+	counter := brain.Stats{}
 	if stats {
-		ai = brain.NewMetricBrain(mind, logger)
+		if format == "csv" {
+			logger.Info("using csv file for statistics output")
+			if soutput == "" {
+				soutput = "stats.csv"
+			}
+			swriter = brain.NewCSVWriter(soutput)
+		} else {
+			logger.Info("using stdout format for statistics output")
+			swriter = brain.NewStdWriter(logger)
+		}
+		ai = brain.NewMetricBrain(mind, &counter)
 	} else {
 		ai = mind
 	}
@@ -133,9 +145,8 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, logger log.Logger) (Pr
 		}
 	}
 	logger.Info("refactoring is finished")
-
-	if withStats, ok := ai.(*brain.MetricBrain); ok {
-		withStats.PrintStats()
+	if stats {
+		err = swriter.Print(&counter)
 	}
 	return proj, err
 }

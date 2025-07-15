@@ -95,7 +95,6 @@ func TestEndToEnd_JavaRefactor_ManyJavaFilesProject(t *testing.T) {
 func TestEndToEnd_OuputOption_CopiesProject(t *testing.T) {
 	tmp := t.TempDir()
 	project := filepath.Join("test_data", "java", "person")
-
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
@@ -107,6 +106,44 @@ func TestEndToEnd_OuputOption_CopiesProject(t *testing.T) {
 	assert.FileExists(t, filepath.Join(tmp, "src", "com", "example", "MainApp.java"), "Expected MainApp.java to be copied to output directory")
 	assert.FileExists(t, filepath.Join(tmp, "src", "com", "example", "model", "Person.java"), "Expected Person.java to be copied to output directory")
 	assert.FileExists(t, filepath.Join(tmp, "src", "com", "example", "service", "GreetingService.java"), "Expected GreetingService.java to be copied to output directory")
+}
+
+func TestEndToEnd_PrintsStatsIfEnabled(t *testing.T) {
+	tmp := t.TempDir()
+	project := filepath.Join("test_data", "java", "person")
+	capture := buff()
+	output := io.MultiWriter(capture, os.Stdout)
+	command := cmd.NewRootCmd(output, io.Discard)
+	command.SetArgs([]string{"refactor", "--stats", "--ai=none", "--output=" + tmp, project})
+
+	err := command.Execute()
+
+	require.NoError(t, err, "Expected command to execute without error")
+	assert.Contains(t, capture.String(), "Total messages asked", "Expected total messages asked to be logged")
+}
+
+func TestEndToEnd_PrintsStatisIfEnabled_ToCSV(t *testing.T) {
+	tmp := t.TempDir()
+	project := filepath.Join("test_data", "java", "person")
+	command := cmd.NewRootCmd(os.Stdout, io.Discard)
+	stats := filepath.Join(tmp, "stats.csv")
+	command.SetArgs([]string{
+		"refactor",
+		"--stats",
+		"--stats-format=csv",
+		"--stats-output=" + stats,
+		"--ai=none",
+		"--output=" + tmp,
+		project,
+	})
+
+	err := command.Execute()
+
+	require.NoError(t, err, "Expected command to execute without error")
+	assert.FileExists(t, stats, "Expected stats CSV file to be created")
+	file, err := os.ReadFile(filepath.Clean(stats))
+	require.NoError(t, err, "Expected to read stats CSV file without error")
+	assert.Contains(t, string(file), "Question,Duration", "Expected stats CSV file to contain header")
 }
 
 func setupJava(t *testing.T, path, name, code string) string {

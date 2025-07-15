@@ -16,6 +16,8 @@ type Params struct {
 	mock     bool
 	debug    bool
 	stats    bool
+	format   string
+	soutput  string
 }
 
 // Execute runs the root command and returns any error encountered.
@@ -38,6 +40,8 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 		PersistentPreRun: func(_ *cobra.Command, _ []string) {
 			if params.debug {
 				log.Set(log.NewZerolog(out, "debug"))
+			} else {
+				log.Set(log.NewZerolog(out, "info"))
 			}
 		},
 	}
@@ -47,6 +51,8 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 	root.PersistentFlags().BoolVar(&params.mock, "mock", false, "Use mock project")
 	root.PersistentFlags().BoolVarP(&params.debug, "debug", "d", false, "print debug logs")
 	root.PersistentFlags().BoolVar(&params.stats, "stats", false, "Print internal interaction statistics")
+	root.PersistentFlags().StringVar(&params.format, "stats-format", "std", "Format for statistics output (e.g., std, csv, etc.)")
+	root.PersistentFlags().StringVar(&params.soutput, "stats-output", "stats", "Output path for statistics (default: stats)")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(),
