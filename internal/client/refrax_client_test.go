@@ -17,7 +17,7 @@ func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
 	client := NewRefraxClient("none", "none", "")
 	origin := NewInMemoryProject(map[string]string{})
 
-	proj, err := client.Refactor(origin, false, log.NewMock())
+	proj, err := client.Refactor(origin, false, "std", "", log.NewMock())
 
 	assert.Equal(t, origin, proj, "Refactoring an empty project should return the same project")
 	assert.Error(t, err, "Expected an error when refactoring an empty project")
@@ -27,7 +27,7 @@ func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
 func TestRefraxClient_PrintsStatsIfEnabled(t *testing.T) {
 	client := NewRefraxClient("mock", "ABC", "")
 	logger := log.NewMock()
-	_, err := client.Refactor(SingleClassProject("Foo.java", "abstract class Foo {}"), true, logger)
+	_, err := client.Refactor(SingleClassProject("Foo.java", "abstract class Foo {}"), true, "std", "", logger)
 	assert.NoError(t, err)
 	assert.True(t, logMessageFoundWithText(logger, "Total messages asked"), "Expected total messages asked to be logged")
 	assert.True(t, logMessageFoundWithText(logger, "Brain finished asking"), "Expected interaction stats to be logged")

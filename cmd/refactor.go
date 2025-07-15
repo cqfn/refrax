@@ -36,7 +36,7 @@ func newRefactorCmd(params *Params) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			ref, err := client.Refactor(params.provider, token, proj, params.stats, log.Default(), params.playbook)
+			ref, err := client.Refactor(params.provider, token, proj, params.stats, params.format, params.soutput, log.Default(), params.playbook)
 			log.Debug("refactor result: %s", ref)
 			return err
 		},
