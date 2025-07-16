@@ -14,6 +14,7 @@ import (
 	"github.com/cqfn/refrax/internal/fixer"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
+	"github.com/cqfn/refrax/internal/stats"
 )
 
 // RefraxClient represents a client used for refactoring projects.
@@ -49,8 +50,8 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
 	log.Debug("found %d classes in the project: %v", len(classes), classes)
-	stats := &brain.Stats{}
-	ai := mind(c.params, stats)
+	counter := &stats.Stats{}
+	ai := mind(c.params, counter)
 
 	criticPort, err := protocol.FreePort()
 	if err != nil {
@@ -131,7 +132,7 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		}
 	}
 	log.Info("refactoring is finished")
-	err = printStats(c.params, stats)
+	err = printStats(c.params, counter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to print statistics: %w", err)
 	}
@@ -156,30 +157,30 @@ func initLogger(params *Params) {
 	}
 }
 
-func printStats(p Params, stats *brain.Stats) error {
+func printStats(p Params, s *stats.Stats) error {
 	if p.Stats {
-		var swriter brain.StatsWriter
+		var swriter stats.Writer
 		if p.Format == "csv" {
 			log.Info("using csv file for statistics output")
 			output := p.Soutput
 			if output == "" {
 				output = "stats.csv"
 			}
-			swriter = brain.NewCSVWriter(output)
+			swriter = stats.NewCSVWriter(output)
 		} else {
 			log.Info("using stdout format for statistics output")
-			swriter = brain.NewStdWriter(log.Default())
+			swriter = stats.NewStdWriter(log.Default())
 		}
-		return swriter.Print(stats)
+		return swriter.Print(s)
 	}
 	return nil
 }
 
-func mind(p Params, stats *brain.Stats) brain.Brain {
+func mind(p Params, s *stats.Stats) brain.Brain {
 	var ai brain.Brain
 	ai = brain.New(p.Provider, token(p), p.Playbook)
 	if p.Stats {
-		ai = brain.NewMetricBrain(ai, stats)
+		ai = brain.NewMetricBrain(ai, s)
 	}
 	return ai
 }

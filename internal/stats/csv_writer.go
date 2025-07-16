@@ -1,4 +1,5 @@
-package brain
+// Package stats provides functionality to write statistics.
+package stats
 
 import (
 	"encoding/csv"
@@ -16,7 +17,7 @@ type csvWriter struct {
 
 // NewCSVWriter created an instance of StatsWriter that saves
 // statistics in CSV format.
-func NewCSVWriter(path string) StatsWriter {
+func NewCSVWriter(path string) Writer {
 	return &csvWriter{path: path}
 }
 
@@ -31,7 +32,7 @@ func (c *csvWriter) Print(stats *Stats) error {
 	if err = w.Write([]string{"Question", "Duration"}); err != nil {
 		return fmt.Errorf("failed to write header: %v", err)
 	}
-	for i, duration := range stats.Durations() {
+	for i, duration := range stats.LLMRequests() {
 		if err = w.Write([]string{strconv.Itoa(i + 1), duration.String()}); err != nil {
 			return fmt.Errorf("failed to write row %d: %v", i+1, err)
 		}
