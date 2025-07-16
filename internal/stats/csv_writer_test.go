@@ -1,4 +1,4 @@
-package brain
+package stats
 
 import (
 	"encoding/csv"
@@ -20,9 +20,9 @@ func TestCSVWriter_Print_Success(t *testing.T) {
 	p := filepath.Join(dir, "output.csv")
 	w := NewCSVWriter(p)
 	stats := &Stats{}
-	stats.Add(1 * time.Second)
-	stats.Add(2 * time.Second)
-	stats.Add(3 * time.Second)
+	stats.LLMReq(1*time.Second, 0, 0, 0, 0)
+	stats.LLMReq(2*time.Second, 0, 0, 0, 0)
+	stats.LLMReq(3*time.Second, 0, 0, 0, 0)
 
 	err := w.Print(stats)
 

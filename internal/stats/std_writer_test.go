@@ -1,4 +1,4 @@
-package brain
+package stats
 
 import (
 	"testing"
@@ -19,9 +19,9 @@ func TestStdWriterPrintLogsCorrectMessageCounts(t *testing.T) {
 	m := log.NewMock()
 	w := NewStdWriter(m)
 	stats := &Stats{}
-	stats.Add(1 * time.Millisecond)
-	stats.Add(2 * time.Millisecond)
-	stats.Add(3 * time.Millisecond)
+	stats.LLMReq(1*time.Millisecond, 0, 0, 0, 0)
+	stats.LLMReq(2*time.Millisecond, 0, 0, 0, 0)
+	stats.LLMReq(3*time.Millisecond, 0, 0, 0, 0)
 
 	err := w.Print(stats)
 
@@ -50,8 +50,8 @@ func TestStdWriterPrintLogsCorrectDurations(t *testing.T) {
 	m := log.NewMock()
 	w := NewStdWriter(m)
 	stats := &Stats{}
-	stats.Add(1 * time.Millisecond)
-	stats.Add(1 * time.Second)
+	stats.LLMReq(1*time.Millisecond, 0, 0, 0, 0)
+	stats.LLMReq(1*time.Second, 0, 0, 0, 0)
 
 	err := w.Print(stats)
 
