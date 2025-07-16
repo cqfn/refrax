@@ -42,7 +42,7 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithMockProject(t *testing.T) {
 
 	require.NoError(t, err, "Expected command to execute without error")
 	assert.Contains(t, capture.String(), "provider: none", "expect no AI provider to be used in output")
-	assert.Contains(t, capture.String(), "refactor result: [Main.java]", "expect refactored code to contain list of changed files")
+	assert.Contains(t, capture.String(), "refactoring is finished", "expect refactored code to contain list of changed files")
 }
 
 func TestEndToEnd_JavaRefactor_InlineVariable_WithoutAI(t *testing.T) {

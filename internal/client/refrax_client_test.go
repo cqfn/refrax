@@ -1,23 +1,24 @@
 package client
 
 import (
-	"strings"
+	"bytes"
+	"io"
+	"sync"
 	"testing"
 
-	"github.com/cqfn/refrax/internal/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRefraxClient_Creates_Successfully(t *testing.T) {
-	client := NewRefraxClient("none", "none", "")
+	client := NewRefraxClient(NewMockParams())
 	assert.NotNil(t, client, "Refrax client should not be nil")
 }
 
 func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
-	client := NewRefraxClient("none", "none", "")
+	client := NewRefraxClient(NewMockParams())
 	origin := NewInMemoryProject(map[string]string{})
 
-	proj, err := client.Refactor(origin, false, "std", "", log.NewMock())
+	proj, err := client.Refactor(origin)
 
 	assert.Equal(t, origin, proj, "Refactoring an empty project should return the same project")
 	assert.Error(t, err, "Expected an error when refactoring an empty project")
@@ -25,21 +26,31 @@ func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
 }
 
 func TestRefraxClient_PrintsStatsIfEnabled(t *testing.T) {
-	client := NewRefraxClient("mock", "ABC", "")
-	logger := log.NewMock()
-	_, err := client.Refactor(SingleClassProject("Foo.java", "abstract class Foo {}"), true, "std", "", logger)
+	params := NewMockParams()
+	params.Stats = true
+	out := bytes.Buffer{}
+	params.Log = NewSyncWriter(io.Writer(&out))
+	client := NewRefraxClient(params)
+	_, err := client.Refactor(SingleClassProject("Foo.java", "abstract class Foo {}"))
 	assert.NoError(t, err)
-	assert.True(t, logMessageFoundWithText(logger, "Total messages asked"), "Expected total messages asked to be logged")
-	assert.True(t, logMessageFoundWithText(logger, "Brain finished asking"), "Expected interaction stats to be logged")
+	assert.Contains(t, out.String(), "Total messages asked", "Expected total messages asked to be logged")
+	assert.Contains(t, out.String(), "Brain finished asking", "Expected interaction stats to be logged")
 }
 
-func logMessageFoundWithText(logger *log.Mock, contains string) bool {
-	found := false
-	for _, msg := range logger.Messages {
-		if strings.Contains(msg, contains) {
-			found = true
-			break
-		}
+type SyncWriter struct {
+	mu sync.Mutex
+	w  io.Writer
+}
+
+func NewSyncWriter(w io.Writer) *SyncWriter {
+	return &SyncWriter{
+		mu: sync.Mutex{},
+		w:  w,
 	}
-	return found
+}
+
+func (s *SyncWriter) Write(p []byte) (n int, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.w.Write(p)
 }
