@@ -9,6 +9,7 @@ import (
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/critic"
+	"github.com/cqfn/refrax/internal/env"
 	"github.com/cqfn/refrax/internal/facilitator"
 	"github.com/cqfn/refrax/internal/fixer"
 	"github.com/cqfn/refrax/internal/log"
@@ -17,28 +18,29 @@ import (
 
 // RefraxClient represents a client used for refactoring projects.
 type RefraxClient struct {
-	provider string
-	playbook string
-	token    string
+	params Params
 }
 
 // NewRefraxClient creates a new instance of RefraxClient.
-func NewRefraxClient(provider, token, playbook string) *RefraxClient {
+func NewRefraxClient(params *Params) *RefraxClient {
+	initLogger(params)
 	return &RefraxClient{
-		provider: provider,
-		token:    token,
-		playbook: playbook,
+		params: *params,
 	}
 }
 
 // Refactor initializes the refactoring process for the given project.
-func Refactor(provider, token string, proj Project, stats bool, format, soutput string, logger log.Logger, playbook string) (Project, error) {
-	return NewRefraxClient(provider, token, playbook).Refactor(proj, stats, format, soutput, logger)
+func Refactor(params *Params) (Project, error) {
+	proj, err := project(*params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create project from params: %w", err)
+	}
+	return NewRefraxClient(params).Refactor(proj)
 }
 
 // Refactor performs refactoring on the given project using the RefraxClient.
-func (c *RefraxClient) Refactor(proj Project, stats bool, format, soutput string, logger log.Logger) (Project, error) {
-	logger.Debug("starting refactoring for project %s", proj)
+func (c *RefraxClient) Refactor(proj Project) (Project, error) {
+	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get classes from project %s: %w", proj, err)
@@ -46,26 +48,10 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, format, soutput string
 	if len(classes) == 0 {
 		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
-	logger.Debug("found %d classes in the project: %v", len(classes), classes)
-	var ai brain.Brain
-	mind := brain.New(c.provider, c.token, c.playbook)
-	var swriter brain.StatsWriter
-	counter := brain.Stats{}
-	if stats {
-		if format == "csv" {
-			logger.Info("using csv file for statistics output")
-			if soutput == "" {
-				soutput = "stats.csv"
-			}
-			swriter = brain.NewCSVWriter(soutput)
-		} else {
-			logger.Info("using stdout format for statistics output")
-			swriter = brain.NewStdWriter(logger)
-		}
-		ai = brain.NewMetricBrain(mind, &counter)
-	} else {
-		ai = mind
-	}
+	log.Debug("found %d classes in the project: %v", len(classes), classes)
+	stats := &brain.Stats{}
+	ai := mind(c.params, stats)
+
 	criticPort, err := protocol.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
@@ -115,12 +101,12 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, format, soutput string
 	<-criticReady
 	<-fixerReady
 
-	logger.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
-	logger.Info("begin refactoring")
+	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
+	log.Info("begin refactoring")
 	facilitatorClient := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
 	for _, class := range classes {
-		logger.Debug("sending class %s for refactoring", class.Name())
+		log.Debug("sending class %s for refactoring", class.Name())
 		var resp *protocol.JSONRPCResponse
 		resp, err = facilitatorClient.SendMessage(protocol.MessageSendParams{
 			Message: protocol.NewMessageBuilder().
@@ -132,7 +118,7 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, format, soutput string
 		if err != nil {
 			return nil, fmt.Errorf("failed to send message for class %s: %w", class.Name(), err)
 		}
-		logger.Debug("received response for class %s: %s", class.Name(), resp)
+		log.Debug("received response for class %s: %s", class.Name(), resp)
 		refactored := resp.Result.(protocol.Message).Parts[0].(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
 		var decoded []byte
 		decoded, err = base64.StdEncoding.DecodeString(refactored)
@@ -144,9 +130,10 @@ func (c *RefraxClient) Refactor(proj Project, stats bool, format, soutput string
 			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
 		}
 	}
-	logger.Info("refactoring is finished")
-	if stats {
-		err = swriter.Print(&counter)
+	log.Info("refactoring is finished")
+	err = printStats(c.params, stats)
+	if err != nil {
+		return nil, fmt.Errorf("failed to print statistics: %w", err)
 	}
 	return proj, err
 }
@@ -159,4 +146,78 @@ func closeResource(resource io.Closer) {
 	if cerr := resource.Close(); cerr != nil {
 		panic(fmt.Sprintf("failed to close resource: %v", cerr))
 	}
+}
+
+func initLogger(params *Params) {
+	if params.Debug {
+		log.Set(log.NewZerolog(params.Log, "debug"))
+	} else {
+		log.Set(log.NewZerolog(params.Log, "info"))
+	}
+}
+
+func printStats(p Params, stats *brain.Stats) error {
+	if p.Stats {
+		var swriter brain.StatsWriter
+		if p.Format == "csv" {
+			log.Info("using csv file for statistics output")
+			output := p.Soutput
+			if output == "" {
+				output = "stats.csv"
+			}
+			swriter = brain.NewCSVWriter(output)
+		} else {
+			log.Info("using stdout format for statistics output")
+			swriter = brain.NewStdWriter(log.Default())
+		}
+		return swriter.Print(stats)
+	}
+	return nil
+}
+
+func mind(p Params, stats *brain.Stats) brain.Brain {
+	var ai brain.Brain
+	ai = brain.New(p.Provider, token(p), p.Playbook)
+	if p.Stats {
+		ai = brain.NewMetricBrain(ai, stats)
+	}
+	return ai
+}
+
+func token(p Params) string {
+	log.Debug("refactoring provider: %s", p.Provider)
+	log.Debug("project path to refactor: %s", p.Input)
+	var token string
+	if p.Token != "" {
+		token = p.Token
+	} else {
+		log.Info("token not provided, trying to find token in .env file")
+		token = env.Token(".env", p.Provider)
+	}
+	log.Debug("using provided token: %s...", mask(token))
+	return token
+}
+
+func project(params Params) (Project, error) {
+	if params.Mock {
+		log.Debug("using mock project")
+		return NewMockProject(), nil
+	}
+	input := NewFilesystemProject(params.Input)
+	output := params.Output
+	if output != "" {
+		log.Debug("copy project to %q", output)
+		return NewMirrorProject(input, output)
+	}
+	log.Debug("no output path provided, changing project in place %q", params.Input)
+	return input, nil
+}
+
+func mask(token string) string {
+	n := len(token)
+	if n == 0 {
+		return ""
+	}
+	visible := min(n, 3)
+	return token[:visible] + strings.Repeat("*", n-visible)
 }
