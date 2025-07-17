@@ -97,12 +97,3 @@ func (d *DeepSeek) send(system, user string) (answer string, err error) {
 	answer = strings.TrimSpace(parsed.Choices[0].Message.Content)
 	return answer, err
 }
-
-func trimmed(prompt string) string {
-	limit := 120 * 400
-	runes := []rune(prompt)
-	if len(runes) > limit {
-		return string(runes[:limit])
-	}
-	return prompt
-}

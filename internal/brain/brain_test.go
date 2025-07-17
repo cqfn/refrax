@@ -24,3 +24,12 @@ func TestNew_WithUnknownProvider_ReturnsMockBrain(t *testing.T) {
 	_, ok := result.(*MockBrain)
 	require.True(t, ok, "Expected result to be of type Mock")
 }
+
+func TestNew_WithOpenAIProvider_ReturnsOpenAIBrain(t *testing.T) {
+	token := "valid_token"
+
+	result := New(openai, token)
+
+	_, ok := result.(*OpenAI)
+	require.True(t, ok, "Expected result to be of type OpenAI")
+}
