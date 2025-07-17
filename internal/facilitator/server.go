@@ -36,7 +36,7 @@ func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitato
 		fixerPort:  fixerPort,
 		port:       port,
 	}
-	server.SetHandler(facilitator.think)
+	server.MsgHandler(facilitator.think)
 	return facilitator
 }
 
@@ -58,6 +58,11 @@ func (f *Facilitator) Close() error {
 	}
 	f.log.Info("facilitator server stopped successfully")
 	return nil
+}
+
+// Handler sets the message handler for the facilitator server.
+func (f *Facilitator) Handler(handler protocol.Handler) {
+	f.server.Handler(handler)
 }
 
 func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {

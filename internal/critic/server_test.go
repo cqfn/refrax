@@ -13,7 +13,7 @@ import (
 type MockServer struct {
 	started bool
 	closed  bool
-	handler protocol.MessageHandler
+	handler protocol.MsgHandler
 }
 
 func (m *MockServer) Start(ready chan<- struct{}) error {
@@ -36,7 +36,10 @@ func (m *MockServer) Close() error {
 	return nil
 }
 
-func (m *MockServer) SetHandler(handler protocol.MessageHandler) {
+func (m *MockServer) Handler(_ protocol.Handler) {
+}
+
+func (m *MockServer) MsgHandler(handler protocol.MsgHandler) {
 	m.handler = handler
 }
 

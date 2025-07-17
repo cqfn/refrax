@@ -40,7 +40,7 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 		log:    logger,
 		port:   port,
 	}
-	server.SetHandler(fixer.think)
+	server.MsgHandler(fixer.think)
 	fixer.log.Debug("preparing the Fixer server on port %d with ai provider %s", port, ai)
 	return fixer
 }
@@ -63,6 +63,11 @@ func (c *Fixer) Close() error {
 	}
 	c.log.Info("fixer server stopped successfully")
 	return nil
+}
+
+// Handler sets the handler function for processing requests on the Fixer server.
+func (c *Fixer) Handler(hander protocol.Handler) {
+	c.server.Handler(hander)
 }
 
 func (c *Fixer) think(m *protocol.Message) (*protocol.Message, error) {

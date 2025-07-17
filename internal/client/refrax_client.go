@@ -2,10 +2,12 @@ package client
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/critic"
@@ -58,18 +60,21 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
 	ctc := critic.NewCritic(ai, criticPort)
+	ctc.Handler(countStats(counter))
 
 	fixerPort, err := protocol.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
 	}
 	fxr := fixer.NewFixer(ai, fixerPort)
+	fxr.Handler(countStats(counter))
 
 	facilitatorPort, err := protocol.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
 	fclttor := facilitator.NewFacilitator(ai, facilitatorPort, criticPort, fixerPort)
+	fclttor.Handler(countStats(counter))
 
 	facilitatorReady := make(chan struct{})
 	criticReady := make(chan struct{})
@@ -221,4 +226,33 @@ func mask(token string) string {
 	}
 	visible := min(n, 3)
 	return token[:visible] + strings.Repeat("*", n-visible)
+}
+
+func countStats(s *stats.Stats) protocol.Handler {
+	return func(next protocol.Handler, r *protocol.JSONRPCRequest) (*protocol.JSONRPCResponse, error) {
+		start := time.Now()
+		resp, err := next(nil, r)
+		if err != nil {
+			return nil, fmt.Errorf("failed to process request: %w", err)
+		}
+		duration := time.Since(start)
+		jsonresp, err := json.Marshal(resp)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal response: %w", err)
+		}
+		jsonreq, err := json.Marshal(r)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request: %w", err)
+		}
+		reqt, err := stats.Tokens(string(jsonreq))
+		if err != nil {
+			return nil, fmt.Errorf("failed to count tokens for request: %w", err)
+		}
+		respt, err := stats.Tokens(string(jsonresp))
+		if err != nil {
+			return nil, fmt.Errorf("failed to count tokens for response: %w", err)
+		}
+		s.A2AReq(duration, reqt, respt, len(jsonreq), len(jsonresp))
+		return resp, err
+	}
 }

@@ -29,8 +29,13 @@ func NewTrpcServer(card *AgentCard, port int) (Server, error) {
 	return &trpcServer{card: card, server: *serv, port: port}, nil
 }
 
-// SetHandler sets the message handler for the TRPC server.
-func (s *trpcServer) SetHandler(_ MessageHandler) {
+// MsgHandler sets the message handler for the TRPC server.
+func (s *trpcServer) MsgHandler(_ MsgHandler) {
+	panic("unimplemented")
+}
+
+// Handler sets the handler function for processing requests.
+func (s *trpcServer) Handler(_ Handler) {
 	panic("unimplemented")
 }
 

@@ -49,7 +49,7 @@ func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 		port:   port,
 		tool:   tool,
 	}
-	server.SetHandler(critic.think)
+	server.MsgHandler(critic.think)
 	critic.log.Debug("preparing the Critic server on port %d with ai provider %s", port, ai)
 	return critic
 }
@@ -72,6 +72,11 @@ func (c *Critic) Close() error {
 	}
 	c.log.Info("critic server stopped successfully")
 	return nil
+}
+
+// Handler sets the message handler for the Critic server.
+func (c *Critic) Handler(handler protocol.Handler) {
+	c.server.Handler(handler)
 }
 
 func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {

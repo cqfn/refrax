@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/cqfn/refrax/internal/log"
 )
@@ -21,6 +20,7 @@ func NewCSVWriter(path string) Writer {
 	return &csvWriter{path: path}
 }
 
+// Print writes the statistics to a CSV file.
 func (c *csvWriter) Print(stats *Stats) error {
 	file, err := os.Create(c.path)
 	if err != nil {
@@ -29,12 +29,13 @@ func (c *csvWriter) Print(stats *Stats) error {
 	defer func() { _ = file.Close() }()
 	w := csv.NewWriter(file)
 	defer w.Flush()
-	if err = w.Write([]string{"Question", "Duration"}); err != nil {
+	if err = w.Write([]string{"Metric", "Value"}); err != nil {
 		return fmt.Errorf("failed to write header: %v", err)
 	}
-	for i, duration := range stats.LLMRequests() {
-		if err = w.Write([]string{strconv.Itoa(i + 1), duration.String()}); err != nil {
-			return fmt.Errorf("failed to write row %d: %v", i+1, err)
+	for _, v := range stats.Entries() {
+		err = w.Write([]string{v.Title, v.Value})
+		if err != nil {
+			return fmt.Errorf("failed to write entry %s: %v", v.Title, err)
 		}
 	}
 	abs, err := filepath.Abs(c.path)

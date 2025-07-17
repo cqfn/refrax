@@ -19,12 +19,12 @@ func TestCSVWriter_Print_Success(t *testing.T) {
 	dir := t.TempDir()
 	p := filepath.Join(dir, "output.csv")
 	w := NewCSVWriter(p)
-	stats := &Stats{}
+	var stats Stats
 	stats.LLMReq(1*time.Second, 0, 0, 0, 0)
 	stats.LLMReq(2*time.Second, 0, 0, 0, 0)
 	stats.LLMReq(3*time.Second, 0, 0, 0, 0)
 
-	err := w.Print(stats)
+	err := w.Print(&stats)
 
 	require.NoError(t, err)
 	file, err := os.Open(filepath.Clean(p))
@@ -32,9 +32,9 @@ func TestCSVWriter_Print_Success(t *testing.T) {
 	defer func() { _ = file.Close() }()
 	lines, err := csv.NewReader(file).ReadAll()
 	require.NoError(t, err)
-	require.Len(t, lines, 4)
-	assert.Equal(t, []string{"Question", "Duration"}, lines[0])
-	assert.Equal(t, []string{"1", "1s"}, lines[1])
-	assert.Equal(t, []string{"2", "2s"}, lines[2])
-	assert.Equal(t, []string{"3", "3s"}, lines[3])
+	require.Len(t, lines, 27)
+	assert.Equal(t, []string{"Metric", "Value"}, lines[0])
+	assert.Equal(t, []string{"Total LLM messages asked", "3"}, lines[1])
+	assert.Equal(t, []string{"Total LLM request duration", "6s"}, lines[2])
+	assert.Equal(t, []string{"Total LLM tokens", "0"}, lines[3])
 }

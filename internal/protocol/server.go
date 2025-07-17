@@ -7,15 +7,15 @@ type Server interface {
 	// Start starts the server and listens on the specified port, while signaling readiness.
 	Start(ready chan<- struct{}) error
 
-	// SetHandler sets the message handler for the server.
-	SetHandler(handler MessageHandler)
+	// MsgHandler sets the message handler for the server.
+	MsgHandler(handler MsgHandler)
+
+	// Handler sets the handler function for processing requests.
+	Handler(handler Handler)
 
 	// Close stops the server gracefully.
 	Close() error
 }
-
-// MessageHandler defines the function signature for handling messages.
-type MessageHandler func(message *Message) (*Message, error)
 
 // FreePort finds a free TCP port on the localhost.
 func FreePort() (port int, err error) {

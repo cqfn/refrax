@@ -33,8 +33,7 @@ func TestRefraxClient_PrintsStatsIfEnabled(t *testing.T) {
 	client := NewRefraxClient(params)
 	_, err := client.Refactor(SingleClassProject("Foo.java", "abstract class Foo {}"))
 	assert.NoError(t, err)
-	assert.Contains(t, out.String(), "Total messages asked", "Expected total messages asked to be logged")
-	assert.Contains(t, out.String(), "Brain finished asking", "Expected interaction stats to be logged")
+	assert.Contains(t, out.String(), "Total LLM messages asked", "Expected total messages asked to be logged")
 }
 
 type SyncWriter struct {
