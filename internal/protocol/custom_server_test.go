@@ -79,7 +79,7 @@ func testServer(t *testing.T) (server Server, port int, ready chan struct{}) {
 	port, err := FreePort()
 	require.NoError(t, err, "Failed to get a free port")
 	server = NewCustomServer(&testCard, port)
-	server.SetHandler(joke)
+	server.MsgHandler(joke)
 	require.NoError(t, err, "Failed to create custom server")
 	ready = make(chan struct{})
 	go func() {

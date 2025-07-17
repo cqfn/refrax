@@ -21,7 +21,7 @@ func NewCustomClient(url string) *CustomClient {
 	return &CustomClient{
 		url: url,
 		client: &http.Client{
-			Timeout: 20 * time.Second,
+			Timeout: 60 * time.Second,
 		},
 	}
 }

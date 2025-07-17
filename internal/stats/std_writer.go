@@ -15,10 +15,9 @@ func NewStdWriter(logger log.Logger) Writer {
 }
 
 func (s *stdWriter) Print(stats *Stats) error {
-	durations := stats.LLMRequests()
-	s.log.Info("Total messages asked: %d", len(durations))
-	for i, d := range durations {
-		s.log.Info("Brain finished asking question #%d in %s", i+1, d)
+	all := stats.Entries()
+	for _, v := range all {
+		s.log.Info("%s: %s", v.Title, v.Value)
 	}
 	return nil
 }

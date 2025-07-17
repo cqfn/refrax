@@ -119,7 +119,7 @@ func TestEndToEnd_PrintsStatsIfEnabled(t *testing.T) {
 	err := command.Execute()
 
 	require.NoError(t, err, "Expected command to execute without error")
-	assert.Contains(t, capture.String(), "Total messages asked", "Expected total messages asked to be logged")
+	assert.Contains(t, capture.String(), "Total LLM messages asked", "Expected total messages asked to be logged")
 }
 
 func TestEndToEnd_PrintsStatisIfEnabled_ToCSV(t *testing.T) {
@@ -143,7 +143,7 @@ func TestEndToEnd_PrintsStatisIfEnabled_ToCSV(t *testing.T) {
 	assert.FileExists(t, stats, "Expected stats CSV file to be created")
 	file, err := os.ReadFile(filepath.Clean(stats))
 	require.NoError(t, err, "Expected to read stats CSV file without error")
-	assert.Contains(t, string(file), "Question,Duration", "Expected stats CSV file to contain header")
+	assert.Contains(t, string(file), "Metric,Value", "Expected stats CSV file to contain header")
 }
 
 func setupJava(t *testing.T, path, name, code string) string {
