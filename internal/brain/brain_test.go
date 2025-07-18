@@ -11,7 +11,7 @@ func TestNew_WithDeepSeekProvider_ReturnsDeepSeekBrain(t *testing.T) {
 
 	result := New(deepseek, token)
 
-	_, ok := result.(*DeepSeek)
+	_, ok := result.(*deepSeek)
 	require.True(t, ok, "Expected result to be of type DeepSeek")
 }
 
@@ -30,6 +30,6 @@ func TestNew_WithOpenAIProvider_ReturnsOpenAIBrain(t *testing.T) {
 
 	result := New(openai, token)
 
-	_, ok := result.(*OpenAI)
+	_, ok := result.(*openAI)
 	require.True(t, ok, "Expected result to be of type OpenAI")
 }

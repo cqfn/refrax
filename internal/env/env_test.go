@@ -119,7 +119,7 @@ func TestProviderToken_DefaultTokenAbsent(t *testing.T) {
 	assert.Equal(t, "", result)
 }
 
-func TestProviderToken_DeepseekTokenIgnoredWhenDefaultTokenExists(t *testing.T) {
+func TestProviderToken_DefaultTokenIgnoredWhenDeepseekTokenExists(t *testing.T) {
 	tmp := t.TempDir()
 	deepseek := "deepseek-token-val"
 	token := "default-token-val"
@@ -132,7 +132,7 @@ func TestProviderToken_DeepseekTokenIgnoredWhenDefaultTokenExists(t *testing.T) 
 	assert.Equal(t, deepseek, result)
 }
 
-func TestProviderToken_OpenAITokenIgnoredWhenDefaultTokenExists(t *testing.T) {
+func TestProviderToken_DefaultTokenIgnoredWhenOpenAITokenExists(t *testing.T) {
 	tmp := t.TempDir()
 	openai := "openai-token-val"
 	token := "default-token-val"

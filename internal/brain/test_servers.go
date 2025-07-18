@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type AIRequest struct {
+type aiRequest struct {
 	Model    string         `json:"model"`
-	Messages []AIMessage    `json:"messages"`
+	Messages []aiMessage    `json:"messages"`
 }
 
-type AIMessage struct {
+type aiMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
@@ -26,14 +26,13 @@ type AIMessage struct {
 func NewEchoServer(t *testing.T, expectedModel string, expectedToken string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify Authorization header if token is provided
 		if expectedToken != "" {
 			auth := r.Header.Get("Authorization")
 			require.Equal(t, "Bearer "+expectedToken, auth, "Invalid API key")
 		}
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err, "Failed to read request body")
-		var request AIRequest
+		var request aiRequest
 		err = json.Unmarshal(body, &request)
 		require.NoError(t, err, "Failed to unmarshal request body")
 		if expectedModel != "" {

@@ -1,4 +1,3 @@
-// brain/openai_test.go
 package brain
 
 import (
@@ -12,7 +11,7 @@ func TestOpenAI_Ask_PositiveCase(t *testing.T) {
 	defer server.Close()
 
 	openai := NewOpenAI("test_api_key")
-	openai.url = server.URL
+	openai.(*openAI).url = server.URL
 
 	answer, err := openai.Ask("This is a test question")
 
@@ -25,7 +24,7 @@ func TestOpenAI_Ask_NegativeCase(t *testing.T) {
 	defer server.Close()
 
 	openai := NewOpenAI("test_api_key")
-	openai.url = server.URL
+	openai.(*openAI).url = server.URL
 
 	answer, err := openai.Ask("This is a test question")
 

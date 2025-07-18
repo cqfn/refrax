@@ -12,7 +12,7 @@ func TestDeepSeek_Ask_PositiveCase(t *testing.T) {
 	defer server.Close()
 
 	deepseek := NewDeepSeek("test_api_key")
-	deepseek.(*DeepSeek).url = server.URL
+	deepseek.(*deepSeek).url = server.URL
 
 	answer, err := deepseek.Ask("This is a test question")
 	require.NoError(t, err)
@@ -24,7 +24,7 @@ func TestDeepSeek_Ask_NegativeCase(t *testing.T) {
 	defer server.Close()
 	
 	deepseek := NewDeepSeek("test_api_key")
-	deepseek.(*DeepSeek).url = server.URL
+	deepseek.(*deepSeek).url = server.URL
 
 	answer, err := deepseek.Ask("This is a test question")
 
