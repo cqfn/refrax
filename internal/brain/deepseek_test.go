@@ -3,7 +3,7 @@ package brain
 
 import (
 	"testing"
-	
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestDeepSeek_Ask_PositiveCase(t *testing.T) {
 func TestDeepSeek_Ask_NegativeCase(t *testing.T) {
 	server := NewErrorServer(t)
 	defer server.Close()
-	
+
 	deepseek := NewDeepSeek("test_api_key")
 	deepseek.(*deepSeek).url = server.URL
 

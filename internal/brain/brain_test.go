@@ -26,7 +26,7 @@ func TestNew_WithUnknownProvider_ReturnsMockBrain(t *testing.T) {
 }
 
 func TestNew_WithOpenAIProvider_ReturnsOpenAIBrain(t *testing.T) {
-	token := "valid_token"
+	token := "valid_openai_token"
 
 	result := New(openai, token)
 

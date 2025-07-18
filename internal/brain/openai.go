@@ -71,7 +71,11 @@ func (o *openAI) send(system, user string) (answer string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("API request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			err = fmt.Errorf("error closing response body: %w", cerr)
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("API error: %s", body)

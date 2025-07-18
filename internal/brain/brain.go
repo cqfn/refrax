@@ -7,6 +7,7 @@ type Brain interface {
 }
 
 const deepseek = "deepseek"
+
 const openai = "openai"
 
 // New creates a new instance of Brain based on the provided provider and optional playbook strings.

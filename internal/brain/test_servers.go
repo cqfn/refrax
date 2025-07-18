@@ -13,8 +13,8 @@ import (
 )
 
 type aiRequest struct {
-	Model    string         `json:"model"`
-	Messages []aiMessage    `json:"messages"`
+	Model    string      `json:"model"`
+	Messages []aiMessage `json:"messages"`
 }
 
 type aiMessage struct {
@@ -23,7 +23,7 @@ type aiMessage struct {
 }
 
 // NewEchoServer creates a test server that echoes back the user message
-func NewEchoServer(t *testing.T, expectedModel string, expectedToken string) *httptest.Server {
+func NewEchoServer(t *testing.T, expectedModel, expectedToken string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if expectedToken != "" {
