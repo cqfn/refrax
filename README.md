@@ -79,7 +79,7 @@ refrax refactor --output="./out" --ai=deepseek test/test_data/java/person
 
 ## Configuration
 
-- `--ai, -a`: Specify the AI provider (e.g., deepseek).
+- `--ai, -a`: Specify the AI provider (e.g., deepseek, openai).
 - `--token, -t`: Token for the AI provider.
 - `--debug, -d`: Enable debug logging.
 
@@ -93,17 +93,25 @@ Some operations in Refrax require AI authentication using an API token. You can 
 refrax refactor . --token your-token-here
 ```
 
+### AI Providers
+
+Supported AI providers are:
+* `deepseek`
+* `openai`
+
 ### Environment Variable
 
-Set the `DEEPSEEK_TOKEN` environment variable:
+✅ The `DEEPSEEK_TOKEN` variable is the recommended option for `deepseep` AI provider
+✅ The `OPENAI_TOKEN` variable is the recommended option for `openai` AI provider
+⚠️ The `TOKEN` variable is still supported for any AI provider but deprecated.
+
+
+Set the environment variable:
 
 ```sh
 export DEEPSEEK_TOKEN=your-token-here
 refrax start facilitator
 ```
-
-✅ The `DEEPSEEK_TOKEN` variable is the recommended option.
-⚠️ The `TOKEN` variable is still supported but deprecated.
 
 ### `.env` File
 

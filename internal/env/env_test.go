@@ -75,6 +75,18 @@ func TestProviderToken_DeepseekTokenPresent(t *testing.T) {
 	assert.Equal(t, deepseek, result)
 }
 
+func TestProviderToken_OpenAITokenPresent(t *testing.T) {
+	tmp := t.TempDir()
+	openai := "openai-token-value"
+	env := filepath.Join(tmp, ".env")
+	err := os.WriteFile(env, fmt.Appendf(nil, "OPENAI_TOKEN=%s", openai), 0o600)
+	require.NoError(t, err)
+
+	result := Token(env, "openai")
+
+	assert.Equal(t, openai, result)
+}
+
 func TestProviderToken_DefaultTokenPresent(t *testing.T) {
 	tmp := t.TempDir()
 	token := "default-token-value"
@@ -93,6 +105,13 @@ func TestProviderToken_DeepseekTokenAbsent(t *testing.T) {
 	assert.Equal(t, "", result)
 }
 
+func TestProviderToken_OpenAITokenAbsent(t *testing.T) {
+	tempDir := t.TempDir()
+
+	result := Token(tempDir, "openai")
+	assert.Equal(t, "", result)
+}
+
 func TestProviderToken_DefaultTokenAbsent(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -100,10 +119,10 @@ func TestProviderToken_DefaultTokenAbsent(t *testing.T) {
 	assert.Equal(t, "", result)
 }
 
-func TestProviderToken_DeepseekTokenIgnoredWhenDefaultTokenExists(t *testing.T) {
+func TestProviderToken_DefaultTokenIgnoredWhenDeepseekTokenExists(t *testing.T) {
 	tmp := t.TempDir()
 	deepseek := "deepseek-token-val"
-	token := "default-token-val"
+	token := "default-ignored-deepseek-token-val"
 	env := filepath.Join(tmp, ".env")
 	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s\nTOKEN=%s\n", deepseek, token), 0o600)
 	require.NoError(t, err)
@@ -113,12 +132,38 @@ func TestProviderToken_DeepseekTokenIgnoredWhenDefaultTokenExists(t *testing.T) 
 	assert.Equal(t, deepseek, result)
 }
 
+func TestProviderToken_DefaultTokenIgnoredWhenOpenAITokenExists(t *testing.T) {
+	tmp := t.TempDir()
+	openai := "openai-token-val"
+	token := "default-openai-token-val"
+	env := filepath.Join(tmp, ".env")
+	err := os.WriteFile(env, fmt.Appendf(nil, "OPENAI_TOKEN=%s\nTOKEN=%s\n", openai, token), 0o600)
+	require.NoError(t, err)
+
+	result := Token(env, "openai")
+
+	assert.Equal(t, openai, result)
+}
+
 func TestProviderToken_DefaultTokenUsedWhenDeepseekNotRequested(t *testing.T) {
 	tmp := t.TempDir()
 	deepseek := "deepseek-token"
-	token := "default-token"
+	token := "default-used-deepseek-token"
 	env := filepath.Join(tmp, ".env")
 	err := os.WriteFile(env, fmt.Appendf(nil, "DEEPSEEK_TOKEN=%s\nTOKEN=%s\n", deepseek, token), 0o600)
+	require.NoError(t, err)
+
+	result := Token(env, "otherprovider")
+
+	assert.Equal(t, token, result)
+}
+
+func TestProviderToken_DefaultTokenUsedWhenOpenAINotRequested(t *testing.T) {
+	tmp := t.TempDir()
+	openai := "openai-token"
+	token := "default-openai-token"
+	env := filepath.Join(tmp, ".env")
+	err := os.WriteFile(env, fmt.Appendf(nil, "OPENAI_TOKEN=%s\nTOKEN=%s\n", openai, token), 0o600)
 	require.NoError(t, err)
 
 	result := Token(env, "otherprovider")

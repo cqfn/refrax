@@ -14,6 +14,8 @@ func Token(path, provider string) string {
 	switch provider {
 	case "deepseek":
 		return find(path, "DEEPSEEK_TOKEN")
+	case "openai":
+		return find(path, "OPENAI_TOKEN")
 	case "mock":
 		return find(path, "MOCK_TOKEN")
 	default:

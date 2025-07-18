@@ -12,8 +12,8 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 )
 
-// DeepSeek represents a client for interacting with the DeepSeek API.
-type DeepSeek struct {
+// deepSeek represents a client for interacting with the deepSeek API.
+type deepSeek struct {
 	token string
 	url   string
 	model string
@@ -38,24 +38,24 @@ type deepseekMsg struct {
 	Content string `json:"content"`
 }
 
-// NewDeepSeek creates a new DeepSeek instance with the provided API key.
+// NewDeepSeek creates a new deepSeek instance with the provided API key.
 func NewDeepSeek(apiKey string) Brain {
-	return &DeepSeek{
+	return &deepSeek{
 		token: apiKey,
 		url:   "https://api.deepseek.com/chat/completions",
 		model: "deepseek-chat",
 	}
 }
 
-// Ask sends a question to the DeepSeek API and retrieves an answer.
-func (d *DeepSeek) Ask(question string) (string, error) {
-	log.Debug("DeepSeek: asking question: %s", question)
+// Ask sends a question to the deepSeek API and retrieves an answer.
+func (d *deepSeek) Ask(question string) (string, error) {
+	log.Debug("deepSeek: asking question: %s", question)
 	return d.send("You are a helpful assistant.", question)
 }
 
-func (d *DeepSeek) send(system, user string) (answer string, err error) {
+func (d *deepSeek) send(system, user string) (answer string, err error) {
 	content := trimmed(user)
-	log.Debug("DeepSeek: sending request with system promt: '%s' and userPrompt: '%s'", system, content)
+	log.Debug("deepSeek: sending request with system promt: '%s' and userPrompt: '%s'", system, content)
 	body := deepseekReq{
 		Model: d.model,
 		Messages: []deepseekMsg{
@@ -96,13 +96,4 @@ func (d *DeepSeek) send(system, user string) (answer string, err error) {
 	}
 	answer = strings.TrimSpace(parsed.Choices[0].Message.Content)
 	return answer, err
-}
-
-func trimmed(prompt string) string {
-	limit := 120 * 400
-	runes := []rune(prompt)
-	if len(runes) > limit {
-		return string(runes[:limit])
-	}
-	return prompt
 }
