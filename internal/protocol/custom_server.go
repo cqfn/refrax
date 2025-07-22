@@ -38,7 +38,7 @@ func NewCustomServer(card *AgentCard, port int) Server {
 		server: &http.Server{
 			Addr:              fmt.Sprintf(":%d", port),
 			Handler:           mux,
-			ReadHeaderTimeout: 5 * time.Second,
+			ReadHeaderTimeout: 20 * time.Second,
 		},
 	}
 	mux.HandleFunc("/.well-known/agent-card.json", server.handleAgentCard)
@@ -74,7 +74,7 @@ func (serv *customServer) Start(ready chan<- struct{}) error {
 // Close stops the custom server gracefully, allowing for a timeout.
 func (serv *customServer) Close() error {
 	log.Debug("stopping custom a2a server on port %d...", serv.port)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	return serv.server.Shutdown(ctx)
 }

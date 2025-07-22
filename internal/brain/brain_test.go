@@ -31,7 +31,7 @@ func TestNew_MockProviderNoPlaybook_ReturnsMockInstance(t *testing.T) {
 	result, err := New(mock, "test-token")
 
 	require.NoError(t, err)
-	_, ok := result.(*MockBrain)
+	_, ok := result.(*mockBrain)
 	require.True(t, ok, "Expected result to be of type Mock")
 }
 

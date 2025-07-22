@@ -36,7 +36,7 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithMockProject(t *testing.T) {
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	command.SetArgs([]string{"refactor", "--ai=mock", "--mock", "--debug", t.TempDir()})
+	command.SetArgs([]string{"refactor", "--ai=mock", "--mock-project", "--debug", t.TempDir()})
 
 	err := command.Execute()
 
