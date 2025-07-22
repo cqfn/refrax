@@ -4,21 +4,21 @@ import (
 	"fmt"
 )
 
-// MockBrain represents a mock implementation of the Brain interface,
+// mockBrain represents a mock implementation of the Brain interface,
 // used for testing purposes with predefined playbooks.
-type MockBrain struct {
+type mockBrain struct {
 	playbooks []string
 }
 
 // NewMock creates a new instance of MockBrain with the provided playbooks.
 // If no playbooks are provided, a default echo playbook will be used.
 func NewMock(playbooks ...string) Brain {
-	return &MockBrain{playbooks: playbooks}
+	return &mockBrain{playbooks: playbooks}
 }
 
 // Ask processes a given question and provides a response based on the active playbook.
 // Returns an error if the question is empty or if the playbook fails to respond.
-func (b *MockBrain) Ask(question string) (string, error) {
+func (b *mockBrain) Ask(question string) (string, error) {
 	if question == "" {
 		return "", fmt.Errorf("question cannot be empty")
 	}
@@ -32,7 +32,7 @@ func (b *MockBrain) Ask(question string) (string, error) {
 // Playbook retrieves the active playbook for the MockBrain.
 // Supports either an echo playbook or a single YAML-based playbook.
 // Returns an error if multiple playbooks are provided.
-func (b *MockBrain) Playbook() (Playbook, error) {
+func (b *mockBrain) Playbook() (Playbook, error) {
 	switch len(b.playbooks) {
 	case 0:
 		return &EchoPlaybook{}, nil

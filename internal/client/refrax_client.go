@@ -114,37 +114,57 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	log.Info("begin refactoring")
 	facilitatorClient := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
+	ch := make(chan refactoring, len(classes))
 	for _, class := range classes {
-		log.Debug("sending class %s for refactoring", class.Name())
-		var resp *protocol.JSONRPCResponse
-		resp, err = facilitatorClient.SendMessage(protocol.MessageSendParams{
-			Message: protocol.NewMessageBuilder().
-				MessageID("1").
-				Part(protocol.NewText(fmt.Sprintf("Refactor the class '%s'", class.Name()))).
-				Part(protocol.NewFileBytes([]byte(class.Content()))).
-				Build(),
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to send message for class %s: %w", class.Name(), err)
-		}
-		log.Debug("received response for class %s: %s", class.Name(), resp)
-		refactored := resp.Result.(protocol.Message).Parts[0].(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
-		var decoded []byte
-		decoded, err = base64.StdEncoding.DecodeString(refactored)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode refactored class %s: %w", class.Name(), err)
-		}
-		err = class.SetContent(clean(string(decoded)))
-		if err != nil {
-			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
+		go refactor(facilitatorClient, class, ch)
+	}
+	for range len(classes) {
+		res := <-ch
+		if res.err != nil {
+			return nil, fmt.Errorf("failed to refactor class: %w", res.err)
 		}
 	}
+
 	log.Info("refactoring is finished")
 	err = printStats(c.params, counter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to print statistics: %w", err)
 	}
 	return proj, err
+}
+
+type refactoring struct {
+	err error
+}
+
+func refactor(client *protocol.CustomClient, class JavaClass, ch chan<- refactoring) {
+	log.Debug("sending class %s for refactoring", class.Name())
+	var resp *protocol.JSONRPCResponse
+	resp, err := client.SendMessage(protocol.MessageSendParams{
+		Message: protocol.NewMessageBuilder().
+			MessageID("1").
+			Part(protocol.NewText(fmt.Sprintf("Refactor the class '%s'", class.Name()))).
+			Part(protocol.NewFileBytes([]byte(class.Content()))).
+			Build(),
+	})
+	if err != nil {
+		ch <- refactoring{err: fmt.Errorf("failed to send message for class %s: %w", class.Name(), err)}
+		return
+	}
+	log.Debug("received response for class %s: %s", class.Name(), resp)
+	refactored := resp.Result.(protocol.Message).Parts[0].(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
+	var decoded []byte
+	decoded, err = base64.StdEncoding.DecodeString(refactored)
+	if err != nil {
+		ch <- refactoring{err: fmt.Errorf("failed to decode refactored class %s: %w", class.Name(), err)}
+		return
+	}
+	err = class.SetContent(clean(string(decoded)))
+	if err != nil {
+		ch <- refactoring{err: fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)}
+		return
+	}
+	ch <- refactoring{err: nil}
 }
 
 func clean(s string) string {
@@ -207,7 +227,7 @@ func token(p Params) string {
 }
 
 func project(params Params) (Project, error) {
-	if params.Mock {
+	if params.MockProject {
 		log.Debug("using mock project")
 		return NewMockProject(), nil
 	}
