@@ -53,7 +53,10 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	}
 	log.Debug("found %d classes in the project: %v", len(classes), classes)
 	counter := &stats.Stats{}
-	ai := mind(c.params, counter)
+	ai, err := mind(c.params, counter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AI instance: %w", err)
+	}
 
 	criticPort, err := protocol.FreePort()
 	if err != nil {
@@ -181,13 +184,12 @@ func printStats(p Params, s *stats.Stats) error {
 	return nil
 }
 
-func mind(p Params, s *stats.Stats) brain.Brain {
-	var ai brain.Brain
-	ai = brain.New(p.Provider, token(p), p.Playbook)
+func mind(p Params, s *stats.Stats) (brain.Brain, error) {
+	ai, err := brain.New(p.Provider, token(p), p.Playbook)
 	if p.Stats {
 		ai = brain.NewMetricBrain(ai, s)
 	}
-	return ai
+	return ai, err
 }
 
 func token(p Params) string {

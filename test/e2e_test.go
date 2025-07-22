@@ -36,12 +36,12 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithMockProject(t *testing.T) {
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	command.SetArgs([]string{"refactor", "--ai=none", "--mock", "--debug", t.TempDir()})
+	command.SetArgs([]string{"refactor", "--ai=mock", "--mock", "--debug", t.TempDir()})
 
 	err := command.Execute()
 
 	require.NoError(t, err, "Expected command to execute without error")
-	assert.Contains(t, capture.String(), "provider: none", "expect no AI provider to be used in output")
+	assert.Contains(t, capture.String(), "provider: mock", "expect no AI provider to be used in output")
 	assert.Contains(t, capture.String(), "refactoring is finished", "expect refactored code to contain list of changed files")
 }
 
@@ -53,12 +53,12 @@ func TestEndToEnd_JavaRefactor_InlineVariable_WithoutAI(t *testing.T) {
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
 	playbook := filepath.Join("test_data", "playbooks", "plain_main.yml")
-	command.SetArgs([]string{"refactor", "--ai=none", "--debug", fmt.Sprintf("--playbook=%s", playbook), jclass})
+	command.SetArgs([]string{"refactor", "--ai=mock", "--debug", fmt.Sprintf("--playbook=%s", playbook), jclass})
 
 	err := command.Execute()
 
 	require.NoError(t, err, "Expected command to execute without error")
-	assert.Contains(t, capture.String(), "provider: none", "expect no AI provider to be used in output")
+	assert.Contains(t, capture.String(), "provider: mock", "expect no AI provider to be used in output")
 	assertContent(t, jclass, expected)
 }
 
@@ -80,7 +80,7 @@ func TestEndToEnd_JavaRefactor_ManyJavaFilesProject(t *testing.T) {
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
 	playbook := filepath.Join("test_data", "playbooks", "person.yml")
-	command.SetArgs([]string{"refactor", "--ai=none", "--debug", fmt.Sprintf("--playbook=%s", playbook), tmp})
+	command.SetArgs([]string{"refactor", "--ai=mock", "--debug", fmt.Sprintf("--playbook=%s", playbook), tmp})
 
 	err = command.Execute()
 
@@ -98,7 +98,7 @@ func TestEndToEnd_OuputOption_CopiesProject(t *testing.T) {
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	command.SetArgs([]string{"refactor", "--ai=none", "--debug", "--output=" + tmp, project})
+	command.SetArgs([]string{"refactor", "--ai=mock", "--debug", "--output=" + tmp, project})
 
 	err := command.Execute()
 
@@ -114,7 +114,7 @@ func TestEndToEnd_PrintsStatsIfEnabled(t *testing.T) {
 	capture := buff()
 	output := io.MultiWriter(capture, os.Stdout)
 	command := cmd.NewRootCmd(output, io.Discard)
-	command.SetArgs([]string{"refactor", "--stats", "--ai=none", "--output=" + tmp, project})
+	command.SetArgs([]string{"refactor", "--stats", "--ai=mock", "--output=" + tmp, project})
 
 	err := command.Execute()
 
@@ -132,7 +132,7 @@ func TestEndToEnd_PrintsStatisIfEnabled_ToCSV(t *testing.T) {
 		"--stats",
 		"--stats-format=csv",
 		"--stats-output=" + stats,
-		"--ai=none",
+		"--ai=mock",
 		"--output=" + tmp,
 		project,
 	})
