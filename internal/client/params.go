@@ -14,6 +14,7 @@ type Params struct {
 	Soutput     string
 	Input       string
 	Output      string
+	MaxSize     int
 	Log         io.Writer
 }
 
@@ -30,6 +31,7 @@ func NewMockParams() *Params {
 		Soutput:     "stats",
 		Input:       "",
 		Output:      "",
+		MaxSize:     200,
 		Log:         io.Discard, // Default to discard if no logging is needed
 	}
 }

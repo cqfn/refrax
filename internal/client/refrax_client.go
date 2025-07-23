@@ -118,13 +118,31 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	for _, class := range classes {
 		go refactor(facilitatorClient, class, ch)
 	}
+	total := 0
 	for range len(classes) {
 		res := <-ch
 		if res.err != nil {
 			return nil, fmt.Errorf("failed to refactor class: %w", res.err)
 		}
+		if res.class == nil {
+			return nil, fmt.Errorf("refactored class is nil, how is that possible?")
+		}
+		if res.content == "" {
+			return nil, fmt.Errorf("refactored class %s has empty content, after refactoring", res.class.Name())
+		}
+		current := res.class.Content()
+		diff := diff(current, res.content)
+		if total+diff <= c.params.MaxSize {
+			err = res.class.SetContent(res.content)
+			if err != nil {
+				return nil, fmt.Errorf("failed to set content for class %s: %w", res.class.Name(), err)
+			}
+			total += diff
+		} else {
+			log.Info("refactoring class %s would exceed max size %d, skipping refactoring", res.class.Name(), c.params.MaxSize)
+			break
+		}
 	}
-
 	log.Info("refactoring is finished")
 	err = printStats(c.params, counter)
 	if err != nil {
@@ -134,7 +152,9 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 }
 
 type refactoring struct {
-	err error
+	class   JavaClass
+	content string
+	err     error
 }
 
 func refactor(client *protocol.CustomClient, class JavaClass, ch chan<- refactoring) {
@@ -159,12 +179,8 @@ func refactor(client *protocol.CustomClient, class JavaClass, ch chan<- refactor
 		ch <- refactoring{err: fmt.Errorf("failed to decode refactored class %s: %w", class.Name(), err)}
 		return
 	}
-	err = class.SetContent(clean(string(decoded)))
-	if err != nil {
-		ch <- refactoring{err: fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)}
-		return
-	}
-	ch <- refactoring{err: nil}
+	content := clean(string(decoded))
+	ch <- refactoring{class: class, content: content, err: nil}
 }
 
 func clean(s string) string {
