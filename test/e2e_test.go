@@ -62,6 +62,23 @@ func TestEndToEnd_JavaRefactor_InlineVariable_WithoutAI(t *testing.T) {
 	assertContent(t, jclass, expected)
 }
 
+func TestEndToEnd_RefactorsNothing_MaxSizeTooSmall(t *testing.T) {
+	const before = "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n\n"
+	jclass := setupJava(t, t.TempDir(), "Main.java", before)
+	capture := buff()
+	output := io.MultiWriter(capture, os.Stdout)
+	command := cmd.NewRootCmd(output, io.Discard)
+	playbook := filepath.Join("test_data", "playbooks", "plain_main.yml")
+	command.SetArgs([]string{"refactor", "--max-size=0", "--ai=mock", "--debug", fmt.Sprintf("--playbook=%s", playbook), jclass})
+
+	err := command.Execute()
+
+	require.NoError(t, err, "Expected command to execute without error")
+	assert.Contains(t, capture.String(), "provider: mock", "expect no AI provider to be used in output")
+	assert.Contains(t, capture.String(), "skipping refactoring", "skipping refactoring due to max size limit")
+	assertContent(t, jclass, before)
+}
+
 func TestEndToEnd_JavaRefactor_ManyJavaFilesProject(t *testing.T) {
 	tmp := t.TempDir()
 	main, err := os.ReadFile(filepath.Join("test_data", "java", "person", "src", "com", "example", "MainApp.java"))
