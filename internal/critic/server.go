@@ -1,6 +1,7 @@
 package critic
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -79,7 +80,16 @@ func (c *Critic) Handler(handler protocol.Handler) {
 	c.server.Handler(handler)
 }
 
-func (c *Critic) think(m *protocol.Message) (*protocol.Message, error) {
+func (c *Critic) think(ctx context.Context, m *protocol.Message) (*protocol.Message, error) {
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("context canceled: %w", ctx.Err())
+	default:
+		return c.thinkLong(m)
+	}
+}
+
+func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Debug("received message: #%s", m.MessageID)
 	var java string
 	var task string

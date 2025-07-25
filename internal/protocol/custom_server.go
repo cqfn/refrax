@@ -24,7 +24,7 @@ type (
 	// Handler handles all incoming requests on JSONRPC level
 	Handler func(next Handler, r *JSONRPCRequest) (*JSONRPCResponse, error)
 	// MsgHandler handles messages received from the A2A server on Message level
-	MsgHandler func(message *Message) (*Message, error)
+	MsgHandler func(ctx context.Context, message *Message) (*Message, error)
 )
 
 // NewCustomServer creates a new instance of a custom server that handles A2A requests
@@ -71,12 +71,14 @@ func (serv *customServer) Start(ready chan<- struct{}) error {
 	return err
 }
 
-// Close stops the custom server gracefully, allowing for a timeout.
+// Close stops the custom server gracefully, allowing for a timeout.ffile.go
+// @todo #75:60min Shutdown should be used instead of Close to allow for graceful shutdown.
+// This will allow the server to finish processing ongoing requests before stopping.
+// Cruntly, Close is used because of:
+// https://stackoverflow.com/questions/79714562/how-to-cancel-long-running-tasks-when-a-go-http-server-is-shut-down
 func (serv *customServer) Close() error {
 	log.Debug("stopping custom a2a server on port %d...", serv.port)
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	return serv.server.Shutdown(ctx)
+	return serv.server.Close()
 }
 
 func (serv *customServer) handleAgentCard(w http.ResponseWriter, r *http.Request) {
@@ -113,9 +115,9 @@ func (serv *customServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) 
 	var err error
 	if serv.handler != nil {
 		start := serv.handler
-		resp, err = start(basic(serv.msgHandler), &req)
+		resp, err = start(basic(r.Context(), serv.msgHandler), &req)
 	} else {
-		start := basic(serv.msgHandler)
+		start := basic(r.Context(), serv.msgHandler)
 		resp, err = start(nil, &req)
 	}
 	if err != nil {
@@ -125,7 +127,7 @@ func (serv *customServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) 
 	return send(w, resp)
 }
 
-func basic(mh MsgHandler) Handler {
+func basic(ctx context.Context, mh MsgHandler) Handler {
 	return func(_ Handler, r *JSONRPCRequest) (*JSONRPCResponse, error) {
 		id := str(r.ID)
 		switch r.Method {
@@ -144,7 +146,7 @@ func basic(mh MsgHandler) Handler {
 			}
 			log.Debug("handling JSON-RPC request: %s, params: %v", r.Method, params)
 			msg := params.Message
-			msg, err = mh(msg)
+			msg, err = mh(ctx, msg)
 			if err != nil {
 				resp := failure(id, ErrCodeInternalError, fmt.Sprintf("failed to handle message send: %v", err))
 				return &resp, nil
@@ -205,7 +207,7 @@ func send(w http.ResponseWriter, r *JSONRPCResponse) error {
 	return json.NewEncoder(w).Encode(r)
 }
 
-func record(message *Message) (*Message, error) {
+func record(_ context.Context, message *Message) (*Message, error) {
 	log.Debug("server received the following message: %s", message.MessageID)
 	return message, nil
 }

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -88,7 +89,7 @@ func testServer(t *testing.T) (server Server, port int, ready chan struct{}) {
 	return server, port, ready
 }
 
-func joke(msg *Message) (*Message, error) {
+func joke(_ context.Context, msg *Message) (*Message, error) {
 	log.Debug("Received message: %s", msg.MessageID)
 	if len(msg.Parts) == 0 || msg.Parts[0].PartKind() != PartKindText || msg.Parts[0].(*TextPart).Text != "tell me a joke" {
 		return nil, fmt.Errorf("unexpected message content, we expected 'tell me a joke', got: '%v'", msg.Parts[0].(*TextPart).Text)

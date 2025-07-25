@@ -1,6 +1,7 @@
 package critic
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -113,7 +114,7 @@ func TestCriticThink_ReturnsMessage(t *testing.T) {
 		MessageID("msg-123").
 		Build()
 
-	response, err := critic.think(msg)
+	response, err := critic.think(context.Background(), msg)
 
 	require.NoError(t, err)
 	assert.Equal(t, msg.MessageID, response.MessageID)
