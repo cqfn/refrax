@@ -2,6 +2,7 @@
 package fixer
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -46,33 +47,59 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 }
 
 // Start begins the Fixer server and signals readiness through the provided channel.
-func (c *Fixer) Start(ready chan<- struct{}) error {
-	c.log.Info("starting fixer server on port %d...", c.port)
+func (f *Fixer) Start(ready chan<- struct{}) error {
+	f.log.Info("starting fixer server on port %d...", f.port)
 	var err error
-	if err = c.server.Start(ready); err != nil && err != http.ErrServerClosed {
+	if err = f.server.Start(ready); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start fixer server: %w", err)
 	}
 	return err
 }
 
 // Close gracefully stops the Fixer server.
-func (c *Fixer) Close() error {
-	c.log.Info("stopping fixer server...")
-	if err := c.server.Close(); err != nil {
+func (f *Fixer) Close() error {
+	f.log.Info("stopping fixer server...")
+	if err := f.server.Close(); err != nil {
 		return fmt.Errorf("failed to stop fixer server: %w", err)
 	}
-	c.log.Info("fixer server stopped successfully")
+	f.log.Info("fixer server stopped successfully")
 	return nil
 }
 
 // Handler sets the handler function for processing requests on the Fixer server.
-func (c *Fixer) Handler(hander protocol.Handler) {
-	c.server.Handler(hander)
+func (f *Fixer) Handler(hander protocol.Handler) {
+	f.server.Handler(hander)
 }
 
-func (c *Fixer) think(m *protocol.Message) (*protocol.Message, error) {
-	c.log.Info("received message: #%s", m.MessageID)
-	c.log.Info("trying to fix Java code...")
+func (f *Fixer) think(ctx context.Context, m *protocol.Message) (*protocol.Message, error) {
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("context canceled: %w", ctx.Err())
+	case res := <-f.thinkChan(m):
+		return res.msg, res.err
+	}
+}
+
+type thought struct {
+	msg *protocol.Message
+	err error
+}
+
+func (f *Fixer) thinkChan(m *protocol.Message) <-chan thought {
+	res := make(chan thought, 1)
+	go func() {
+		msg, err := f.thinkLong(m)
+		res <- thought{
+			msg, err,
+		}
+		close(res)
+	}()
+	return res
+}
+
+func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
+	f.log.Info("received message: #%s", m.MessageID)
+	f.log.Info("trying to fix Java code...")
 	var code string
 	var suggestions []string
 	var class string
@@ -97,14 +124,14 @@ func (c *Fixer) think(m *protocol.Message) (*protocol.Message, error) {
 	}
 	all := strings.Join(suggestions, "\n")
 	question := fmt.Sprintf(prompt, class, code, all)
-	c.log.Info("asking AI to fix java code...")
-	c.log.Debug("asking AI: %s", question)
-	answer, err := c.brain.Ask(question)
+	f.log.Info("asking AI to fix java code...")
+	f.log.Debug("asking AI: %s", question)
+	answer, err := f.brain.Ask(question)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from AI: %w", err)
 	}
-	c.log.Debug("received answer from AI: %s", answer)
-	c.log.Info("AI provided a fix for the Java code, sending response back...")
+	f.log.Debug("received answer from AI: %s", answer)
+	f.log.Info("AI provided a fix for the Java code, sending response back...")
 	message := protocol.NewMessageBuilder().
 		MessageID(m.MessageID).
 		Part(protocol.NewFileBytes([]byte(clean(answer)))).

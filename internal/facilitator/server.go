@@ -3,6 +3,7 @@
 package facilitator
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -65,7 +66,16 @@ func (f *Facilitator) Handler(handler protocol.Handler) {
 	f.server.Handler(handler)
 }
 
-func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
+func (f *Facilitator) think(ctx context.Context, m *protocol.Message) (*protocol.Message, error) {
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("context canceled: %w", ctx.Err())
+	default:
+		return f.thinkLong(m)
+	}
+}
+
+func (f *Facilitator) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	f.log.Debug("received message: #%s", m.MessageID)
 	var file *protocol.FilePart
 	var task string
@@ -92,7 +102,6 @@ func (f *Facilitator) think(m *protocol.Message) (*protocol.Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to ask critic: %w", err)
 	}
-
 	criticMessage := criticResp.Result.(protocol.Message)
 	var suggestions []string
 	for _, part := range criticMessage.Parts {
