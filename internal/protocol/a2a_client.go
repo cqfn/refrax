@@ -10,15 +10,15 @@ import (
 	"time"
 )
 
-// CustomClient represents a client for interacting with a custom API.
-type CustomClient struct {
+// a2aClient represents a client for interacting with a custom API.
+type a2aClient struct {
 	url    string
 	client *http.Client
 }
 
-// NewCustomClient creates a new instance of CustomClient with a specified URL.
-func NewCustomClient(url string) *CustomClient {
-	return &CustomClient{
+// NewClient creates a new instance of CustomClient with a specified URL.
+func NewClient(url string) Client {
+	return &a2aClient{
 		url: url,
 		client: &http.Client{
 			Timeout: 5 * time.Minute,
@@ -27,7 +27,7 @@ func NewCustomClient(url string) *CustomClient {
 }
 
 // SendMessage sends a message using the custom API and returns the JSON-RPC response.
-func (c *CustomClient) SendMessage(params MessageSendParams) (*JSONRPCResponse, error) {
+func (c *a2aClient) SendMessage(params MessageSendParams) (*JSONRPCResponse, error) {
 	req := JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      "1", // Static ID for simplicity, can be changed to a unique ID generator
@@ -46,22 +46,22 @@ func (c *CustomClient) SendMessage(params MessageSendParams) (*JSONRPCResponse, 
 }
 
 // CancelTask is a placeholder for canceling a task.
-func (c *CustomClient) CancelTask() {
+func (c *a2aClient) CancelTask() {
 	panic("unimplemented")
 }
 
 // GetTask is a placeholder for retrieving a task.
-func (c *CustomClient) GetTask() {
+func (c *a2aClient) GetTask() {
 	panic("unimplemented")
 }
 
 // StreamMessage is a placeholder for streaming a message.
-func (c *CustomClient) StreamMessage() {
+func (c *a2aClient) StreamMessage() {
 	panic("unimplemented")
 }
 
 // doRequest sends a JSON-RPC request to the server and decodes the response.
-func (c *CustomClient) doRequest(req any, resp *JSONRPCResponse) error {
+func (c *a2aClient) doRequest(req any, resp *JSONRPCResponse) error {
 	body, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request %v: %w", req, err)

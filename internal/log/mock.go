@@ -2,13 +2,13 @@ package log
 
 import "fmt"
 
-// Mock is a mock logger that collects log messages for testing purposes.
+// Mock is a Mock logger that collects log messages for testing purposes.
 type Mock struct {
 	Messages []string
 }
 
 // NewMock creates and returns a new instance of Mock logger.
-func NewMock() *Mock {
+func NewMock() Logger {
 	return &Mock{Messages: []string{}}
 }
 

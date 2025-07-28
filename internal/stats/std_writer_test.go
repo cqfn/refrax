@@ -16,7 +16,7 @@ func TestNewStdWriterCreatesInstance(t *testing.T) {
 }
 
 func TestStdWriterPrintLogsCorrectMessageCounts(t *testing.T) {
-	m := log.NewMock()
+	m := log.NewMock().(*log.Mock)
 	w := NewStdWriter(m)
 	var stats Stats
 	stats.LLMReq(1*time.Millisecond, 0, 0, 0, 0)
@@ -34,7 +34,7 @@ func TestStdWriterPrintLogsCorrectMessageCounts(t *testing.T) {
 }
 
 func TestStdWriterPrintHandlesEmptyStats(t *testing.T) {
-	m := log.NewMock()
+	m := log.NewMock().(*log.Mock)
 	w := NewStdWriter(m)
 	var stats Stats
 
@@ -47,7 +47,7 @@ func TestStdWriterPrintHandlesEmptyStats(t *testing.T) {
 }
 
 func TestStdWriterPrintLogsCorrectDurations(t *testing.T) {
-	m := log.NewMock()
+	m := log.NewMock().(*log.Mock)
 	w := NewStdWriter(m)
 	var stats Stats
 	stats.LLMReq(1*time.Millisecond, 0, 0, 0, 0)

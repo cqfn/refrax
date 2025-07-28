@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -79,40 +78,36 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	fclttor := facilitator.NewFacilitator(ai, facilitatorPort, criticPort, fixerPort)
 	fclttor.Handler(countStats(counter))
 
-	facilitatorReady := make(chan struct{})
-	criticReady := make(chan struct{})
-	fixerReady := make(chan struct{})
-
 	go func() {
-		faerr := fclttor.Start(facilitatorReady)
+		faerr := fclttor.ListenAndServe()
 		if faerr != nil && faerr != http.ErrServerClosed {
 			panic(fmt.Sprintf("failed to start facilitator server: %v", faerr))
 		}
 	}()
 	go func() {
-		ferr := fxr.Start(fixerReady)
+		ferr := fxr.ListenAndServe()
 		if ferr != nil && ferr != http.ErrServerClosed {
 			panic(fmt.Sprintf("failed to start fixer server: %v", ferr))
 		}
 	}()
 	go func() {
-		cerr := ctc.Start(criticReady)
+		cerr := ctc.ListenAndServe()
 		if cerr != nil && cerr != http.ErrServerClosed {
 			panic(fmt.Sprintf("failed to start critic server: %v", cerr))
 		}
 	}()
 
-	defer closeResource(ctc)
-	defer closeResource(fclttor)
-	defer closeResource(fxr)
+	defer shutdown(ctc)
+	defer shutdown(fclttor)
+	defer shutdown(fxr)
 
-	<-facilitatorReady
-	<-criticReady
-	<-fixerReady
+	<-ctc.Ready()
+	<-fclttor.Ready()
+	<-fxr.Ready()
 
 	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
 	log.Info("begin refactoring")
-	facilitatorClient := protocol.NewCustomClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
+	facilitatorClient := protocol.NewClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
 	ch := make(chan refactoring, len(classes))
 	for _, class := range classes {
@@ -157,7 +152,7 @@ type refactoring struct {
 	err     error
 }
 
-func refactor(client *protocol.CustomClient, class JavaClass, ch chan<- refactoring) {
+func refactor(client protocol.Client, class JavaClass, ch chan<- refactoring) {
 	log.Debug("sending class %s for refactoring", class.Name())
 	var resp *protocol.JSONRPCResponse
 	resp, err := client.SendMessage(protocol.MessageSendParams{
@@ -187,8 +182,12 @@ func clean(s string) string {
 	return strings.TrimSpace(s)
 }
 
-func closeResource(resource io.Closer) {
-	if cerr := resource.Close(); cerr != nil {
+type shudownable interface {
+	Shutdown() error
+}
+
+func shutdown(s shudownable) {
+	if cerr := s.Shutdown(); cerr != nil {
 		panic(fmt.Sprintf("failed to close resource: %v", cerr))
 	}
 }

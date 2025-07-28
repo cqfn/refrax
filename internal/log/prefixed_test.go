@@ -20,7 +20,7 @@ func TestNewPrefixed(t *testing.T) {
 }
 
 func TestPrefixed_Info(t *testing.T) {
-	mock := NewMock()
+	mock := NewMock().(*Mock)
 	prefix := "test-prefix"
 	pref := NewPrefixed(prefix, mock)
 
@@ -31,7 +31,7 @@ func TestPrefixed_Info(t *testing.T) {
 }
 
 func TestPrefixed_Debug(t *testing.T) {
-	mock := NewMock()
+	mock := NewMock().(*Mock)
 	prefix := "debug-prefix"
 	pref := NewPrefixed(prefix, mock)
 
@@ -42,7 +42,7 @@ func TestPrefixed_Debug(t *testing.T) {
 }
 
 func TestPrefixed_Warn(t *testing.T) {
-	mock := NewMock()
+	mock := NewMock().(*Mock)
 	prefix := "warn-prefix"
 	pref := NewPrefixed(prefix, mock)
 
@@ -53,7 +53,7 @@ func TestPrefixed_Warn(t *testing.T) {
 }
 
 func TestPrefixed_Error(t *testing.T) {
-	mock := NewMock()
+	mock := NewMock().(*Mock)
 	prefix := "error-prefix"
 	pref := NewPrefixed(prefix, mock)
 
@@ -64,7 +64,7 @@ func TestPrefixed_Error(t *testing.T) {
 }
 
 func TestPrefixed_WithArgs(t *testing.T) {
-	mock := NewMock()
+	mock := NewMock().(*Mock)
 	prefix := "arg-prefix"
 	pref := NewPrefixed(prefix, mock)
 

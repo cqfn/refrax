@@ -9,9 +9,9 @@ import (
 
 func TestCustomClient_SendsMessage(t *testing.T) {
 	var err error
-	serv, port, ready := testServer(t)
-	<-ready
-	client := NewCustomClient(fmt.Sprintf("http://localhost:%d", port))
+	serv, port := testServer(t)
+	<-serv.Ready()
+	client := NewClient(fmt.Sprintf("http://localhost:%d", port))
 	message := MessageSendParams{
 		Message: askJoke(),
 	}
@@ -19,7 +19,7 @@ func TestCustomClient_SendsMessage(t *testing.T) {
 	resp, err := client.SendMessage(message)
 
 	require.NoError(t, err, "Failed to send message")
-	err = serv.Close()
+	err = serv.Shutdown()
 	require.NoError(t, err, "Failed to close server")
 	expected := &JSONRPCResponse{
 		ID:      "1",

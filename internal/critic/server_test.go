@@ -11,22 +11,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type MockServer struct {
+type mock struct {
 	started bool
 	closed  bool
 	handler protocol.MsgHandler
+	ready   chan bool
 }
 
-func (m *MockServer) Start(ready chan<- struct{}) error {
+func (m *mock) ListenAndServe() error {
 	if m.started {
 		return errors.New("server already started")
 	}
+	reeady := make(chan bool, 1)
+	reeady <- true
+	close(reeady)
+	m.ready = reeady
 	m.started = true
-	close(ready)
 	return nil
 }
 
-func (m *MockServer) Close() error {
+func (m *mock) Shutdown() error {
 	if !m.started {
 		return errors.New("server not started")
 	}
@@ -37,11 +41,15 @@ func (m *MockServer) Close() error {
 	return nil
 }
 
-func (m *MockServer) Handler(_ protocol.Handler) {
+func (m *mock) Handler(_ protocol.Handler) {
 }
 
-func (m *MockServer) MsgHandler(handler protocol.MsgHandler) {
+func (m *mock) MsgHandler(handler protocol.MsgHandler) {
 	m.handler = handler
+}
+
+func (m *mock) Ready() <-chan bool {
+	return m.ready
 }
 
 type MockBrain struct{}
@@ -59,23 +67,24 @@ func TestCriticStart_Success(t *testing.T) {
 	port, err := protocol.FreePort()
 	require.NoError(t, err)
 	critic := NewCritic(ai, port)
-	ready := make(chan struct{})
+	var listen error
+	var shutdown error
 
-	go func() { err = critic.Start(ready) }()
+	go func() { listen = critic.ListenAndServe() }()
 
-	defer func() { err = critic.Close() }()
-	require.NoError(t, err)
-	_, ok := <-ready
+	defer func() { shutdown = critic.Shutdown() }()
+	require.NoError(t, shutdown)
+	require.NoError(t, listen)
+	_, ok := <-critic.Ready()
 	assert.False(t, ok)
 }
 
 func TestCriticStart_ServerStartError(t *testing.T) {
 	ai := brain.NewMock()
 	critic := NewCritic(ai, 18081)
-	critic.server = &MockServer{started: true}
-	ready := make(chan struct{})
+	critic.server = &mock{started: true}
 
-	err := critic.Start(ready)
+	err := critic.ListenAndServe()
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to start critic server")
@@ -83,11 +92,11 @@ func TestCriticStart_ServerStartError(t *testing.T) {
 
 func TestCriticClose_Success(t *testing.T) {
 	ai := brain.NewMock()
-	server := &MockServer{started: true}
+	server := &mock{started: true}
 	critic := NewCritic(ai, 18081)
 	critic.server = server
 
-	err := critic.Close()
+	err := critic.Shutdown()
 
 	require.NoError(t, err)
 	assert.True(t, server.closed)
@@ -95,11 +104,11 @@ func TestCriticClose_Success(t *testing.T) {
 
 func TestCriticClose_ServerNotStartedError(t *testing.T) {
 	ai := brain.NewMock()
-	server := &MockServer{}
+	server := &mock{}
 	critic := NewCritic(ai, 18081, NewMockToolEmpty())
 	critic.server = server
 
-	err := critic.Close()
+	err := critic.Shutdown()
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to stop critic server")
@@ -107,7 +116,7 @@ func TestCriticClose_ServerNotStartedError(t *testing.T) {
 
 func TestCriticThink_ReturnsMessage(t *testing.T) {
 	ai := brain.NewMock()
-	server := &MockServer{}
+	server := &mock{}
 	critic := NewCritic(ai, 18081, NewMockToolEmpty())
 	critic.server = server
 	msg := protocol.NewMessageBuilder().

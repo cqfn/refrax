@@ -28,7 +28,7 @@ type Facilitator struct {
 func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitator {
 	logger := log.NewPrefixed("facilitator", log.Default())
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
-	server := protocol.NewCustomServer(agentCard(port), port)
+	server := protocol.NewServer(agentCard(port), port)
 	facilitator := &Facilitator{
 		server:     server,
 		brain:      ai,
@@ -41,24 +41,29 @@ func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitato
 	return facilitator
 }
 
-// Start starts the facilitator server and prepares it for handling requests.
-func (f *Facilitator) Start(ready chan<- struct{}) error {
+// ListenAndServe starts the facilitator server and prepares it for handling requests.
+func (f *Facilitator) ListenAndServe() error {
 	f.log.Info("starting facilitator server on port %d...", f.port)
 	var err error
-	if err = f.server.Start(ready); err != nil && err != http.ErrServerClosed {
+	if err = f.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start facilitator server: %w", err)
 	}
 	return err
 }
 
-// Close stops the facilitator server and releases resources.
-func (f *Facilitator) Close() error {
+// Shutdown stops the facilitator server and releases resources.
+func (f *Facilitator) Shutdown() error {
 	f.log.Info("stopping facilitator server...")
-	if err := f.server.Close(); err != nil {
+	if err := f.server.Shutdown(); err != nil {
 		return fmt.Errorf("failed to stop facilitator server: %w", err)
 	}
 	f.log.Info("facilitator server stopped successfully")
 	return nil
+}
+
+// Ready returns a channel that signals when the facilitator server is ready to accept requests.
+func (f *Facilitator) Ready() <-chan bool {
+	return f.server.Ready()
 }
 
 // Handler sets the message handler for the facilitator server.
@@ -129,7 +134,7 @@ func (f *Facilitator) thinkLong(m *protocol.Message) (*protocol.Message, error) 
 func (f *Facilitator) AskFixer(id string, suggestions []string, class string, file *protocol.FilePart) (*protocol.JSONRPCResponse, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.fixerPort)
 	log.Debug("asking fixer (%s) to apply suggestions...", address)
-	fixer := protocol.NewCustomClient(address)
+	fixer := protocol.NewClient(address)
 	builder := protocol.NewMessageBuilder().
 		MessageID(id).
 		Part(protocol.NewText(fmt.Sprintf("class_name:%s", class))).
@@ -146,7 +151,7 @@ func (f *Facilitator) AskCritic(id string, file *protocol.FilePart) (*protocol.J
 	address := fmt.Sprintf("http://localhost:%d", f.criticPort)
 	f.log.Info("asking critic (%s) to lint the class...", address)
 	f.log.Debug("message id: %s, file: %s", id, file.File.(protocol.FileWithBytes))
-	critic := protocol.NewCustomClient(address)
+	critic := protocol.NewClient(address)
 	msg := protocol.NewMessageBuilder().
 		MessageID(id).
 		Part(protocol.NewText("lint class")).
