@@ -34,7 +34,7 @@ const prompt = "Fix '%s' code based on the listed suggestions.\n\n" +
 func NewFixer(ai brain.Brain, port int) *Fixer {
 	logger := log.NewPrefixed("fixer", log.Default())
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
-	server := protocol.NewCustomServer(agentCard(port), port)
+	server := protocol.NewServer(agentCard(port), port)
 	fixer := &Fixer{
 		server: server,
 		brain:  ai,
@@ -46,24 +46,29 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 	return fixer
 }
 
-// Start begins the Fixer server and signals readiness through the provided channel.
-func (f *Fixer) Start(ready chan<- struct{}) error {
+// ListenAndServe begins the Fixer server and signals readiness through the provided channel.
+func (f *Fixer) ListenAndServe() error {
 	f.log.Info("starting fixer server on port %d...", f.port)
 	var err error
-	if err = f.server.Start(ready); err != nil && err != http.ErrServerClosed {
+	if err = f.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start fixer server: %w", err)
 	}
 	return err
 }
 
-// Close gracefully stops the Fixer server.
-func (f *Fixer) Close() error {
+// Shutdown gracefully stops the Fixer server.
+func (f *Fixer) Shutdown() error {
 	f.log.Info("stopping fixer server...")
-	if err := f.server.Close(); err != nil {
+	if err := f.server.Shutdown(); err != nil {
 		return fmt.Errorf("failed to stop fixer server: %w", err)
 	}
 	f.log.Info("fixer server stopped successfully")
 	return nil
+}
+
+// Ready returns a channel that signals when the Fixer server is ready to accept requests.
+func (f *Fixer) Ready() <-chan bool {
+	return f.server.Ready()
 }
 
 // Handler sets the handler function for processing requests on the Fixer server.

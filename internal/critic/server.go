@@ -42,7 +42,7 @@ Respond with a plain list of suggestions, one per line. Do not include any expla
 // NewCritic creates and initializes a new instance of Critic.
 func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 	logger := log.NewPrefixed("critic", log.Default())
-	server := protocol.NewCustomServer(agentCard(port), port)
+	server := protocol.NewServer(agentCard(port), port)
 	critic := &Critic{
 		server: server,
 		brain:  ai,
@@ -55,20 +55,20 @@ func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 	return critic
 }
 
-// Start starts the Critic server and signals readiness via the provided channel.
-func (c *Critic) Start(ready chan<- struct{}) error {
+// ListenAndServe starts the Critic server and signals readiness via the provided channel.
+func (c *Critic) ListenAndServe() error {
 	c.log.Info("starting critic server on port %d...", c.port)
 	var err error
-	if err = c.server.Start(ready); err != nil && http.ErrServerClosed != err {
+	if err = c.server.ListenAndServe(); err != nil && http.ErrServerClosed != err {
 		return fmt.Errorf("failed to start critic server: %w", err)
 	}
 	return err
 }
 
-// Close gracefully shuts down the Critic server.
-func (c *Critic) Close() error {
+// Shutdown gracefully shuts down the Critic server.
+func (c *Critic) Shutdown() error {
 	c.log.Info("stopping critic server...")
-	if err := c.server.Close(); err != nil {
+	if err := c.server.Shutdown(); err != nil {
 		return fmt.Errorf("failed to stop critic server: %w", err)
 	}
 	c.log.Info("critic server stopped successfully")
@@ -78,6 +78,11 @@ func (c *Critic) Close() error {
 // Handler sets the message handler for the Critic server.
 func (c *Critic) Handler(handler protocol.Handler) {
 	c.server.Handler(handler)
+}
+
+// Ready returns a channel that signals when the Critic server is ready to accept requests.
+func (c *Critic) Ready() <-chan bool {
+	return c.server.Ready()
 }
 
 func (c *Critic) think(ctx context.Context, m *protocol.Message) (*protocol.Message, error) {

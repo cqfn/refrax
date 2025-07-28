@@ -1,11 +1,14 @@
 package protocol
 
-import "net"
+import (
+	"context"
+	"net"
+)
 
 // Server defines the interface for a server that can handle incoming A2A messages
 type Server interface {
-	// Start starts the server and listens on the specified port, while signaling readiness.
-	Start(ready chan<- struct{}) error
+	// ListenAndServe starts the server and listens on the specified port, while signaling readiness.
+	ListenAndServe() error
 
 	// MsgHandler sets the message handler for the server.
 	MsgHandler(handler MsgHandler)
@@ -13,9 +16,19 @@ type Server interface {
 	// Handler sets the handler function for processing requests.
 	Handler(handler Handler)
 
-	// Close stops the server gracefully.
-	Close() error
+	// Shutdown stops the server gracefully.
+	Shutdown() error
+
+	// Ready returns a channel that signals when the server is ready to accept requests.
+	Ready() <-chan bool
 }
+
+type (
+	// Handler handles all incoming requests on JSONRPC level
+	Handler func(next Handler, r *JSONRPCRequest) (*JSONRPCResponse, error)
+	// MsgHandler handles messages received from the A2A server on Message level
+	MsgHandler func(ctx context.Context, message *Message) (*Message, error)
+)
 
 // FreePort finds a free TCP port on the localhost.
 func FreePort() (port int, err error) {

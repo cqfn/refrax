@@ -22,13 +22,13 @@ var testCard = AgentCard{
 
 func TestCustomServer_AgentCard(t *testing.T) {
 	var err error
-	serv, port, ready := testServer(t)
-	<-ready
+	serv, port := testServer(t)
+	<-serv.Ready()
 
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/.well-known/agent-card.json", port))
 
 	require.NoError(t, err)
-	err = serv.Close()
+	err = serv.Shutdown()
 	require.NoError(t, err, "Failed to close server")
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	var result AgentCard
@@ -41,8 +41,8 @@ func TestCustomServer_AgentCard(t *testing.T) {
 
 func TestCustomServer_SendsMessage(t *testing.T) {
 	var err error
-	serv, port, ready := testServer(t)
-	<-ready
+	serv, port := testServer(t)
+	<-serv.Ready()
 	request := JSONRPCRequest{
 		JSONRPC: "2.0",
 		ID:      float64(1),
@@ -71,22 +71,21 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type header should be application/json")
 	assert.Equal(t, expected, response, "Server should return the expected joke message")
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	err = serv.Close()
+	err = serv.Shutdown()
 	require.NoError(t, err, "Failed to close server")
 }
 
-func testServer(t *testing.T) (server Server, port int, ready chan struct{}) {
+func testServer(t *testing.T) (server Server, port int) {
 	t.Helper()
 	port, err := FreePort()
 	require.NoError(t, err, "Failed to get a free port")
-	server = NewCustomServer(&testCard, port)
+	server = NewServer(&testCard, port)
 	server.MsgHandler(joke)
 	require.NoError(t, err, "Failed to create custom server")
-	ready = make(chan struct{})
 	go func() {
-		_ = server.Start(ready)
+		_ = server.ListenAndServe()
 	}()
-	return server, port, ready
+	return server, port
 }
 
 func joke(_ context.Context, msg *Message) (*Message, error) {

@@ -11,7 +11,7 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 )
 
-type customServer struct {
+type a2aServer struct {
 	mux        *http.ServeMux
 	card       AgentCard
 	msgHandler MsgHandler
@@ -19,25 +19,20 @@ type customServer struct {
 	server     *http.Server
 	handler    Handler
 	cancel     context.CancelFunc
+	ready      chan bool
 }
 
-type (
-	// Handler handles all incoming requests on JSONRPC level
-	Handler func(next Handler, r *JSONRPCRequest) (*JSONRPCResponse, error)
-	// MsgHandler handles messages received from the A2A server on Message level
-	MsgHandler func(ctx context.Context, message *Message) (*Message, error)
-)
-
-// NewCustomServer creates a new instance of a custom server that handles A2A requests
-func NewCustomServer(card *AgentCard, port int) Server {
+// NewServer creates a new instance of a custom server that handles A2A requests
+func NewServer(card *AgentCard, port int) Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	mux := http.NewServeMux()
-	server := &customServer{
+	server := &a2aServer{
 		mux:        mux,
 		card:       *card,
 		port:       port,
 		msgHandler: record,
 		cancel:     cancel,
+		ready:      make(chan bool, 1),
 		server: &http.Server{
 			Addr:              fmt.Sprintf(":%d", port),
 			Handler:           mux,
@@ -51,37 +46,41 @@ func NewCustomServer(card *AgentCard, port int) Server {
 }
 
 // MsgHandler sets the message handler for the custom server.
-func (serv *customServer) MsgHandler(handler MsgHandler) {
+func (serv *a2aServer) MsgHandler(handler MsgHandler) {
 	serv.msgHandler = handler
 }
 
 // Handler sets the handler function for processing requests.
-func (serv *customServer) Handler(handler Handler) {
+func (serv *a2aServer) Handler(handler Handler) {
 	serv.handler = handler
 }
 
-// Start starts the custom server and listens on the specified port, while signaling readiness.
-func (serv *customServer) Start(ready chan<- struct{}) error {
+// ListenAndServe starts the custom server and listens on the specified port, while signaling readiness.
+func (serv *a2aServer) ListenAndServe() error {
 	log.Debug("starting custom a2a server on port %d...", serv.port)
 	address := fmt.Sprintf(":%d", serv.port)
 	l, err := net.Listen("tcp", address)
 	if err != nil {
 		return fmt.Errorf("failed to listen on port %d: %w", serv.port, err)
 	}
-	close(ready)
+	close(serv.ready)
 	if err = serv.server.Serve(l); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start server on port %d: %w", serv.port, err)
 	}
 	return err
 }
 
-func (serv *customServer) Close() error {
+func (serv *a2aServer) Shutdown() error {
 	log.Debug("stopping custom a2a server on port %d...", serv.port)
 	serv.cancel()
 	return serv.server.Shutdown(context.Background())
 }
 
-func (serv *customServer) handleAgentCard(w http.ResponseWriter, r *http.Request) {
+func (serv *a2aServer) Ready() <-chan bool {
+	return serv.ready
+}
+
+func (serv *a2aServer) handleAgentCard(w http.ResponseWriter, r *http.Request) {
 	log.Debug("request for agent card received: %s", r.URL.Path)
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -93,7 +92,7 @@ func (serv *customServer) handleAgentCard(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (serv *customServer) handleRequest(w http.ResponseWriter, r *http.Request) {
+func (serv *a2aServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 	err := serv.handleJSONRPC(w, r)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to handle request: %v", err), http.StatusInternalServerError)
@@ -101,7 +100,7 @@ func (serv *customServer) handleRequest(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (serv *customServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) error {
+func (serv *a2aServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) error {
 	log.Debug("JSON-RPC request received: %s", r.URL.Path)
 	if r.Method != http.MethodPost {
 		return fmt.Errorf("method not allowed: %s", r.Method)
