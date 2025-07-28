@@ -18,6 +18,7 @@ type customServer struct {
 	port       int
 	server     *http.Server
 	handler    Handler
+	cancel     context.CancelFunc
 }
 
 type (
@@ -29,16 +30,19 @@ type (
 
 // NewCustomServer creates a new instance of a custom server that handles A2A requests
 func NewCustomServer(card *AgentCard, port int) Server {
+	ctx, cancel := context.WithCancel(context.Background())
 	mux := http.NewServeMux()
 	server := &customServer{
 		mux:        mux,
 		card:       *card,
 		port:       port,
 		msgHandler: record,
+		cancel:     cancel,
 		server: &http.Server{
 			Addr:              fmt.Sprintf(":%d", port),
 			Handler:           mux,
 			ReadHeaderTimeout: 20 * time.Second,
+			BaseContext:       func(_ net.Listener) context.Context { return ctx },
 		},
 	}
 	mux.HandleFunc("/.well-known/agent-card.json", server.handleAgentCard)
@@ -71,14 +75,10 @@ func (serv *customServer) Start(ready chan<- struct{}) error {
 	return err
 }
 
-// Close stops the custom server gracefully, allowing for a timeout.ffile.go
-// @todo #75:60min Shutdown should be used instead of Close to allow for graceful shutdown.
-// This will allow the server to finish processing ongoing requests before stopping.
-// Cruntly, Close is used because of:
-// https://stackoverflow.com/questions/79714562/how-to-cancel-long-running-tasks-when-a-go-http-server-is-shut-down
 func (serv *customServer) Close() error {
 	log.Debug("stopping custom a2a server on port %d...", serv.port)
-	return serv.server.Close()
+	serv.cancel()
+	return serv.server.Shutdown(context.Background())
 }
 
 func (serv *customServer) handleAgentCard(w http.ResponseWriter, r *http.Request) {
