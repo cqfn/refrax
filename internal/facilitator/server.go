@@ -4,7 +4,6 @@ package facilitator
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
+	"github.com/cqfn/refrax/internal/util"
 )
 
 // Facilitator facilitates communication between the critic and fixer agents.
@@ -81,69 +81,111 @@ func (f *Facilitator) think(ctx context.Context, m *protocol.Message) (*protocol
 }
 
 func (f *Facilitator) thinkLong(m *protocol.Message) (*protocol.Message, error) {
-	f.log.Debug("received message: #%s", m.MessageID)
-	var file *protocol.FilePart
-	var task string
-	var class string
-	for _, part := range m.Parts {
-		partKind := part.PartKind()
-		if partKind == protocol.PartKindText {
-			task = part.(*protocol.TextPart).Text
-			class = className(task)
-			f.log.Debug("received task: %s", task)
+	if f.isRefactoringTask(m) {
+		return f.refactor(m)
+	}
+	f.log.Warn("received a message that is not related to refactoring. ignoring.")
+	return nil, fmt.Errorf("received a message that is not related to refactoring")
+}
+
+func (f *Facilitator) isRefactoringTask(m *protocol.Message) bool {
+	res := false
+	if len(m.Parts) > 0 {
+		for _, part := range m.Parts {
+			if part.PartKind() == protocol.PartKindText {
+				task := part.(*protocol.TextPart).Text
+				if strings.Contains(task, "refactor the project") {
+					res = true
+					break
+				}
+			}
 		}
+	}
+	if !res {
+		f.log.Warn("received a task that is not related to refactoring. ignoring.")
+	}
+	return res
+}
+
+func (f *Facilitator) refactor(m *protocol.Message) (*protocol.Message, error) {
+	maxSize := maxSizeParam(m)
+	f.log.Info("received messsage %s, number of attached files: %d, max-size: %d", m.MessageID, nfiles(m), maxSize)
+	response := protocol.NewMessageBuilder()
+	changed := 0
+	var example string
+	for _, part := range m.Parts {
+		var file *protocol.FilePart
+		var class string
+		partKind := part.PartKind()
 		if partKind == protocol.PartKindFile {
+			class = part.Metadata()["class-name"].(string)
 			filePart := part.(*protocol.FilePart)
 			file = filePart
-			content, err := base64.StdEncoding.DecodeString(filePart.File.(protocol.FileWithBytes).Bytes)
+			content, err := util.DecodeFile(filePart.File.(protocol.FileWithBytes).Bytes)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed decode file: %w", err)
 			}
-			f.log.Debug("received file: %s", content)
-		}
-	}
-	f.log.Info("received messsage #%s, '%s', number of attached files: %d", m.MessageID, task, 1)
-	criticResp, err := f.AskCritic(m.MessageID, file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ask critic: %w", err)
-	}
-	criticMessage := criticResp.Result.(protocol.Message)
-	var suggestions []string
-	for _, part := range criticMessage.Parts {
-		if part.PartKind() == protocol.PartKindText {
-			suggestions = append(suggestions, part.(*protocol.TextPart).Text)
-			f.log.Debug("received suggestion: %s", part.(*protocol.TextPart).Text)
-		}
-	}
-	f.log.Info("received %d suggestions from critic", len(suggestions))
 
-	fixed, err := f.AskFixer(m.MessageID, suggestions, class, file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ask fixer: %w", err)
+			f.log.Debug("received file: %s", content)
+			if changed >= maxSize {
+				f.log.Info("refactoring class %s would exceed max size %d, skipping refactoring", class, maxSize)
+				response.Part(file.WithMetadata("class-name", class).WithMetadata("refactor-status", "skipped"))
+				continue
+			}
+			criticResp, err := f.AskCritic(m.MessageID, file)
+			if err != nil {
+				return nil, fmt.Errorf("failed to ask critic: %w", err)
+			}
+			criticMessage := criticResp.Result.(protocol.Message)
+			var suggestions []string
+			for _, part := range criticMessage.Parts {
+				if part.PartKind() == protocol.PartKindText {
+					suggestions = append(suggestions, part.(*protocol.TextPart).Text)
+					f.log.Debug("received suggestion: %s", part.(*protocol.TextPart).Text)
+				}
+			}
+			f.log.Info("received %d suggestions from critic", len(suggestions))
+
+			fixed, err := f.AskFixer(m.MessageID, suggestions, class, file, example)
+			if err != nil {
+				return nil, fmt.Errorf("failed to ask fixer: %w", err)
+			}
+			filePartResult := fixed.Result.(protocol.Message).Parts[0].(*protocol.FilePart)
+			after, err := util.DecodeFile(filePartResult.File.(protocol.FileWithBytes).Bytes)
+			example = after
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode fixed file: %w", err)
+			}
+			changed += util.Diff(content, after)
+			f.log.Info("total number of fixed lines: %s", changed)
+			f.log.Info("received fixed file from fixer, sending final response...")
+			response = response.Part(filePartResult.WithMetadata("class-name", class))
+		}
 	}
-	filePartResult := fixed.Result.(protocol.Message).Parts[0].(*protocol.FilePart)
-	f.log.Info("received fixed file from fixer, sending final response...")
-	res := protocol.NewMessageBuilder().
-		Part(filePartResult).
-		Build()
-	f.log.Debug("sending response: %s", res)
+	res := response.Build()
+	f.log.Debug("sending response: %s", res.MessageID)
 	return res, nil
 }
 
-// AskFixer sends the suggestions and file to the fixer agent for processing.
-func (f *Facilitator) AskFixer(id string, suggestions []string, class string, file *protocol.FilePart) (*protocol.JSONRPCResponse, error) {
-	address := fmt.Sprintf("http://localhost:%d", f.fixerPort)
-	log.Debug("asking fixer (%s) to apply suggestions...", address)
-	fixer := protocol.NewClient(address)
-	builder := protocol.NewMessageBuilder().
-		MessageID(id).
-		Part(protocol.NewText(fmt.Sprintf("class_name:%s", class))).
-		Part(protocol.NewText("apply all the following suggestions"))
-	for _, suggestion := range suggestions {
-		builder.Part(protocol.NewText(suggestion))
+func maxSizeParam(m *protocol.Message) int {
+	res := 0
+	for _, v := range m.Parts {
+		size := v.Metadata()["max-size"]
+		if size != nil {
+			return int(size.(float64))
+		}
 	}
-	msg := builder.Part(file).Build()
-	return fixer.SendMessage(protocol.NewMessageSendParamsBuilder().Message(msg).Build())
+	return res
+}
+
+func nfiles(m *protocol.Message) int {
+	res := 0
+	for _, v := range m.Parts {
+		if v.PartKind() == protocol.PartKindFile {
+			res++
+		}
+	}
+	return res
 }
 
 // AskCritic sends a file to the critic agent for linting and analysis.
@@ -162,6 +204,24 @@ func (f *Facilitator) AskCritic(id string, file *protocol.FilePart) (*protocol.J
 			Message(msg).
 			Build(),
 	)
+}
+
+// AskFixer sends the suggestions and file to the fixer agent for processing.
+func (f *Facilitator) AskFixer(id string, suggestions []string, class string, file *protocol.FilePart, example string) (*protocol.JSONRPCResponse, error) {
+	address := fmt.Sprintf("http://localhost:%d", f.fixerPort)
+	log.Debug("asking fixer (%s) to apply suggestions...", address)
+	fixer := protocol.NewClient(address)
+	builder := protocol.NewMessageBuilder().
+		MessageID(id).
+		Part(protocol.NewText("apply all the following suggestions"))
+	for _, suggestion := range suggestions {
+		builder.Part(protocol.NewText(suggestion).WithMetadata("suggestion", true))
+	}
+	if example != "" {
+		builder.Part(protocol.NewText(example).WithMetadata("example", true))
+	}
+	msg := builder.Part(file.WithMetadata("class-name", class)).Build()
+	return fixer.SendMessage(protocol.NewMessageSendParamsBuilder().Message(msg).Build())
 }
 
 func agentCard(port int) *protocol.AgentCard {

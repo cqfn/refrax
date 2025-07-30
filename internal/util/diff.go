@@ -1,10 +1,12 @@
-package client
+package util
 
 import (
 	"strings"
 )
 
-func diff(before, after string) int {
+// Diff calculates the difference score between two strings
+// by computing the total number of lines removed and added.
+func Diff(before, after string) int {
 	blines := strings.Split(before, "\n")
 	alines := strings.Split(after, "\n")
 	longest := lcs(blines, alines)
