@@ -52,9 +52,12 @@ type JSONRPCError struct {
 	Data    any    `json:"data,omitempty"` // Optional additional information (any type)
 }
 
+func (r *JSONRPCResponse) String() string {
+	return fmt.Sprintf("JSONRPCResponse{jsonrpc: %s, id: %v, error: %v}", r.JSONRPC, r.ID, r.Error)
+}
+
 // UnmarshalJSON implements custom unmarshalling for JSON-RPC responses.
 func (r *JSONRPCResponse) UnmarshalJSON(data []byte) error {
-	log.Debug("Unmarshalling JSON-RPC response: %s", string(data))
 	type alias JSONRPCResponse
 	type temp struct {
 		Result json.RawMessage `json:"result,omitempty"`

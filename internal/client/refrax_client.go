@@ -1,7 +1,6 @@
 package client
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,6 +15,8 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/stats"
+	"github.com/cqfn/refrax/internal/util"
+	"github.com/google/uuid"
 )
 
 // RefraxClient represents a client used for refactoring projects.
@@ -110,10 +111,7 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 	facilitatorClient := protocol.NewClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
 	ch := make(chan refactoring, len(classes))
-	for _, class := range classes {
-		go refactor(facilitatorClient, class, ch)
-	}
-	total := 0
+	go refactor(facilitatorClient, proj, c.params.MaxSize, ch)
 	for range len(classes) {
 		res := <-ch
 		if res.err != nil {
@@ -125,17 +123,9 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		if res.content == "" {
 			return nil, fmt.Errorf("refactored class %s has empty content, after refactoring", res.class.Name())
 		}
-		current := res.class.Content()
-		diff := diff(current, res.content)
-		if total+diff <= c.params.MaxSize {
-			err = res.class.SetContent(res.content)
-			if err != nil {
-				return nil, fmt.Errorf("failed to set content for class %s: %w", res.class.Name(), err)
-			}
-			total += diff
-		} else {
-			log.Info("refactoring class %s would exceed max size %d, skipping refactoring", res.class.Name(), c.params.MaxSize)
-			break
+		err = res.class.SetContent(res.content)
+		if err != nil {
+			return nil, fmt.Errorf("failed to set content for class %s: %w", res.class.Name(), err)
 		}
 	}
 	log.Info("refactoring is finished")
@@ -152,34 +142,43 @@ type refactoring struct {
 	err     error
 }
 
-func refactor(client protocol.Client, class JavaClass, ch chan<- refactoring) {
-	log.Debug("sending class %s for refactoring", class.Name())
-	var resp *protocol.JSONRPCResponse
-	resp, err := client.SendMessage(protocol.MessageSendParams{
-		Message: protocol.NewMessageBuilder().
-			MessageID("1").
-			Part(protocol.NewText(fmt.Sprintf("Refactor the class '%s'", class.Name()))).
-			Part(protocol.NewFileBytes([]byte(class.Content()))).
-			Build(),
-	})
+func refactor(client protocol.Client, project Project, size int, ch chan<- refactoring) {
+	log.Debug("refactoring project %q", project)
+	all, err := project.Classes()
+	classes := make(map[string]JavaClass)
 	if err != nil {
-		ch <- refactoring{err: fmt.Errorf("failed to send message for class %s: %w", class.Name(), err)}
+		ch <- refactoring{err: fmt.Errorf("failed to get classes from project %s: %w", project, err)}
 		return
 	}
-	log.Debug("received response for class %s: %s", class.Name(), resp)
-	refactored := resp.Result.(protocol.Message).Parts[0].(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
-	var decoded []byte
-	decoded, err = base64.StdEncoding.DecodeString(refactored)
+	msg := protocol.NewMessageBuilder().MessageID(uuid.NewString()).
+		Part(protocol.NewText("refactor the project").WithMetadata("max-size", size))
+	for _, class := range all {
+		name := class.Name()
+		msg = msg.Part(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", name))
+		classes[name] = class
+	}
+	resp, err := client.SendMessage(protocol.MessageSendParams{Message: msg.Build()})
 	if err != nil {
-		ch <- refactoring{err: fmt.Errorf("failed to decode refactored class %s: %w", class.Name(), err)}
+		ch <- refactoring{err: fmt.Errorf("failed to send message: %w", err)}
 		return
 	}
-	content := clean(string(decoded))
-	ch <- refactoring{class: class, content: content, err: nil}
-}
-
-func clean(s string) string {
-	return strings.TrimSpace(s)
+	log.Debug("received refactoring response: %s", resp)
+	parts := resp.Result.(protocol.Message).Parts
+	for _, p := range parts {
+		kind := p.PartKind()
+		if kind == protocol.PartKindFile {
+			class := classes[p.Metadata()["class-name"].(string)]
+			log.Debug("rececived refactored class: ", class)
+			bytes := p.(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
+			decoded, err := util.DecodeFile(bytes)
+			if err != nil {
+				ch <- refactoring{err: fmt.Errorf("failed to decode refactored class %s: %w", class, err)}
+				return
+			}
+			ch <- refactoring{class: class, content: decoded, err: nil}
+		}
+	}
+	close(ch)
 }
 
 type shudownable interface {

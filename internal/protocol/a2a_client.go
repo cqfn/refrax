@@ -21,7 +21,7 @@ func NewClient(url string) Client {
 	return &a2aClient{
 		url: url,
 		client: &http.Client{
-			Timeout: 5 * time.Minute,
+			Timeout: 15 * time.Minute,
 		},
 	}
 }

@@ -27,6 +27,7 @@ const prompt = `Analyze the following Java code:
 
 Identify possible improvements or flaws such as:
 
+* grammar and spelling mistakes in comments,
 * variables that can be inlined or removed without changing functionality,
 * unnecessary comments inside methods,
 * redundant code,
@@ -36,7 +37,9 @@ Keep in mind the following imperfections with Java code, identified by automated
 
 {{imperfections}}
 
-Respond with a plain list of suggestions, one per line. Do not include any explanations, summaries, or extra text.
+Respond with a single most relevant and important suggestion for improvement, formatted as a single line of text. 
+If there are no suggestions or they are insignificant, respond with "No suggestions found".
+Do not include any explanations, summaries, or extra text.
 `
 
 // NewCritic creates and initializes a new instance of Critic.
@@ -132,7 +135,7 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		builder.Part(protocol.NewText(suggestion))
 	}
 	res := builder.Build()
-	c.log.Debug("sending response: %s", res)
+	c.log.Debug("sending response: %s", res.MessageID)
 	return res, nil
 }
 

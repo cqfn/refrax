@@ -9,6 +9,11 @@ import (
 // PartKind represents the type of a part in a message.
 type PartKind string
 
+// PartBase represents the base structure for a part, containing common metadata.
+type PartBase struct {
+	Metadata map[string]any `json:"metadata,omitempty"`
+}
+
 const (
 	// PartKindText represents a text part.
 	PartKindText PartKind = "text"
@@ -23,24 +28,28 @@ const (
 // Part is an interface that defines the common behavior for all parts in a message.
 type Part interface {
 	PartKind() PartKind
+	Metadata() map[string]any
 }
 
 // TextPart represents a text part in a message.
 type TextPart struct {
 	Kind PartKind `json:"kind"` // Must be "text"
 	Text string   `json:"text"` // Required text content
+	PartBase
 }
 
 // FilePart represents a file part in a message.
 type FilePart struct {
 	Kind PartKind `json:"kind"` // Must be "file"
 	File any      `json:"file"` // Can be FileWithBytes or FileWithUri
+	PartBase
 }
 
 // DataPart represents a data part in a message.
 type DataPart struct {
 	Kind PartKind       `json:"kind"` // Must be "data"
 	Data map[string]any `json:"data"` // Required structured content
+	PartBase
 }
 
 // Parts represents a collection of Part interfaces.
@@ -59,6 +68,21 @@ func (p *FilePart) PartKind() PartKind {
 // PartKind returns the kind of the part.
 func (p *DataPart) PartKind() PartKind {
 	return p.Kind
+}
+
+// Metadata returns the metadata of the TextPart.
+func (p *TextPart) Metadata() map[string]any {
+	return p.PartBase.Metadata
+}
+
+// Metadata returns the metadata of the FilePart.
+func (p *FilePart) Metadata() map[string]any {
+	return p.PartBase.Metadata
+}
+
+// Metadata returns the metadata of the DataPart.
+func (p *DataPart) Metadata() map[string]any {
+	return p.PartBase.Metadata
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface for Parts.
@@ -128,4 +152,31 @@ func NewText(text string) *TextPart {
 		Kind: PartKindText,
 		Text: text,
 	}
+}
+
+// WithMetadata adds a key-value pair to the metadata of the FilePart and returns the updated FilePart.
+func (p *FilePart) WithMetadata(key string, val any) *FilePart {
+	if p.PartBase.Metadata == nil {
+		p.PartBase.Metadata = make(map[string]any)
+	}
+	p.PartBase.Metadata[key] = val
+	return p
+}
+
+// WithMetadata adds a key-value pair to the metadata of the DataPart and returns the updated DataPart.
+func (p *DataPart) WithMetadata(key string, val any) *DataPart {
+	if p.PartBase.Metadata == nil {
+		p.PartBase.Metadata = make(map[string]any)
+	}
+	p.PartBase.Metadata[key] = val
+	return p
+}
+
+// WithMetadata adds a key-value pair to the metadata of the TextPart and returns the updated TextPart.
+func (p *TextPart) WithMetadata(key string, val any) *TextPart {
+	if p.PartBase.Metadata == nil {
+		p.PartBase.Metadata = make(map[string]any)
+	}
+	p.PartBase.Metadata[key] = val
+	return p
 }

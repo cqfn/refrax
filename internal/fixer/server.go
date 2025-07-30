@@ -3,7 +3,6 @@ package fixer
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
+	"github.com/cqfn/refrax/internal/util"
 )
 
 // Fixer is a server that fixes Java code based on suggestions provided.
@@ -29,6 +29,9 @@ const prompt = "Fix '%s' code based on the listed suggestions.\n\n" +
 	"Do not rename class names.\n" +
 	"Return only the corrected Java code.\n" +
 	"Do not include explanations, comments, or any extra text.\n\n"
+
+const exampleNote = "This is an example of another refactored class. The same refactoring has been applied here." +
+	"```java\n%s\n```"
 
 // NewFixer creates a new Fixer instance with the provided AI brain and port.
 func NewFixer(ai brain.Brain, port int) *Fixer {
@@ -108,27 +111,31 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	var code string
 	var suggestions []string
 	var class string
+	var example string
 	for _, part := range m.Parts {
 		if part.PartKind() == protocol.PartKindText {
 			msg := part.(*protocol.TextPart).Text
-			if msg != "" {
-				if strings.HasPrefix(msg, "class_name:") {
-					class = strings.TrimSpace(strings.TrimPrefix(msg, "class_name:"))
-				} else {
-					suggestions = append(suggestions, msg)
-				}
+			if part.Metadata()["suggestion"] != nil {
+				suggestions = append(suggestions, msg)
+			}
+			if part.Metadata()["example"] != nil {
+				example = msg
 			}
 		} else if part.PartKind() == protocol.PartKindFile {
 			codePart := part.(*protocol.FilePart)
-			codeBytes, err := base64.StdEncoding.DecodeString(codePart.File.(protocol.FileWithBytes).Bytes)
+			class = codePart.Metadata()["class-name"].(string)
+			var err error
+			code, err = util.DecodeFile(codePart.File.(protocol.FileWithBytes).Bytes)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode code part: %w", err)
 			}
-			code = string(codeBytes)
 		}
 	}
 	all := strings.Join(suggestions, "\n")
 	question := fmt.Sprintf(prompt, class, code, all)
+	if example != "" {
+		question += "\n\n" + fmt.Sprintf(exampleNote, example)
+	}
 	f.log.Info("asking AI to fix java code...")
 	f.log.Debug("asking AI: %s", question)
 	answer, err := f.brain.Ask(question)
