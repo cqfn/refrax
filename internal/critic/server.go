@@ -44,7 +44,7 @@ Do not include any explanations, summaries, or extra text.
 
 // NewCritic creates and initializes a new instance of Critic.
 func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
-	logger := log.NewPrefixed("critic", log.Default())
+	logger := log.NewPrefixed("critic", log.NewColored(log.Default(), log.Cyan))
 	server := protocol.NewServer(agentCard(port), port)
 	critic := &Critic{
 		server: server,

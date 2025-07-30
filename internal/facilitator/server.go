@@ -26,7 +26,7 @@ type Facilitator struct {
 
 // NewFacilitator creates a new instance of Facilitator to manage communication between agents.
 func NewFacilitator(ai brain.Brain, port, criticPort, fixerPort int) *Facilitator {
-	logger := log.NewPrefixed("facilitator", log.Default())
+	logger := log.NewPrefixed("facilitator", log.NewColored(log.Default(), log.Yellow))
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
 	server := protocol.NewServer(agentCard(port), port)
 	facilitator := &Facilitator{
@@ -157,7 +157,7 @@ func (f *Facilitator) refactor(m *protocol.Message) (*protocol.Message, error) {
 				return nil, fmt.Errorf("failed to decode fixed file: %w", err)
 			}
 			changed += util.Diff(content, after)
-			f.log.Info("total number of fixed lines: %s", changed)
+			f.log.Info("total number of fixed lines: %d", changed)
 			f.log.Info("received fixed file from fixer, sending final response...")
 			response = response.Part(filePartResult.WithMetadata("class-name", class))
 		}
