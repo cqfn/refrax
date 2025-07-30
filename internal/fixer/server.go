@@ -118,17 +118,21 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 			if part.Metadata()["suggestion"] != nil {
 				suggestions = append(suggestions, msg)
 			}
-			if part.Metadata()["example"] != nil {
-				example = msg
-			}
 		} else if part.PartKind() == protocol.PartKindFile {
-			codePart := part.(*protocol.FilePart)
-			class = codePart.Metadata()["class-name"].(string)
+			file := part.(*protocol.FilePart)
 			var err error
-			code, err = util.DecodeFile(codePart.File.(protocol.FileWithBytes).Bytes)
+			content, err := util.DecodeFile(file.File.(protocol.FileWithBytes).Bytes)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode code part: %w", err)
 			}
+			if part.Metadata()["example"] != nil {
+				example = content
+			} else {
+				code = content
+				name := file.Metadata()["class-name"]
+				class = fmt.Sprintf("%v", name)
+			}
+
 		}
 	}
 	all := strings.Join(suggestions, "\n")
@@ -146,7 +150,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	f.log.Info("AI provided a fix for the Java code, sending response back...")
 	message := protocol.NewMessageBuilder().
 		MessageID(m.MessageID).
-		Part(protocol.NewFileBytes([]byte(clean(answer)))).
+		Part(protocol.NewFileBytes([]byte(clean(answer))).WithMetadata("class-name", class)).
 		Build()
 	return message, nil
 }
