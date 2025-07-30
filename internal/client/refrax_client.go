@@ -164,10 +164,17 @@ func refactor(client protocol.Client, project Project, size int, ch chan<- refac
 	}
 	log.Debug("received refactoring response: %s", resp)
 	parts := resp.Result.(protocol.Message).Parts
+	log.Debug("received %d parts in refactoring response", len(parts))
 	for _, p := range parts {
 		kind := p.PartKind()
 		if kind == protocol.PartKindFile {
-			class := classes[p.Metadata()["class-name"].(string)]
+			log.Debug("received file part %v", p)
+			classname := p.Metadata()["class-name"]
+			class := classes[classname.(string)]
+			if class == nil {
+				ch <- refactoring{err: fmt.Errorf("received refactored class %s, but it is not in the project", classname)}
+				return
+			}
 			log.Debug("rececived refactored class: ", class)
 			bytes := p.(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
 			decoded, err := util.DecodeFile(bytes)
