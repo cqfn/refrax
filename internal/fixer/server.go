@@ -35,7 +35,7 @@ const exampleNote = "This is an example of another refactored class. The same re
 
 // NewFixer creates a new Fixer instance with the provided AI brain and port.
 func NewFixer(ai brain.Brain, port int) *Fixer {
-	logger := log.NewPrefixed("fixer", log.Default())
+	logger := log.NewPrefixed("fixer", log.NewColored(log.Default(), log.Magenta))
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
 	server := protocol.NewServer(agentCard(port), port)
 	fixer := &Fixer{
