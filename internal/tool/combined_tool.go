@@ -1,4 +1,4 @@
-package critic
+package tool
 
 import "strings"
 
@@ -7,8 +7,8 @@ type CombinedTool struct {
 	tools []Tool
 }
 
-// NewCombinedTool creates a new CombinedTool instance with the provided tools.
-func NewCombinedTool(tls ...Tool) Tool {
+// NewCombined creates a new CombinedTool instance with the provided tools.
+func NewCombined(tls ...Tool) Tool {
 	return &CombinedTool{tls}
 }
 

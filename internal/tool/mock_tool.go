@@ -1,17 +1,17 @@
-package critic
+package tool
 
 // MockTool represents a mock implementation of the Tool interface.
 type MockTool struct {
 	data string
 }
 
-// NewMockTool creates a new instance of MockTool with the provided data.
-func NewMockTool(data string) Tool {
+// NewMock creates a new instance of MockTool with the provided data.
+func NewMock(data string) Tool {
 	return &MockTool{data}
 }
 
-// NewMockToolEmpty creates a new instance of MockTool with empty data.
-func NewMockToolEmpty() Tool {
+// NewEmpty creates a new instance of MockTool with empty data.
+func NewEmpty() Tool {
 	return &MockTool{string([]byte{})}
 }
 

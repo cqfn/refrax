@@ -9,14 +9,15 @@ import (
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/critic"
+	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/env"
 	"github.com/cqfn/refrax/internal/facilitator"
 	"github.com/cqfn/refrax/internal/fixer"
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/project"
 	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/stats"
 	"github.com/cqfn/refrax/internal/util"
-	"github.com/google/uuid"
 )
 
 // RefraxClient represents a client used for refactoring projects.
@@ -33,8 +34,8 @@ func NewRefraxClient(params *Params) *RefraxClient {
 }
 
 // Refactor initializes the refactoring process for the given project.
-func Refactor(params *Params) (Project, error) {
-	proj, err := project(*params)
+func Refactor(params *Params) (domain.Project, error) {
+	proj, err := proj(*params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create project from params: %w", err)
 	}
@@ -42,7 +43,7 @@ func Refactor(params *Params) (Project, error) {
 }
 
 // Refactor performs refactoring on the given project using the RefraxClient.
-func (c *RefraxClient) Refactor(proj Project) (Project, error) {
+func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
@@ -58,25 +59,25 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
 
-	criticPort, err := protocol.FreePort()
+	criticPort, err := util.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
 	ctc := critic.NewCritic(ai, criticPort)
 	ctc.Handler(countStats(counter))
 
-	fixerPort, err := protocol.FreePort()
+	fixerPort, err := util.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
 	}
 	fxr := fixer.NewFixer(ai, fixerPort)
 	fxr.Handler(countStats(counter))
 
-	facilitatorPort, err := protocol.FreePort()
+	facilitatorPort, err := util.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
-	fclttor := facilitator.NewFacilitator(ai, facilitatorPort, criticPort, fixerPort)
+	fclttor := facilitator.NewFacilitator(ai, ctc, fxr, facilitatorPort)
 	fclttor.Handler(countStats(counter))
 
 	go func() {
@@ -108,10 +109,10 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 
 	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
 	log.Info("begin refactoring")
-	facilitatorClient := protocol.NewClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
+	// facilitatorClient := protocol.NewClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
 
 	ch := make(chan refactoring, len(classes))
-	go refactor(facilitatorClient, proj, c.params.MaxSize, ch)
+	go refactor(fclttor, proj, c.params.MaxSize, ch)
 	for range len(classes) {
 		res := <-ch
 		if res.err != nil {
@@ -137,53 +138,33 @@ func (c *RefraxClient) Refactor(proj Project) (Project, error) {
 }
 
 type refactoring struct {
-	class   JavaClass
+	class   domain.Class
 	content string
 	err     error
 }
 
-func refactor(client protocol.Client, project Project, size int, ch chan<- refactoring) {
-	log.Debug("refactoring project %q", project)
-	all, err := project.Classes()
-	classes := make(map[string]JavaClass)
+func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refactoring) {
+	log.Debug("refactoring project %q", p)
+	all, err := p.Classes()
 	if err != nil {
-		ch <- refactoring{err: fmt.Errorf("failed to get classes from project %s: %w", project, err)}
+		ch <- refactoring{err: fmt.Errorf("failed to get classes from project %s: %w", p, err)}
+		close(ch)
 		return
 	}
-	msg := protocol.NewMessageBuilder().MessageID(uuid.NewString()).
-		Part(protocol.NewText("refactor the project").WithMetadata("max-size", size))
-	for _, class := range all {
-		name := class.Name()
-		msg = msg.Part(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", name))
-		classes[name] = class
+	before := make(map[string]domain.Class)
+	for _, c := range all {
+		before[c.Name()] = c
 	}
-	resp, err := client.SendMessage(protocol.MessageSendParams{Message: msg.Build()})
+	task := domain.NewTask("refactor the project", all, map[string]any{"max-size": fmt.Sprintf("%d", size)})
+	refactored, err := f.Refactor(task)
 	if err != nil {
-		ch <- refactoring{err: fmt.Errorf("failed to send message: %w", err)}
+		ch <- refactoring{err: fmt.Errorf("failed to refactor project %s: %w", p, err)}
+		close(ch)
 		return
 	}
-	log.Debug("received refactoring response: %s", resp)
-	parts := resp.Result.(protocol.Message).Parts
-	log.Debug("received %d parts in refactoring response", len(parts))
-	for _, p := range parts {
-		kind := p.PartKind()
-		if kind == protocol.PartKindFile {
-			log.Debug("received file part %v", p)
-			classname := p.Metadata()["class-name"]
-			class := classes[classname.(string)]
-			if class == nil {
-				ch <- refactoring{err: fmt.Errorf("received refactored class %s, but it is not in the project", classname)}
-				return
-			}
-			log.Debug("rececived refactored class: ", class)
-			bytes := p.(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
-			decoded, err := util.DecodeFile(bytes)
-			if err != nil {
-				ch <- refactoring{err: fmt.Errorf("failed to decode refactored class %s: %w", class, err)}
-				return
-			}
-			ch <- refactoring{class: class, content: decoded, err: nil}
-		}
+	for _, c := range refactored {
+		log.Debug("rececived refactored class: ", c)
+		ch <- refactoring{class: before[c.Name()], content: c.Content(), err: nil}
 	}
 	close(ch)
 }
@@ -247,16 +228,16 @@ func token(p Params) string {
 	return token
 }
 
-func project(params Params) (Project, error) {
+func proj(params Params) (domain.Project, error) {
 	if params.MockProject {
 		log.Debug("using mock project")
-		return NewMockProject(), nil
+		return project.NewMock(), nil
 	}
-	input := NewFilesystemProject(params.Input)
+	input := project.NewFilesystem(params.Input)
 	output := params.Output
 	if output != "" {
 		log.Debug("copy project to %q", output)
-		return NewMirrorProject(input, output)
+		return project.NewMirrorProject(input, output)
 	}
 	log.Debug("no output path provided, changing project in place %q", params.Input)
 	return input, nil

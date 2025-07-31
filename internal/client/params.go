@@ -1,3 +1,4 @@
+// Package client provides functionality for client-side operations.
 package client
 
 import "io"

@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"context"
-	"net"
 )
 
 // Server defines the interface for a server that can handle incoming A2A messages
@@ -29,18 +28,3 @@ type (
 	// MsgHandler handles messages received from the A2A server on Message level
 	MsgHandler func(ctx context.Context, message *Message) (*Message, error)
 )
-
-// FreePort finds a free TCP port on the localhost.
-func FreePort() (port int, err error) {
-	l, err := net.Listen("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		if cerr := l.Close(); cerr != nil {
-			err = cerr
-		}
-	}()
-	port = l.Addr().(*net.TCPAddr).Port
-	return port, nil
-}

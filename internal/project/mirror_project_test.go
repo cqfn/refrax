@@ -1,4 +1,4 @@
-package client
+package project
 
 import (
 	"os"
@@ -16,7 +16,7 @@ func TestNewMirrorProject_Mirrors_Successfully(t *testing.T) {
 	err := os.WriteFile(filepath.Join(srcDir, "Copy.java"), []byte("class Copy{}"), 0o600)
 	require.NoError(t, err)
 
-	original := NewFilesystemProject(srcDir)
+	original := NewFilesystem(srcDir)
 
 	mp, err := NewMirrorProject(original, dstDir)
 	require.NoError(t, err)
@@ -30,7 +30,7 @@ func TestNewMirrorProject_CreatesDirectories(t *testing.T) {
 	srcDir := t.TempDir()
 	dstDir := filepath.Join(t.TempDir(), "nonexistent", "dir")
 
-	original := NewFilesystemProject(srcDir)
+	original := NewFilesystem(srcDir)
 	mp, err := NewMirrorProject(original, dstDir)
 
 	require.NoError(t, err)
@@ -46,7 +46,7 @@ func TestMirrorProject_Classes(t *testing.T) {
 	err := os.WriteFile(filepath.Join(src, "App.java"), []byte("public class App{}"), 0o600)
 	require.NoError(t, err)
 
-	original := NewFilesystemProject(src)
+	original := NewFilesystem(src)
 	mp, err := NewMirrorProject(original, dst)
 	require.NoError(t, err)
 
@@ -64,7 +64,7 @@ func TestNewMirrorProject_OverwritesExistingDirectory(t *testing.T) {
 	conflictingFile := filepath.Join(mirrorDir, "Original.java")
 	require.NoError(t, os.WriteFile(conflictingFile, []byte("conflicting content"), 0o600))
 
-	orig := NewFilesystemProject(originalDir)
+	orig := NewFilesystem(originalDir)
 	_, err := NewMirrorProject(orig, mirrorDir)
 	require.NoError(t, err)
 

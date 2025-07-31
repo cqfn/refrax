@@ -1,5 +1,5 @@
-// Package critic provides tools for identifying refactoring opportunities in code.
-package critic
+// Package tool provides tools for identifying refactoring opportunities in code.
+package tool
 
 import (
 	"os/exec"

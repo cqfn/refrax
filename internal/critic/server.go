@@ -1,3 +1,4 @@
+// Package critic provides functionality for analyzing and critiquing Java code.
 package critic
 
 import (
@@ -8,8 +9,11 @@ import (
 	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
+	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
+	"github.com/cqfn/refrax/internal/tool"
+	"github.com/google/uuid"
 )
 
 // Critic represents the main struct responsible for analyzing code critiques.
@@ -18,7 +22,7 @@ type Critic struct {
 	brain  brain.Brain
 	log    log.Logger
 	port   int
-	tool   []Tool
+	tools  []tool.Tool
 }
 
 const prompt = `Analyze the following Java code:
@@ -43,7 +47,7 @@ Do not include any explanations, summaries, or extra text.
 `
 
 // NewCritic creates and initializes a new instance of Critic.
-func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
+func NewCritic(ai brain.Brain, port int, tools ...tool.Tool) *Critic {
 	logger := log.NewPrefixed("critic", log.NewColored(log.Default(), log.Cyan))
 	server := protocol.NewServer(agentCard(port), port)
 	critic := &Critic{
@@ -51,7 +55,7 @@ func NewCritic(ai brain.Brain, port int, tool ...Tool) *Critic {
 		brain:  ai,
 		log:    logger,
 		port:   port,
-		tool:   tool,
+		tools:  tools,
 	}
 	server.MsgHandler(critic.think)
 	critic.log.Debug("preparing the Critic server on port %d with ai provider %s", port, ai)
@@ -66,6 +70,26 @@ func (c *Critic) ListenAndServe() error {
 		return fmt.Errorf("failed to start critic server: %w", err)
 	}
 	return err
+}
+
+// Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
+func (c *Critic) Review(class domain.Class) ([]domain.Suggestion, error) {
+	address := fmt.Sprintf("http://localhost:%d", c.port)
+	c.log.Info("asking critic (%s) to lint the class...", address)
+	critic := protocol.NewClient(address)
+	msg := protocol.NewMessageBuilder().
+		MessageID(uuid.NewString()).
+		Part(protocol.NewText("lint class")).
+		Part(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", class.Name())).
+		Build()
+	resp, err := critic.SendMessage(
+		protocol.NewMessageSendParamsBuilder().
+			Message(msg).
+			Build())
+	if err != nil {
+		return nil, fmt.Errorf("failed to send message to critic: %w", err)
+	}
+	return domain.RespToSuggestions(resp), nil
 }
 
 // Shutdown gracefully shuts down the Critic server.
@@ -121,7 +145,7 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Info("asking ai to find flaws in the code...")
 	replacer := strings.NewReplacer(
 		"{{code}}", java,
-		"{{imperfections}}", NewCombinedTool(c.tool...).Imperfections(),
+		"{{imperfections}}", tool.NewCombined(c.tools...).Imperfections(),
 	)
 	answer, err := c.brain.Ask(replacer.Replace(prompt))
 	if err != nil {

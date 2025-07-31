@@ -7,6 +7,8 @@ import (
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/protocol"
+	"github.com/cqfn/refrax/internal/tool"
+	"github.com/cqfn/refrax/internal/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -64,7 +66,7 @@ func TestNewCritic_Success(t *testing.T) {
 
 func TestCriticStart_Success(t *testing.T) {
 	ai := brain.NewMock()
-	port, err := protocol.FreePort()
+	port, err := util.FreePort()
 	require.NoError(t, err)
 	critic := NewCritic(ai, port)
 	var listen error
@@ -105,7 +107,7 @@ func TestCriticClose_Success(t *testing.T) {
 func TestCriticClose_ServerNotStartedError(t *testing.T) {
 	ai := brain.NewMock()
 	server := &mock{}
-	critic := NewCritic(ai, 18081, NewMockToolEmpty())
+	critic := NewCritic(ai, 18081, tool.NewEmpty())
 	critic.server = server
 
 	err := critic.Shutdown()
@@ -117,7 +119,7 @@ func TestCriticClose_ServerNotStartedError(t *testing.T) {
 func TestCriticThink_ReturnsMessage(t *testing.T) {
 	ai := brain.NewMock()
 	server := &mock{}
-	critic := NewCritic(ai, 18081, NewMockToolEmpty())
+	critic := NewCritic(ai, 18081, tool.NewEmpty())
 	critic.server = server
 	msg := protocol.NewMessageBuilder().
 		MessageID("msg-123").
