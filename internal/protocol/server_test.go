@@ -7,12 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cqfn/refrax/internal/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestServer_AgentCard(t *testing.T) {
-	port, err := FreePort()
+	port, err := util.FreePort()
 	require.NoError(t, err, "expected no error getting free port")
 	server := NewServer(mockCard(port), port)
 	server.MsgHandler(joke)
@@ -33,7 +34,7 @@ func TestServer_AgentCard(t *testing.T) {
 }
 
 func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
-	port, err := FreePort()
+	port, err := util.FreePort()
 	require.NoError(t, err, "expected no error getting free port")
 	server := NewServer(mockCard(port), port)
 	server.MsgHandler(joke)

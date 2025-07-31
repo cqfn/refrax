@@ -1,4 +1,4 @@
-package client
+package project
 
 import (
 	"os"
@@ -12,7 +12,7 @@ import (
 
 func TestNewFilesystemProject(t *testing.T) {
 	projectPath := "/example/path"
-	project := NewFilesystemProject(projectPath)
+	project := NewFilesystem(projectPath)
 
 	assert.NotNil(t, project)
 	assert.Equal(t, projectPath, project.path)
@@ -24,7 +24,7 @@ func TestFilesystemProject_Classes_Success(t *testing.T) {
 	second := filepath.Join(tempDir, "Class2.java")
 	require.NoError(t, os.WriteFile(first, []byte("class Class1 {}"), 0o600))
 	require.NoError(t, os.WriteFile(second, []byte("class Class2 {}"), 0o600))
-	project := NewFilesystemProject(tempDir)
+	project := NewFilesystem(tempDir)
 
 	classes, err := project.Classes()
 
@@ -38,7 +38,7 @@ func TestFilesystemProject_Classes_Success(t *testing.T) {
 
 func TestFilesystemProject_Classes_EmptyDirectory(t *testing.T) {
 	tempDir := t.TempDir()
-	project := NewFilesystemProject(tempDir)
+	project := NewFilesystem(tempDir)
 
 	classes, err := project.Classes()
 
@@ -51,7 +51,7 @@ func TestFilesystemProject_Classes_NonJavaFilesIgnored(t *testing.T) {
 	filePath := filepath.Join(tempDir, "NotAJavaFile.txt")
 	require.NoError(t, os.WriteFile(filePath, []byte("Some content"), 0o600))
 
-	project := NewFilesystemProject(tempDir)
+	project := NewFilesystem(tempDir)
 
 	classes, err := project.Classes()
 
@@ -66,7 +66,7 @@ func TestFilesystemProject_Classes_ErrorReadingFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, []byte("class Class1 {}"), 0o600))
 	require.NoError(t, os.Chmod(filePath, 0o200)) // Write-only
 
-	project := NewFilesystemProject(tempDir)
+	project := NewFilesystem(tempDir)
 
 	classes, err := project.Classes()
 
@@ -79,7 +79,7 @@ func TestFilesystemProject_Classes_ErrorDuringTraversal(t *testing.T) {
 	tempDir := t.TempDir()
 	subDir := filepath.Join(tempDir, "subdir")
 	require.NoError(t, os.Mkdir(subDir, 0o000)) // No permissions
-	project := NewFilesystemProject(tempDir)
+	project := NewFilesystem(tempDir)
 
 	classes, err := project.Classes()
 
@@ -88,23 +88,23 @@ func TestFilesystemProject_Classes_ErrorDuringTraversal(t *testing.T) {
 	require.NoError(t, os.Chmod(subDir, 0o600))
 }
 
-func TestFilesystemJavaClass_Name(t *testing.T) {
-	class := &FilesystemJavaClass{name: "TestClass"}
+func TestFilesystemClass_Name(t *testing.T) {
+	class := &FilesystemClass{name: "TestClass"}
 
 	assert.Equal(t, "TestClass", class.Name())
 }
 
-func TestFilesystemJavaClass_Content(t *testing.T) {
-	class := &FilesystemJavaClass{content: "class TestClass {}"}
+func TestFilesystemClass_Content(t *testing.T) {
+	class := &FilesystemClass{content: "class TestClass {}"}
 
 	assert.Equal(t, "class TestClass {}", class.Content())
 }
 
-func TestFilesystemJavaClass_SetContent_Success(t *testing.T) {
+func TestFilesystemClass_SetContent_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "TestClass.java")
 	require.NoError(t, os.WriteFile(filePath, []byte("class TestClass {}"), 0o600))
-	class := &FilesystemJavaClass{
+	class := &FilesystemClass{
 		name:    "TestClass",
 		content: "class TestClass {}",
 		path:    filePath,
@@ -126,7 +126,7 @@ func TestFilesystemProject_Classes_FindsHierarchy(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Join(tmp, "child"), 0o700))
 	require.NoError(t, os.WriteFile(filepath.Join(tmp, "parent", "Parent.java"), []byte("class Parent {}"), 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(tmp, "child", "Child.java"), []byte("class Child extends Parent {}"), 0o600))
-	project := NewFilesystemProject(tmp)
+	project := NewFilesystem(tmp)
 	classes, err := project.Classes()
 	require.NoError(t, err)
 	assert.Len(t, classes, 2)

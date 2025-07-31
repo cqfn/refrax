@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -77,7 +78,7 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 
 func testServer(t *testing.T) (server Server, port int) {
 	t.Helper()
-	port, err := FreePort()
+	port, err := util.FreePort()
 	require.NoError(t, err, "Failed to get a free port")
 	server = NewServer(&testCard, port)
 	server.MsgHandler(joke)

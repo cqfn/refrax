@@ -8,9 +8,11 @@ import (
 	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
+	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/util"
+	"github.com/google/uuid"
 )
 
 // Fixer is a server that fixes Java code based on suggestions provided.
@@ -47,6 +49,32 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 	server.MsgHandler(fixer.think)
 	fixer.log.Debug("preparing the Fixer server on port %d with ai provider %s", port, ai)
 	return fixer
+}
+
+// Fix applies the given suggestions to the provided class and returns the modified class or an error.
+// It communicates with an external fixer service to perform the modifications.
+func (f *Fixer) Fix(class domain.Class, suggestions []domain.Suggestion, example domain.Class) (domain.Class, error) {
+	address := fmt.Sprintf("http://localhost:%d", f.port)
+	f.log.Info("asking fixer (%s) to apply suggestions...", address)
+	fixer := protocol.NewClient(address)
+	builder := protocol.NewMessageBuilder().
+		MessageID(uuid.NewString()).
+		Part(protocol.NewText("apply all the following suggestions"))
+	for _, suggestion := range suggestions {
+		builder.Part(protocol.NewText(suggestion.Text()).WithMetadata("suggestion", true))
+	}
+	if example != nil {
+		builder.Part(protocol.NewFileBytes([]byte(example.Content())).
+			WithMetadata("class-name", example.Name()).
+			WithMetadata("example", true))
+	}
+	file := protocol.NewFileBytes([]byte(class.Content()))
+	msg := builder.Part(file.WithMetadata("class-name", class.Name())).Build()
+	resp, err := fixer.SendMessage(protocol.NewMessageSendParamsBuilder().Message(msg).Build())
+	if err != nil {
+		return nil, fmt.Errorf("failed to send message to fixer: %w", err)
+	}
+	return domain.RespToClass(resp)
 }
 
 // ListenAndServe begins the Fixer server and signals readiness through the provided channel.

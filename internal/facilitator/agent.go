@@ -5,97 +5,30 @@ import (
 	"strconv"
 
 	"github.com/cqfn/refrax/internal/brain"
+	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
-	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/util"
-	"github.com/google/uuid"
 )
 
 type agent struct {
-	brain      brain.Brain
-	log        log.Logger
-	criticPort int
-	fixerPort  int
+	brain  brain.Brain
+	log    log.Logger
+	critic domain.Critic
+	fixer  domain.Fixer
 }
 
-// Task represents a unit of work that contains classes and associated parameters.
-type Task interface {
-	Description() string
-	Classes() []Class
-	Example() Class
-	Param(name string) (string, bool)
-}
-
-// Class represents a code or text entity with a name and content.
-type Class interface {
-	Name() string
-	Content() string
-}
-
-// Suggestion represents a proposed improvement or fix for a class.
-type Suggestion interface {
-	Text() string
-}
-
-func limit(t Task) (int, error) {
-	size, ok := t.Param("max-size")
-	if !ok {
-		size = "200"
-	}
-	return strconv.Atoi(size)
-}
-
-func (a *agent) AskCritic(class Class) ([]Suggestion, error) {
-	address := fmt.Sprintf("http://localhost:%d", a.criticPort)
-	a.log.Info("asking critic (%s) to lint the class...", address)
-	critic := protocol.NewClient(address)
-	msg := protocol.NewMessageBuilder().
-		MessageID(uuid.NewString()).
-		Part(protocol.NewText("lint class")).
-		Part(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", class.Name())).
-		Build()
-	resp, err := critic.SendMessage(
-		protocol.NewMessageSendParamsBuilder().
-			Message(msg).
-			Build())
-	if err != nil {
-		return nil, fmt.Errorf("failed to send message to critic: %w", err)
-	}
-	return ParseSuggestions(resp), nil
-}
-
-func (a *agent) AskFixer(class Class, suggestions []Suggestion, example Class) (Class, error) {
-	address := fmt.Sprintf("http://localhost:%d", a.fixerPort)
-	a.log.Info("asking fixer (%s) to apply suggestions...", address)
-	fixer := protocol.NewClient(address)
-	builder := protocol.NewMessageBuilder().
-		MessageID(uuid.NewString()).
-		Part(protocol.NewText("apply all the following suggestions"))
-	for _, suggestion := range suggestions {
-		builder.Part(protocol.NewText(suggestion.Text()).WithMetadata("suggestion", true))
-	}
-	if example != nil {
-		builder.Part(protocol.NewFileBytes([]byte(example.Content())).
-			WithMetadata("class-name", example.Name()).
-			WithMetadata("example", true))
-	}
-	file := protocol.NewFileBytes([]byte(class.Content()))
-	msg := builder.Part(file.WithMetadata("class-name", class.Name())).Build()
-	resp, err := fixer.SendMessage(protocol.NewMessageSendParamsBuilder().Message(msg).Build())
-	if err != nil {
-		return nil, fmt.Errorf("failed to send message to fixer: %w", err)
-	}
-	return ParseClass(resp)
-}
-
-func (a *agent) refactor(t Task) ([]Class, error) {
-	size, err := limit(t)
+func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
+	size, err := maxSize(t)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get max size limit: %w", err)
 	}
+	if t.Description() != "refactor the project" {
+		a.log.Warn("received a message that is not related to refactoring. ignoring.")
+		return nil, fmt.Errorf("received a message that is not related to refactoring")
+	}
 	a.log.Info("received request for refactoring, number of attached files: %d, max-size: %d", len(t.Classes()), size)
-	refactored := make([]Class, 0, len(t.Classes()))
-	var example Class
+	refactored := make([]domain.Class, 0, len(t.Classes()))
+	var example domain.Class
 	changed := 0
 	for _, class := range t.Classes() {
 		a.log.Info("received class for refactoring: %q", class.Name())
@@ -104,12 +37,12 @@ func (a *agent) refactor(t Task) ([]Class, error) {
 			refactored = append(refactored, class)
 			continue
 		}
-		suggestions, err := a.AskCritic(class)
+		suggestions, err := a.critic.Review(class)
 		if err != nil {
 			return nil, fmt.Errorf("failed to ask critic: %w", err)
 		}
 		a.log.Info("received %d suggestions from critic", len(suggestions))
-		modified, err := a.AskFixer(class, suggestions, example)
+		modified, err := a.fixer.Fix(class, suggestions, example)
 		if err != nil {
 			return nil, fmt.Errorf("failed to ask fixer: %w", err)
 		}
@@ -119,4 +52,12 @@ func (a *agent) refactor(t Task) ([]Class, error) {
 		changed += diff
 	}
 	return refactored, nil
+}
+
+func maxSize(t domain.Task) (int, error) {
+	size, ok := t.Param("max-size")
+	if !ok {
+		size = "200"
+	}
+	return strconv.Atoi(size)
 }

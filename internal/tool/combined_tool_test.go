@@ -1,4 +1,4 @@
-package critic
+package tool
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ func TestCombinesAllToolsTogether(t *testing.T) {
 	assert.Equal(
 		t,
 		"foo\nbar",
-		NewCombinedTool(NewMockTool("foo"), NewMockTool("bar")).Imperfections(),
+		NewCombined(NewMock("foo"), NewMock("bar")).Imperfections(),
 		"The result of tool combination does not match with expected",
 	)
 }

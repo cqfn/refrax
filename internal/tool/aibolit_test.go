@@ -1,4 +1,4 @@
-package critic
+package tool
 
 import (
 	"strings"

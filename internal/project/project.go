@@ -1,29 +1,15 @@
-package client
+package project
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/cqfn/refrax/internal/domain"
 )
-
-// Project represents an interface for managing Java classes within a project.
-type Project interface {
-	// Classes retrieves all Java classes within the project.
-	Classes() ([]JavaClass, error)
-}
-
-// JavaClass represents an interface for a single Java class.
-type JavaClass interface {
-	// Name returns the name of the Java class.
-	Name() string
-	// Content retrieves the content of the Java class.
-	Content() string
-	// SetContent sets the content of the Java class.
-	SetContent(content string) error
-}
 
 // InMemoryProject is an implementation of Project that stores its classes in memory.
 type InMemoryProject struct {
-	files map[string]JavaClass
+	files map[string]domain.Class
 }
 
 // InMemoryJavaClass is an implementation of JavaClass that stores its data in memory.
@@ -32,25 +18,25 @@ type InMemoryJavaClass struct {
 	content string
 }
 
-// NewMockProject creates a mock project with predefined content for testing purposes.
-func NewMockProject() Project {
+// NewMock creates a mock project with predefined content for testing purposes.
+func NewMock() domain.Project {
 	mapping := map[string]string{
 		"Main.java": "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n",
 	}
-	return NewInMemoryProject(mapping)
+	return NewInMemory(mapping)
 }
 
-// SingleClassProject creates a project containing a single Java class with the provided name and content.
-func SingleClassProject(name, content string) Project {
+// SingleClass creates a project containing a single Java class with the provided name and content.
+func SingleClass(name, content string) domain.Project {
 	mapping := map[string]string{
 		name: content,
 	}
-	return NewInMemoryProject(mapping)
+	return NewInMemory(mapping)
 }
 
-// NewInMemoryProject creates a new in-memory project with the given map of file names to Java class content.
-func NewInMemoryProject(files map[string]string) Project {
-	res := make(map[string]JavaClass, len(files))
+// NewInMemory creates a new in-memory project with the given map of file names to Java class content.
+func NewInMemory(files map[string]string) domain.Project {
+	res := make(map[string]domain.Class, len(files))
 	for name, content := range files {
 		res[name] = &InMemoryJavaClass{
 			name:    name,
@@ -63,8 +49,8 @@ func NewInMemoryProject(files map[string]string) Project {
 }
 
 // Classes retrieves all Java classes in the in-memory project.
-func (i *InMemoryProject) Classes() ([]JavaClass, error) {
-	res := make([]JavaClass, 0)
+func (i *InMemoryProject) Classes() ([]domain.Class, error) {
+	res := make([]domain.Class, 0)
 	for _, class := range i.files {
 		res = append(res, class)
 	}
