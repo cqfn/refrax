@@ -55,3 +55,83 @@ type AgentSkill struct {
 	InputModes  []string `json:"inputModes,omitempty"`
 	OutputModes []string `json:"outputModes,omitempty"`
 }
+
+// NewAgentCard creates and returns a new AgentCard with default values.
+func NewAgentCard() *AgentCard {
+	return &AgentCard{
+		Capabilities: AgentCapabilities{},
+		Provider: &AgentProvider{
+			Organization: "Default Organization",
+			URL:          "",
+		},
+	}
+}
+
+// WithName sets the name of the agent card.
+func (c *AgentCard) WithName(name string) *AgentCard {
+	c.Name = name
+	return c
+}
+
+// WithDescription sets the description of the agent card.
+func (c *AgentCard) WithDescription(desc string) *AgentCard {
+	c.Description = desc
+	return c
+}
+
+// WithURL sets the URL of the agent.
+func (c *AgentCard) WithURL(url string) *AgentCard {
+	c.URL = url
+	return c
+}
+
+// WithProvider sets the provider information of the agent.
+func (c *AgentCard) WithProvider(provider AgentProvider) *AgentCard {
+	c.Provider = &provider
+	return c
+}
+
+// WithVersion sets the version string of the agent.
+func (c *AgentCard) WithVersion(version string) *AgentCard {
+	c.Version = version
+	return c
+}
+
+// WithDocumentationURL sets the optional documentation URL for the agent.
+func (c *AgentCard) WithDocumentationURL(url string) *AgentCard {
+	c.DocumentationURL = &url
+	return c
+}
+
+// WithCapabilities sets the agent's declared capabilities.
+func (c *AgentCard) WithCapabilities(capabilities AgentCapabilities) *AgentCard {
+	c.Capabilities = capabilities
+	return c
+}
+
+// WithDefaultInputModes sets the default input modes supported by the agent.
+func (c *AgentCard) WithDefaultInputModes(modes []string) *AgentCard {
+	c.DefaultInputModes = modes
+	return c
+}
+
+// WithDefaultOutputModes sets the default output modes supported by the agent.
+func (c *AgentCard) WithDefaultOutputModes(modes []string) *AgentCard {
+	c.DefaultOutputModes = modes
+	return c
+}
+
+// AddSkill appends a single skill to the agent's skill list.
+func (c *AgentCard) AddSkill(_, name, description string) *AgentCard {
+	c.Skills = append(c.Skills, AgentSkill{
+		Name:        name,
+		Description: description,
+	})
+	return c
+}
+
+// WithSkills sets the list of skills for the agent.
+func (c *AgentCard) WithSkills(skills []AgentSkill) *AgentCard {
+	c.Skills = skills
+	return c
+}

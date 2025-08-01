@@ -121,9 +121,10 @@ func TestCriticThink_ReturnsMessage(t *testing.T) {
 	server := &mock{}
 	critic := NewCritic(ai, 18081, tool.NewEmpty())
 	critic.server = server
-	msg := protocol.NewMessageBuilder().
-		MessageID("msg-123").
-		Build()
+	msg := protocol.NewMessage().
+		WithMessageID("msg-123").
+		AddPart(protocol.NewText("review the code")).
+		AddPart(protocol.NewFileBytes([]byte("some code")))
 
 	response, err := critic.think(context.Background(), msg)
 

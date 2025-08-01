@@ -24,72 +24,60 @@ type Message struct {
 	Kind             Kind           `json:"kind"`
 }
 
-// MessageBuilder provides a fluent API for constructing Message objects.
-type MessageBuilder struct {
-	msg *Message
-}
-
-// NewMessageBuilder creates and returns a new MessageBuilder instance.
-func NewMessageBuilder() *MessageBuilder {
-	return &MessageBuilder{
-		msg: &Message{
-			Kind: KindMessage,
-		},
+// NewMessage creates and returns a new Message instance with Kind set to KindMessage.
+func NewMessage() *Message {
+	return &Message{
+		Kind: KindMessage,
 	}
 }
 
-// Role sets the role of the message sender (e.g., "user" or "agent").
-func (b *MessageBuilder) Role(role string) *MessageBuilder {
-	b.msg.Role = role
-	return b
+// WithRole sets the Role field of the Message and returns the updated Message instance.
+func (m *Message) WithRole(role string) *Message {
+	m.Role = role
+	return m
 }
 
-// MessageID sets the unique identifier for the message.
-func (b *MessageBuilder) MessageID(id string) *MessageBuilder {
-	b.msg.MessageID = id
-	return b
+// WithMessageID sets the MessageID field of the Message and returns the updated Message instance.
+func (m *Message) WithMessageID(id string) *Message {
+	m.MessageID = id
+	return m
 }
 
-// Part appends a message part to the message content.
-func (b *MessageBuilder) Part(part Part) *MessageBuilder {
-	b.msg.Parts = append(b.msg.Parts, part)
-	return b
+// AddPart appends a Part to the Parts slice in the Message and returns the updated Message instance.
+func (m *Message) AddPart(part Part) *Message {
+	m.Parts = append(m.Parts, part)
+	return m
 }
 
-// MetadataField sets a key-value pair in the message metadata.
-func (b *MessageBuilder) MetadataField(key string, value any) *MessageBuilder {
-	if b.msg.Metadata == nil {
-		b.msg.Metadata = make(map[string]any)
+// AddMetadata adds a key-value pair to the Metadata map of the Message and returns the updated Message instance.
+func (m *Message) AddMetadata(key string, value any) *Message {
+	if m.Metadata == nil {
+		m.Metadata = make(map[string]any)
 	}
-	b.msg.Metadata[key] = value
-	return b
+	m.Metadata[key] = value
+	return m
 }
 
-// Extensions appends one or more extension URIs to the message.
-func (b *MessageBuilder) Extensions(ext ...string) *MessageBuilder {
-	b.msg.Extensions = append(b.msg.Extensions, ext...)
-	return b
+// AddExtensions appends one or more extensions to the Extensions slice of the Message and returns the updated Message instance.
+func (m *Message) AddExtensions(ext ...string) *Message {
+	m.Extensions = append(m.Extensions, ext...)
+	return m
 }
 
-// ReferenceTaskIDs appends one or more task IDs to the reference list.
-func (b *MessageBuilder) ReferenceTaskIDs(ids ...string) *MessageBuilder {
-	b.msg.ReferenceTaskIDs = append(b.msg.ReferenceTaskIDs, ids...)
-	return b
+// AddReferenceTaskIDs appends one or more task IDs to the ReferenceTaskIDs slice of the Message and returns the updated Message instance.
+func (m *Message) AddReferenceTaskIDs(ids ...string) *Message {
+	m.ReferenceTaskIDs = append(m.ReferenceTaskIDs, ids...)
+	return m
 }
 
-// TaskID sets the optional task ID associated with the message.
-func (b *MessageBuilder) TaskID(taskID string) *MessageBuilder {
-	b.msg.TaskID = &taskID
-	return b
+// WithTaskID sets the TaskID field of the Message and returns the updated Message instance.
+func (m *Message) WithTaskID(taskID string) *Message {
+	m.TaskID = &taskID
+	return m
 }
 
-// ContextID sets the optional context ID associated with the message.
-func (b *MessageBuilder) ContextID(contextID string) *MessageBuilder {
-	b.msg.ContextID = &contextID
-	return b
-}
-
-// Build finalizes and returns the constructed Message.
-func (b *MessageBuilder) Build() *Message {
-	return b.msg
+// WithContextID sets the ContextID field of the Message and returns the updated Message instance.
+func (m *Message) WithContextID(contextID string) *Message {
+	m.ContextID = &contextID
+	return m
 }

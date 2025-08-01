@@ -3,7 +3,6 @@ package critic
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
@@ -25,6 +24,8 @@ type Critic struct {
 	tools  []tool.Tool
 }
 
+const notFound = "No suggestions found"
+
 const prompt = `Analyze the following Java code:
 
 {{code}}
@@ -42,7 +43,7 @@ Keep in mind the following imperfections with Java code, identified by automated
 {{imperfections}}
 
 Respond with a single most relevant and important suggestion for improvement, formatted as a single line of text. 
-If there are no suggestions or they are insignificant, respond with "No suggestions found".
+If there are no suggestions or they are insignificant, respond with "{{not-found}}".
 Do not include any explanations, summaries, or extra text.
 `
 
@@ -77,15 +78,11 @@ func (c *Critic) Review(class domain.Class) ([]domain.Suggestion, error) {
 	address := fmt.Sprintf("http://localhost:%d", c.port)
 	c.log.Info("asking critic (%s) to lint the class...", address)
 	critic := protocol.NewClient(address)
-	msg := protocol.NewMessageBuilder().
-		MessageID(uuid.NewString()).
-		Part(protocol.NewText("lint class")).
-		Part(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", class.Name())).
-		Build()
-	resp, err := critic.SendMessage(
-		protocol.NewMessageSendParamsBuilder().
-			Message(msg).
-			Build())
+	msg := protocol.NewMessage().
+		WithMessageID(uuid.NewString()).
+		AddPart(protocol.NewText("lint class")).
+		AddPart(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", class.Name()))
+	resp, err := critic.SendMessage(protocol.NewMessageSendParams().WithMessage(msg))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to critic: %w", err)
 	}
@@ -123,44 +120,41 @@ func (c *Critic) think(ctx context.Context, m *protocol.Message) (*protocol.Mess
 
 func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Debug("received message: #%s", m.MessageID)
-	var java string
-	var task string
-	for _, part := range m.Parts {
-		partKind := part.PartKind()
-		if partKind == protocol.PartKindText {
-			task = part.(*protocol.TextPart).Text
-			c.log.Debug("received task: %s", task)
-		}
-		if partKind == protocol.PartKindFile {
-			filePart := part.(*protocol.FilePart)
-			content, err := base64.StdEncoding.DecodeString(filePart.File.(protocol.FileWithBytes).Bytes)
-			if err != nil {
-				return nil, err
-			}
-			java = string(content)
-			c.log.Debug("received file: %s", content)
-		}
+	tsk, err := domain.MsgToTask(m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse task from message: %w", err)
 	}
-	c.log.Info("received messsage #%s, '%s', number of attached files: %d", m.MessageID, task, 1)
-	c.log.Info("asking ai to find flaws in the code...")
+	class := tsk.Classes()[0]
+	c.log.Info("received class %q for analysis", class.Name())
 	replacer := strings.NewReplacer(
-		"{{code}}", java,
+		"{{code}}", class.Content(),
 		"{{imperfections}}", tool.NewCombined(c.tools...).Imperfections(),
+		"{{not-found}}", notFound,
 	)
 	answer, err := c.brain.Ask(replacer.Replace(prompt))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
 	}
-	builder := protocol.NewMessageBuilder().MessageID(m.MessageID)
+	res := protocol.NewMessage().WithMessageID(m.MessageID)
 	suggestions := parseAnswer(answer)
+	logSuggestions(c.log, suggestions)
 	c.log.Info("found %d possible improvements", len(suggestions))
 	for _, suggestion := range suggestions {
 		c.log.Debug("suggestion: %s", suggestion)
-		builder.Part(protocol.NewText(suggestion))
+		if strings.EqualFold(suggestion, notFound) {
+			c.log.Info("no suggestions found")
+		} else {
+			res.AddPart(protocol.NewText(suggestion))
+		}
 	}
-	res := builder.Build()
 	c.log.Debug("sending response: %s", res.MessageID)
 	return res, nil
+}
+
+func logSuggestions(logger log.Logger, suggestions []string) {
+	for i, suggestion := range suggestions {
+		logger.Info("suggestion #%d: %s", i+1, suggestion)
+	}
 }
 
 func parseAnswer(answer string) []string {
@@ -176,11 +170,10 @@ func parseAnswer(answer string) []string {
 }
 
 func agentCard(port int) *protocol.AgentCard {
-	return protocol.Card().
-		Name("Critic Agent").
-		Description("Critic Description").
-		URL(fmt.Sprintf("http://localhost:%d", port)).
-		Version("0.0.1").
-		Skill("critic-java-code", "Critic Java Code", "Give a reasonable critique on Java code").
-		Build()
+	return protocol.NewAgentCard().
+		WithName("Critic Agent").
+		WithDescription("Critic Description").
+		WithURL(fmt.Sprintf("http://localhost:%d", port)).
+		WithVersion("0.0.1").
+		AddSkill("critic-java-code", "Critic Java Code", "Give a reasonable critique on Java code")
 }

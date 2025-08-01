@@ -44,7 +44,8 @@ func NewFacilitator(ai brain.Brain, critic domain.Critic, fixer domain.Fixer, po
 // Refactor sends a refactoring request to the facilitator server and returns the refactored classes.
 func (f *A2AFacilitator) Refactor(task domain.Task) ([]domain.Class, error) {
 	client := protocol.NewClient(fmt.Sprintf("http://localhost:%d", f.port))
-	resp, err := client.SendMessage(protocol.MessageSendParams{Message: domain.TaskToMsg(task)})
+	resp, err := client.SendMessage(
+		protocol.NewMessageSendParams().WithMessage(domain.TaskToMsg(task)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send refactoring request: %w", err)
 	}
@@ -104,11 +105,10 @@ func (f *A2AFacilitator) thinkLong(m *protocol.Message) (*protocol.Message, erro
 }
 
 func agentCard(port int) *protocol.AgentCard {
-	return protocol.Card().
-		Name("Facilitator Agent").
-		Description("An agent that facilitates talk between critic and fixer").
-		URL(fmt.Sprintf("http://localhost:%d", port)).
-		Version("0.0.1").
-		Skill("facilitate-discussion", "Refactor Java Projects", "Facilitate discussion on code refactoring").
-		Build()
+	return protocol.NewAgentCard().
+		WithName("Facilitator Agent").
+		WithDescription("An agent that facilitates talk between critic and fixer").
+		WithURL(fmt.Sprintf("http://localhost:%d", port)).
+		WithVersion("0.0.1").
+		AddSkill("facilitate-discussion", "Refactor Java Projects", "Facilitate discussion on code refactoring")
 }

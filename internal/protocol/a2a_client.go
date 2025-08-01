@@ -8,12 +8,15 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // a2aClient represents a client for interacting with a custom API.
 type a2aClient struct {
 	url    string
 	client *http.Client
+	id     func() string
 }
 
 // NewClient creates a new instance of CustomClient with a specified URL.
@@ -23,14 +26,15 @@ func NewClient(url string) Client {
 		client: &http.Client{
 			Timeout: 15 * time.Minute,
 		},
+		id: uuid.NewString,
 	}
 }
 
 // SendMessage sends a message using the custom API and returns the JSON-RPC response.
-func (c *a2aClient) SendMessage(params MessageSendParams) (*JSONRPCResponse, error) {
+func (c *a2aClient) SendMessage(params *MessageSendParams) (*JSONRPCResponse, error) {
 	req := JSONRPCRequest{
 		JSONRPC: "2.0",
-		ID:      "1", // Static ID for simplicity, can be changed to a unique ID generator
+		ID:      c.id(),
 		Method:  "message/send",
 		Params:  params,
 	}

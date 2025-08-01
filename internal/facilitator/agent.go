@@ -42,6 +42,10 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 			return nil, fmt.Errorf("failed to ask critic: %w", err)
 		}
 		a.log.Info("received %d suggestions from critic", len(suggestions))
+		if len(suggestions) == 0 {
+			a.log.Info("no suggestions found for class %s, skipping refactoring", class.Name())
+			continue
+		}
 		modified, err := a.fixer.Fix(class, suggestions, example)
 		if err != nil {
 			return nil, fmt.Errorf("failed to ask fixer: %w", err)

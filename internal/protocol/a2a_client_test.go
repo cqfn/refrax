@@ -7,16 +7,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCustomClient_SendsMessage(t *testing.T) {
+func TestClient_SendsMessage(t *testing.T) {
 	var err error
 	serv, port := testServer(t)
 	<-serv.Ready()
-	client := NewClient(fmt.Sprintf("http://localhost:%d", port))
+	client := NewClient(fmt.Sprintf("http://localhost:%d", port)).(*a2aClient)
+	client.id = func() string { return "1" }
 	message := MessageSendParams{
 		Message: askJoke(),
 	}
 
-	resp, err := client.SendMessage(message)
+	resp, err := client.SendMessage(&message)
 
 	require.NoError(t, err, "Failed to send message")
 	err = serv.Shutdown()
@@ -24,7 +25,7 @@ func TestCustomClient_SendsMessage(t *testing.T) {
 	expected := &JSONRPCResponse{
 		ID:      "1",
 		JSONRPC: "2.0",
-		Result:  *tellJoke(),
+		Result:  tellJoke(),
 	}
 	require.NoError(t, err, "Failed to send message")
 	require.NotNil(t, resp, "Response should not be nil")

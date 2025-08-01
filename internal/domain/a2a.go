@@ -22,20 +22,20 @@ func TaskToMsg(task Task) *protocol.Message {
 	if err != nil {
 		panic(err)
 	}
-	msg := protocol.NewMessageBuilder().
-		MessageID(uuid.NewString()).
-		Part(protocol.NewText(task.Description()).WithMetadata("max-size", size))
+	msg := protocol.NewMessage().
+		WithMessageID(uuid.NewString()).
+		AddPart(protocol.NewText(task.Description()).WithMetadata("max-size", size))
 	all := task.Classes()
 	for _, class := range all {
 		name := class.Name()
-		msg = msg.Part(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", name))
+		msg = msg.AddPart(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", name))
 	}
-	return msg.Build()
+	return msg
 }
 
 // RespToClasses converts a protocol.JSONRPCResponse to a slice of Class objects.
 func RespToClasses(resp *protocol.JSONRPCResponse) ([]Class, error) {
-	parts := resp.Result.(protocol.Message).Parts
+	parts := resp.Result.(*protocol.Message).Parts
 	log.Debug("received %d parts in refactoring response", len(parts))
 	classes := make([]Class, 0, len(parts))
 	for _, p := range parts {
@@ -57,16 +57,16 @@ func RespToClasses(resp *protocol.JSONRPCResponse) ([]Class, error) {
 
 // ClassesToMsg compiles a protocol message from a list of classes.
 func ClassesToMsg(classes []Class) *protocol.Message {
-	msg := protocol.NewMessageBuilder()
+	msg := protocol.NewMessage()
 	for _, v := range classes {
-		msg.Part(protocol.NewFileBytes([]byte(v.Content())).WithMetadata("class-name", v.Name()))
+		msg.AddPart(protocol.NewFileBytes([]byte(v.Content())).WithMetadata("class-name", v.Name()))
 	}
-	return msg.Build()
+	return msg
 }
 
 // RespToSuggestions converts a protocol.JSONRPCResponse to a slice of Suggestion objects.
 func RespToSuggestions(resp *protocol.JSONRPCResponse) []Suggestion {
-	criticMessage := resp.Result.(protocol.Message)
+	criticMessage := resp.Result.(*protocol.Message)
 	suggestions := make([]Suggestion, 0, len(criticMessage.Parts))
 	for _, part := range criticMessage.Parts {
 		if part.PartKind() == protocol.PartKindText {
@@ -79,7 +79,7 @@ func RespToSuggestions(resp *protocol.JSONRPCResponse) []Suggestion {
 
 // RespToClass converts a JSONRPCResponse into a Class, decoding file parts as needed.
 func RespToClass(resp *protocol.JSONRPCResponse) (Class, error) {
-	part := resp.Result.(protocol.Message).Parts[0]
+	part := resp.Result.(*protocol.Message).Parts[0]
 	if part.PartKind() == protocol.PartKindFile {
 		filePart := part.(*protocol.FilePart)
 		decoded, err := util.DecodeFile(filePart.File.(protocol.FileWithBytes).Bytes)

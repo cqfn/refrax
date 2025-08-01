@@ -7,6 +7,12 @@ import (
 	"github.com/cqfn/refrax/internal/domain"
 )
 
+// Project represents an interface for managing Java classes within a project.
+type Project interface {
+	// Classes retrieves all Java classes within the project.
+	Classes() ([]domain.Class, error)
+}
+
 // InMemoryProject is an implementation of Project that stores its classes in memory.
 type InMemoryProject struct {
 	files map[string]domain.Class
@@ -19,7 +25,7 @@ type InMemoryJavaClass struct {
 }
 
 // NewMock creates a mock project with predefined content for testing purposes.
-func NewMock() domain.Project {
+func NewMock() Project {
 	mapping := map[string]string{
 		"Main.java": "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n",
 	}
@@ -27,7 +33,7 @@ func NewMock() domain.Project {
 }
 
 // SingleClass creates a project containing a single Java class with the provided name and content.
-func SingleClass(name, content string) domain.Project {
+func SingleClass(name, content string) Project {
 	mapping := map[string]string{
 		name: content,
 	}
@@ -35,7 +41,7 @@ func SingleClass(name, content string) domain.Project {
 }
 
 // NewInMemory creates a new in-memory project with the given map of file names to Java class content.
-func NewInMemory(files map[string]string) domain.Project {
+func NewInMemory(files map[string]string) Project {
 	res := make(map[string]domain.Class, len(files))
 	for name, content := range files {
 		res[name] = &InMemoryJavaClass{

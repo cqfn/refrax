@@ -17,12 +17,6 @@ type Facilitator interface {
 	Refactor(task Task) ([]Class, error)
 }
 
-// Project represents an interface for managing Java classes within a project.
-type Project interface {
-	// Classes retrieves all Java classes within the project.
-	Classes() ([]Class, error)
-}
-
 // Task represents a unit of work that contains classes and associated parameters.
 type Task interface {
 	Description() string

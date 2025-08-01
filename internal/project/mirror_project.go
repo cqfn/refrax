@@ -10,7 +10,7 @@ import (
 
 // MirrorProject decorates FilesystemProject with a mirror location to avoid modifying the original.
 type MirrorProject struct {
-	mirror domain.Project
+	mirror Project
 }
 
 // NewMirrorProject creates a mirror of the original FilesystemProject at the given path.
