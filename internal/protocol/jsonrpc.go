@@ -86,13 +86,13 @@ func (r *JSONRPCResponse) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(aux.Result, &msg); err != nil {
 			return fmt.Errorf("failed to unmarshal message: %w", err)
 		}
-		r.Result = msg
+		r.Result = &msg
 	case "task":
 		var task Task
 		if err := json.Unmarshal(aux.Result, &task); err != nil {
 			return fmt.Errorf("failed to unmarshal task: %w", err)
 		}
-		r.Result = task
+		r.Result = &task
 	default:
 		var generic map[string]any
 		if err := json.Unmarshal(aux.Result, &generic); err != nil {

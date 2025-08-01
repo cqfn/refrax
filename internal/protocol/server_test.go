@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestServer_AgentCard(t *testing.T) {
+func TestServerMux_AgentCard(t *testing.T) {
 	port, err := util.FreePort()
 	require.NoError(t, err, "expected no error getting free port")
 	server := NewServer(mockCard(port), port)
@@ -33,7 +33,7 @@ func TestServer_AgentCard(t *testing.T) {
 	assert.Equal(t, *mockCard(port), card, "Expected agent card to match")
 }
 
-func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
+func TestServerMux_AgentCard_MethodNotAllowed(t *testing.T) {
 	port, err := util.FreePort()
 	require.NoError(t, err, "expected no error getting free port")
 	server := NewServer(mockCard(port), port)
@@ -50,11 +50,10 @@ func TestServer_AgentCard_MethodNotAllowed(t *testing.T) {
 }
 
 func mockCard(port int) *AgentCard {
-	return Card().
-		Name("Test Agent").
-		Description("A test agent for unit tests").
-		URL(fmt.Sprintf("http://localhost:%d", port)).
-		Version("0.0.1").
-		Skill("refactor-java", "Refactor Java Projects", "Refrax can refactor java projects").
-		Build()
+	return NewAgentCard().
+		WithName("Test Agent").
+		WithDescription("A test agent for unit tests").
+		WithURL(fmt.Sprintf("http://localhost:%d", port)).
+		WithVersion("0.0.1").
+		AddSkill("refactor-java", "Refactor Java Projects", "Refrax can refactor java projects")
 }

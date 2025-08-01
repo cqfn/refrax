@@ -21,7 +21,7 @@ var testCard = AgentCard{
 	Version:     "1.0.0",
 }
 
-func TestCustomServer_AgentCard(t *testing.T) {
+func TestServer_AgentCard(t *testing.T) {
 	var err error
 	serv, port := testServer(t)
 	<-serv.Ready()
@@ -40,7 +40,7 @@ func TestCustomServer_AgentCard(t *testing.T) {
 	require.Equal(t, "TestAgent", result.Name, "Agent name does not match")
 }
 
-func TestCustomServer_SendsMessage(t *testing.T) {
+func TestServer_SendsMessage(t *testing.T) {
 	var err error
 	serv, port := testServer(t)
 	<-serv.Ready()
@@ -67,7 +67,7 @@ func TestCustomServer_SendsMessage(t *testing.T) {
 	expected := JSONRPCResponse{
 		ID:      "1",
 		JSONRPC: "2.0",
-		Result:  *tellJoke(),
+		Result:  tellJoke(),
 	}
 	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"), "Content-Type header should be application/json")
 	assert.Equal(t, expected, response, "Server should return the expected joke message")
@@ -99,17 +99,15 @@ func joke(_ context.Context, msg *Message) (*Message, error) {
 }
 
 func askJoke() *Message {
-	return NewMessageBuilder().
-		Role("user").
-		Part(NewText("tell me a joke")).
-		MessageID("9229e770-767c-417b-a0b0-f0741243c589").
-		Build()
+	return NewMessage().
+		WithRole("user").
+		AddPart(NewText("tell me a joke")).
+		WithMessageID("9229e770-767c-417b-a0b0-f0741243c589")
 }
 
 func tellJoke() *Message {
-	return NewMessageBuilder().
-		Role("agent").
-		Part(NewText("Why did the chicken cross the road? To get to the other side!")).
-		MessageID("363422be-b0f9-4692-a24d-278670e7c7f1").
-		Build()
+	return NewMessage().
+		WithRole("agent").
+		AddPart(NewText("Why did the chicken cross the road? To get to the other side!")).
+		WithMessageID("363422be-b0f9-4692-a24d-278670e7c7f1")
 }

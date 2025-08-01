@@ -34,7 +34,7 @@ func NewRefraxClient(params *Params) *RefraxClient {
 }
 
 // Refactor initializes the refactoring process for the given project.
-func Refactor(params *Params) (domain.Project, error) {
+func Refactor(params *Params) (project.Project, error) {
 	proj, err := proj(*params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create project from params: %w", err)
@@ -43,7 +43,7 @@ func Refactor(params *Params) (domain.Project, error) {
 }
 
 // Refactor performs refactoring on the given project using the RefraxClient.
-func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
+func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
@@ -58,7 +58,6 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
-
 	criticPort, err := util.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
@@ -109,8 +108,6 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 
 	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
 	log.Info("begin refactoring")
-	// facilitatorClient := protocol.NewClient(fmt.Sprintf("http://localhost:%d", facilitatorPort))
-
 	ch := make(chan refactoring, len(classes))
 	go refactor(fclttor, proj, c.params.MaxSize, ch)
 	for range len(classes) {
@@ -143,7 +140,7 @@ type refactoring struct {
 	err     error
 }
 
-func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refactoring) {
+func refactor(f domain.Facilitator, p project.Project, size int, ch chan<- refactoring) {
 	log.Debug("refactoring project %q", p)
 	all, err := p.Classes()
 	if err != nil {
@@ -228,7 +225,7 @@ func token(p Params) string {
 	return token
 }
 
-func proj(params Params) (domain.Project, error) {
+func proj(params Params) (project.Project, error) {
 	if params.MockProject {
 		log.Debug("using mock project")
 		return project.NewMock(), nil

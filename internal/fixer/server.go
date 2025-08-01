@@ -57,20 +57,20 @@ func (f *Fixer) Fix(class domain.Class, suggestions []domain.Suggestion, example
 	address := fmt.Sprintf("http://localhost:%d", f.port)
 	f.log.Info("asking fixer (%s) to apply suggestions...", address)
 	fixer := protocol.NewClient(address)
-	builder := protocol.NewMessageBuilder().
-		MessageID(uuid.NewString()).
-		Part(protocol.NewText("apply all the following suggestions"))
+	msg := protocol.NewMessage().
+		WithMessageID(uuid.NewString()).
+		AddPart(protocol.NewText("apply all the following suggestions"))
 	for _, suggestion := range suggestions {
-		builder.Part(protocol.NewText(suggestion.Text()).WithMetadata("suggestion", true))
+		msg.AddPart(protocol.NewText(suggestion.Text()).WithMetadata("suggestion", true))
 	}
 	if example != nil {
-		builder.Part(protocol.NewFileBytes([]byte(example.Content())).
+		msg.AddPart(protocol.NewFileBytes([]byte(example.Content())).
 			WithMetadata("class-name", example.Name()).
 			WithMetadata("example", true))
 	}
 	file := protocol.NewFileBytes([]byte(class.Content()))
-	msg := builder.Part(file.WithMetadata("class-name", class.Name())).Build()
-	resp, err := fixer.SendMessage(protocol.NewMessageSendParamsBuilder().Message(msg).Build())
+	msg = msg.AddPart(file.WithMetadata("class-name", class.Name()))
+	resp, err := fixer.SendMessage(protocol.NewMessageSendParams().WithMessage(msg))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to fixer: %w", err)
 	}
@@ -176,11 +176,9 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	}
 	f.log.Debug("received answer from AI: %s", answer)
 	f.log.Info("AI provided a fix for the Java code, sending response back...")
-	message := protocol.NewMessageBuilder().
-		MessageID(m.MessageID).
-		Part(protocol.NewFileBytes([]byte(clean(answer))).WithMetadata("class-name", class)).
-		Build()
-	return message, nil
+	return protocol.NewMessage().
+		WithMessageID(m.MessageID).
+		AddPart(protocol.NewFileBytes([]byte(clean(answer))).WithMetadata("class-name", class)), nil
 }
 
 func clean(answer string) string {
@@ -189,11 +187,10 @@ func clean(answer string) string {
 }
 
 func agentCard(port int) *protocol.AgentCard {
-	return protocol.Card().
-		Name("Fixer Agent").
-		Description("Fixer Description").
-		URL(fmt.Sprintf("http://localhost:%d", port)).
-		Version("0.0.1").
-		Skill("fix-java-code", "Fix Java Code", "Fix a Java code based on suggestions").
-		Build()
+	return protocol.NewAgentCard().
+		WithName("Fixer Agent").
+		WithDescription("Fixer Description").
+		WithURL(fmt.Sprintf("http://localhost:%d", port)).
+		WithVersion("0.0.1").
+		AddSkill("fix-java-code", "Fix Java Code", "Fix a Java code based on suggestions")
 }
