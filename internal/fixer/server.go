@@ -29,6 +29,7 @@ const prompt = "Fix '%s' code based on the listed suggestions.\n\n" +
 	"\n\nSuggestions:\n" +
 	"```suggestion\n%s\n\n```" +
 	"Do not rename class names.\n" +
+	"Do not remove JavaDoc comments.\n" +
 	"Return only the corrected Java code.\n" +
 	"Do not include explanations, comments, or any extra text.\n\n"
 
@@ -135,7 +136,6 @@ func (f *Fixer) thinkChan(m *protocol.Message) <-chan thought {
 
 func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	f.log.Info("received message: #%s", m.MessageID)
-	f.log.Info("trying to fix Java code...")
 	var code string
 	var suggestions []string
 	var class string
@@ -163,6 +163,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 
 		}
 	}
+	f.log.Info("trying to fix %q class...", class)
 	all := strings.Join(suggestions, "\n")
 	question := fmt.Sprintf(prompt, class, code, all)
 	if example != "" {
