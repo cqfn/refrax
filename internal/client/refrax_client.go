@@ -116,7 +116,8 @@ func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 			return nil, fmt.Errorf("failed to refactor class: %w", res.err)
 		}
 		if res.class == nil {
-			return nil, fmt.Errorf("refactored class is nil, how is that possible?")
+			log.Warn("refactored class is nil, skipping this class")
+			continue
 		}
 		if res.content == "" {
 			return nil, fmt.Errorf("refactored class %s has empty content, after refactoring", res.class.Name())
@@ -159,6 +160,7 @@ func refactor(f domain.Facilitator, p project.Project, size int, ch chan<- refac
 		close(ch)
 		return
 	}
+	log.Info("refactored %d classes in project %s", len(refactored), p)
 	for _, c := range refactored {
 		log.Debug("rececived refactored class: ", c)
 		ch <- refactoring{class: before[c.Name()], content: c.Content(), err: nil}

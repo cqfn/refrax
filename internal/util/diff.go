@@ -6,6 +6,9 @@ import (
 
 // Diff calculates the difference score between two strings
 // by computing the total number of lines removed and added.
+// @todo #81:90min Repair Diff method to return the number of lines that were removed and added
+// by some reason this method returns to many changes lines. For example, if a file has 15 changes,
+// this method migt return 200. We need to find the bug and fix it.
 func Diff(before, after string) int {
 	blines := strings.Split(before, "\n")
 	alines := strings.Split(after, "\n")

@@ -35,14 +35,17 @@ Identify possible improvements or flaws such as:
 * grammar and spelling mistakes in comments,
 * variables that can be inlined or removed without changing functionality,
 * unnecessary comments inside methods,
-* redundant code,
-* non-idiomatic patterns.
+* redundant code.
+
+Don't suggest any changes that would alter the functionality of the code.
+Don't suggest any changes that would require moving code parts between files (like extract class or extract an interface).
+Don't suggest method renaming or class renaming.
 
 Keep in mind the following imperfections with Java code, identified by automated static analysis system:
 
 {{imperfections}}
 
-Respond with a single most relevant and important suggestion for improvement, formatted as a single line of text. 
+Respond with a few most relevant and important suggestion for improvement, formatted as a few lines of text. 
 If there are no suggestions or they are insignificant, respond with "{{not-found}}".
 Do not include any explanations, summaries, or extra text.
 `
@@ -137,6 +140,7 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	}
 	res := protocol.NewMessage().WithMessageID(m.MessageID)
 	suggestions := parseAnswer(answer)
+	suggestions = associated(suggestions, class.Name())
 	logSuggestions(c.log, suggestions)
 	c.log.Info("found %d possible improvements", len(suggestions))
 	for _, suggestion := range suggestions {
@@ -165,6 +169,13 @@ func parseAnswer(answer string) []string {
 		if suggestion != "" {
 			suggestions = append(suggestions, suggestion)
 		}
+	}
+	return suggestions
+}
+
+func associated(suggestions []string, class string) []string {
+	for i, suggestion := range suggestions {
+		suggestions[i] = fmt.Sprintf("%s: %s", class, suggestion)
 	}
 	return suggestions
 }

@@ -20,9 +20,10 @@ type deepSeek struct {
 }
 
 type deepseekReq struct {
-	Model    string        `json:"model"`
-	Messages []deepseekMsg `json:"messages"`
-	Stream   bool          `json:"stream"`
+	Model       string        `json:"model"`
+	Messages    []deepseekMsg `json:"messages"`
+	Stream      bool          `json:"stream"`
+	Temperature *float64      `json:"temperature,omitempty"`
 }
 
 type deepseekResp struct {
@@ -56,13 +57,15 @@ func (d *deepSeek) Ask(question string) (string, error) {
 func (d *deepSeek) send(system, user string) (answer string, err error) {
 	content := trimmed(user)
 	log.Debug("deepSeek: sending request with system promt: '%s' and userPrompt: '%s'", system, content)
+	temp := float64(0.0)
 	body := deepseekReq{
 		Model: d.model,
 		Messages: []deepseekMsg{
 			{Role: "system", Content: system},
 			{Role: "user", Content: content},
 		},
-		Stream: false,
+		Stream:      false,
+		Temperature: &temp,
 	}
 	data, err := json.Marshal(body)
 	if err != nil {
