@@ -53,8 +53,9 @@ func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
 	log.Debug("found %d classes in the project: %v", len(classes), classes)
-	counter := &stats.Stats{}
-	ai, err := mind(c.params, counter)
+
+	criticStats := &stats.Stats{Name: "critic"}
+	criticBrain, err := mind(c.params, criticStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -62,22 +63,32 @@ func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
-	ctc := critic.NewCritic(ai, criticPort)
-	ctc.Handler(countStats(counter))
+	ctc := critic.NewCritic(criticBrain, criticPort)
+	ctc.Handler(countStats(criticStats))
 
+	fixerStats := &stats.Stats{Name: "fixer"}
+	fixerBrain, err := mind(c.params, fixerStats)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AI instance: %w", err)
+	}
 	fixerPort, err := util.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
 	}
-	fxr := fixer.NewFixer(ai, fixerPort)
-	fxr.Handler(countStats(counter))
+	fxr := fixer.NewFixer(fixerBrain, fixerPort)
+	fxr.Handler(countStats(fixerStats))
 
+	facilitatorStats := &stats.Stats{Name: "facilitator"}
+	facilitatorBrain, err := mind(c.params, facilitatorStats)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AI instance: %w", err)
+	}
 	facilitatorPort, err := util.FreePort()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
-	fclttor := facilitator.NewFacilitator(ai, ctc, fxr, facilitatorPort)
-	fclttor.Handler(countStats(counter))
+	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, facilitatorPort)
+	fclttor.Handler(countStats(facilitatorStats))
 
 	go func() {
 		faerr := fclttor.ListenAndServe()
@@ -128,7 +139,7 @@ func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 		}
 	}
 	log.Info("refactoring is finished")
-	err = printStats(c.params, counter)
+	err = printStats(c.params, criticStats, fixerStats, facilitatorStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to print statistics: %w", err)
 	}
@@ -186,7 +197,7 @@ func initLogger(params *Params) {
 	}
 }
 
-func printStats(p Params, s *stats.Stats) error {
+func printStats(p Params, s ...*stats.Stats) error {
 	if p.Stats {
 		var swriter stats.Writer
 		if p.Format == "csv" {
@@ -200,7 +211,15 @@ func printStats(p Params, s *stats.Stats) error {
 			log.Info("using stdout format for statistics output")
 			swriter = stats.NewStdWriter(log.Default())
 		}
-		return swriter.Print(s)
+		var res []*stats.Stats
+		total := &stats.Stats{}
+		for _, st := range s {
+			res = append(res, st)
+			total = total.Add(st)
+		}
+		total.Name = "total"
+		res = append(res, total)
+		return swriter.Print(res...)
 	}
 	return nil
 }
