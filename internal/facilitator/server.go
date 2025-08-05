@@ -100,7 +100,7 @@ func (f *A2AFacilitator) thinkLong(m *protocol.Message) (*protocol.Message, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to refactor task: %w", err)
 	}
-	log.Debug("number of processed classes: %d", len(resp))
+	f.log.Info("number of processed classes: %d", len(resp))
 	return domain.ClassesToMsg(resp), nil
 }
 
