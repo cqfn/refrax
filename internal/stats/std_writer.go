@@ -14,10 +14,12 @@ func NewStdWriter(logger log.Logger) Writer {
 	return &stdWriter{log: logger}
 }
 
-func (s *stdWriter) Print(stats *Stats) error {
-	all := stats.Entries()
-	for _, v := range all {
-		s.log.Info("%s: %s", v.Title, v.Value)
+func (w *stdWriter) Print(stats ...*Stats) error {
+	for _, s := range stats {
+		all := s.Entries()
+		for _, v := range all {
+			w.log.Info("%s: %s", v.Title, v.Value)
+		}
 	}
 	return nil
 }

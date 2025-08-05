@@ -11,6 +11,9 @@ import (
 
 // Stats is a struct that contains interaction statistics between components.
 type Stats struct {
+	// name is a string that represents the name of the statistics.
+	Name string
+
 	// mu is a mutex to protect concurrent write access to stats.
 	mu sync.Mutex
 
@@ -44,9 +47,6 @@ type Stats struct {
 	// a2arespbytes is an int that stores the number of bytes received in A2A responses.
 	a2arespbytes int
 }
-
-// StatEntry is a placeholder type. Add fields or remove if unnecessary.
-type StatEntry struct{}
 
 // AverageA2ARespBytes calculates the average number of A2A response bytes.
 func (s *Stats) AverageA2ARespBytes() float64 {
@@ -296,6 +296,41 @@ func (s *Stats) A2AReq(duration time.Duration, reqt, respt, reqb, respb int) {
 	s.a2aresptokens += respt
 	s.a2areqbytes += reqb
 	s.a2arespbytes += respb
+}
+
+// Add combines the current Stats instance with another and returns a new Stats instance.
+// It does not mutate either of the original Stats instances.
+func (s *Stats) Add(other *Stats) *Stats {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	other.mu.Lock()
+	defer other.mu.Unlock()
+	combined := &Stats{
+		Name:          fmt.Sprintf("%s + %s", s.Name, other.Name),
+		llmreq:        append([]time.Duration{}, s.llmreq...),
+		llmreqtokens:  s.llmreqtokens,
+		llmresptokens: s.llmresptokens,
+		llmreqbytes:   s.llmreqbytes,
+		llmrespbytes:  s.llmrespbytes,
+		a2areqs:       append([]time.Duration{}, s.a2areqs...),
+		a2areqtokens:  s.a2areqtokens,
+		a2aresptokens: s.a2aresptokens,
+		a2areqbytes:   s.a2areqbytes,
+		a2arespbytes:  s.a2arespbytes,
+	}
+	// Append other durations
+	combined.llmreq = append(combined.llmreq, other.llmreq...)
+	combined.a2areqs = append(combined.a2areqs, other.a2areqs...)
+	// Sum other values
+	combined.llmreqtokens += other.llmreqtokens
+	combined.llmresptokens += other.llmresptokens
+	combined.llmreqbytes += other.llmreqbytes
+	combined.llmrespbytes += other.llmrespbytes
+	combined.a2areqtokens += other.a2areqtokens
+	combined.a2aresptokens += other.a2aresptokens
+	combined.a2areqbytes += other.a2areqbytes
+	combined.a2arespbytes += other.a2arespbytes
+	return combined
 }
 
 // Tokens counts the number of tokens in a given text using the tiktoken library.

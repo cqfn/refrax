@@ -131,6 +131,18 @@ If multiple sources are provided, the following priority order is applied (highe
 3. `TOKEN` environment variable (deprecated)
 4. `.env` file (`DEEPSEEK_TOKEN` > `TOKEN`)
 
+## Statistics
+
+To gather interaction statistics, you can use the following command:
+
+```sh
+refrax refactor . --ai=deepseek --stats --stats-format=csv --stats-output=stats.csv
+```
+
+This command generates a `stats.csv` file containing the interaction statistics.
+The `--stats-output` and `--stats-format` parameters are optional.
+If you omit them, `refrax` will output the statistics directly to the console.
+
 ## License
 
 Licensed under the [MIT](LICENSE.txt) License.
