@@ -19,6 +19,11 @@ type agent struct {
 	fixer  domain.Fixer
 }
 
+// @todo #93:90min Handle classes with the same name.
+// Currently, we have a problem when classes might have the same name, which can lead to confusion
+// 'package-info.java' is one of the examples.
+// We need to ensure that we handle such cases correctly, possibly by using unique identifiers or
+// paths to differentiate between classes with the same name.
 func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	size, err := maxSize(t)
 	if err != nil {
@@ -33,7 +38,9 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	improvements := make([]improvement, 0, len(t.Classes()))
 	ch := make(chan improvementResult, len(t.Classes()))
 	nreviewed := 0
+	untouched := make(map[string]domain.Class, 0)
 	for _, class := range t.Classes() {
+		untouched[class.Name()] = class
 		tokens, _ := stats.Tokens(class.Content())
 		a.log.Info("class %s has %d tokens", class.Name(), tokens)
 		if tokens < 2_000 {
@@ -43,6 +50,7 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 			a.log.Warn("class %s has too many tokens (%d), skipping review", class.Name(), tokens)
 		}
 	}
+	a.log.Info("number of classes to review: %d, untouched: %d", nreviewed, len(untouched))
 	for range nreviewed {
 		impr := <-ch
 		if impr.err != nil {
@@ -61,39 +69,46 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	}
 	a.log.Info("received %d most frequent suggestions from brain", len(mostImportant))
 	refactored := make([]domain.Class, 0)
-	fixChannel := make(chan fixRes, len(mostImportant))
+	fixChannel := make(chan fixResult, len(mostImportant))
+	send := make(map[string]improvement, 0)
 	for _, imp := range mostImportant {
+		send[imp.class.Name()] = imp
+		delete(untouched, imp.class.Name())
 		go a.fix(imp, example, fixChannel)
 	}
 	changed := 0
-	for _, imp := range mostImportant {
-		fixResult := <-fixChannel
-		if fixResult.err != nil {
-			return nil, fmt.Errorf("failed to fix class %s: %w", imp.class.Name(), fixResult.err)
+	for range len(send) {
+		fixRes := <-fixChannel
+		classname := fixRes.class.Name()
+		if fixRes.err != nil {
+			panic(fmt.Sprintf("failed to fix class %s: %v", classname, fixRes.err))
 		}
-		class := imp.class
+		class := send[classname].class
 		if changed >= size {
 			a.log.Warn("refactoring class %s would exceed max-size is %d (current %d), skipping refactoring", class.Name(), size, changed)
 			continue
 		}
-		modified := fixResult.class
-		a.log.Info("fixed class %s, changed content", modified.Name())
+		modified := fixRes.class
 		refactored = append(refactored, modified)
 		diff := util.Diff(class.Content(), modified.Content())
+		a.log.Info("fixed class %s, changed content (diff %d)", modified.Name(), diff)
 		changed += diff
+	}
+	for _, class := range untouched {
+		refactored = append(refactored, class)
 	}
 	return refactored, nil
 }
 
-func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixRes) {
+func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) {
 	class := imp.class
 	suggestions := imp.suggestions
 	modified, err := a.fixer.Fix(class, suggestions, example)
 	if err != nil {
-		ch <- fixRes{fmt.Errorf("failed to ask fixer: %w", err), nil}
+		ch <- fixResult{fmt.Errorf("failed to ask fixer: %w", err), nil}
 		return
 	}
-	ch <- fixRes{nil, modified}
+	ch <- fixResult{nil, modified}
 }
 
 func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
@@ -118,7 +133,7 @@ func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
 	}
 }
 
-type fixRes struct {
+type fixResult struct {
 	err   error
 	class domain.Class
 }
