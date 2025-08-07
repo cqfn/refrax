@@ -26,28 +26,15 @@ type InMemoryJavaClass struct {
 
 // NewMock creates a mock project with predefined content for testing purposes.
 func NewMock() Project {
-	mapping := map[string]string{
-		"Main.java": "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n",
-	}
-	return NewInMemory(mapping)
-}
-
-// SingleClass creates a project containing a single Java class with the provided name and content.
-func SingleClass(name, content string) Project {
-	mapping := map[string]string{
-		name: content,
-	}
-	return NewInMemory(mapping)
+	class := domain.NewClass("Main.java", ".", "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n")
+	return NewInMemory(class)
 }
 
 // NewInMemory creates a new in-memory project with the given map of file names to Java class content.
-func NewInMemory(files map[string]string) Project {
-	res := make(map[string]domain.Class, len(files))
-	for name, content := range files {
-		res[name] = &InMemoryJavaClass{
-			name:    name,
-			content: content,
-		}
+func NewInMemory(classes ...domain.Class) Project {
+	res := make(map[string]domain.Class, len(classes))
+	for _, class := range classes {
+		res[class.Path()] = class
 	}
 	return &InMemoryProject{
 		files: res,

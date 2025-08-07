@@ -1,6 +1,8 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Critic represents an interface to review a class and provide suggestions.
 type Critic interface {
@@ -28,6 +30,7 @@ type Task interface {
 type Class interface {
 	Name() string
 	Content() string
+	Path() string
 	SetContent(content string) error
 }
 
@@ -68,13 +71,15 @@ func NewTask(description string, classes []Class, parameters map[string]any) Tas
 
 type class struct {
 	content string
+	path    string
 	name    string
 }
 
 // NewClass creates a new Class instance with the given name and content.
-func NewClass(name, content string) Class {
+func NewClass(name, path, content string) Class {
 	return &class{
 		name:    name,
+		path:    path,
 		content: content,
 	}
 }
@@ -87,6 +92,11 @@ func (a *class) Content() string {
 // Name implements Class.
 func (a *class) Name() string {
 	return a.name
+}
+
+// Path implements Class.
+func (a *class) Path() string {
+	return a.path
 }
 
 type suggestion struct {

@@ -84,7 +84,7 @@ func (c *Critic) Review(class domain.Class) ([]domain.Suggestion, error) {
 	msg := protocol.NewMessage().
 		WithMessageID(uuid.NewString()).
 		AddPart(protocol.NewText("lint class")).
-		AddPart(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", class.Name()))
+		AddPart(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", class.Name()).WithMetadata("class-path", class.Path()))
 	resp, err := critic.SendMessage(protocol.NewMessageSendParams().WithMessage(msg))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to critic: %w", err)
@@ -140,7 +140,7 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	}
 	res := protocol.NewMessage().WithMessageID(m.MessageID)
 	suggestions := parseAnswer(answer)
-	suggestions = associated(suggestions, class.Name())
+	suggestions = associated(suggestions, class.Path())
 	logSuggestions(c.log, suggestions)
 	c.log.Info("found %d possible improvements", len(suggestions))
 	for _, suggestion := range suggestions {
@@ -173,9 +173,9 @@ func parseAnswer(answer string) []string {
 	return suggestions
 }
 
-func associated(suggestions []string, class string) []string {
+func associated(suggestions []string, classPath string) []string {
 	for i, suggestion := range suggestions {
-		suggestions[i] = fmt.Sprintf("%s: %s", class, suggestion)
+		suggestions[i] = fmt.Sprintf("%s: %s", classPath, suggestion)
 	}
 	return suggestions
 }

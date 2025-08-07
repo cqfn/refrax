@@ -28,7 +28,8 @@ func TaskToMsg(task Task) *protocol.Message {
 	all := task.Classes()
 	for _, class := range all {
 		name := class.Name()
-		msg = msg.AddPart(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", name))
+		path := class.Path()
+		msg = msg.AddPart(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", name).WithMetadata("class-path", path))
 	}
 	return msg
 }
@@ -43,12 +44,13 @@ func RespToClasses(resp *protocol.JSONRPCResponse) ([]Class, error) {
 		if kind == protocol.PartKindFile {
 			log.Debug("received file part %v", p)
 			classname := p.Metadata()["class-name"]
+			path := fmt.Sprintf("%v", p.Metadata()["class-path"])
 			bytes := p.(*protocol.FilePart).File.(protocol.FileWithBytes).Bytes
 			decoded, err := util.DecodeFile(bytes)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode refactored class %s: %w", classname, err)
 			}
-			class := NewClass(fmt.Sprintf("%v", classname), decoded)
+			class := NewClass(fmt.Sprintf("%v", classname), path, decoded)
 			classes = append(classes, class)
 		}
 	}
@@ -87,11 +89,16 @@ func RespToClass(resp *protocol.JSONRPCResponse) (Class, error) {
 			return nil, fmt.Errorf("failed to decode file part: %w", err)
 		}
 		meta := filePart.Metadata()
-		if meta["class-name"] == nil {
+		name := meta["class-name"]
+		if name == nil {
 			return nil, fmt.Errorf("file part has no class name metadata")
 		}
-		log.Debug("decoded class name: %s", meta["class-name"])
-		return NewClass(fmt.Sprintf("%v", meta["class-name"]), decoded), nil
+		path := meta["class-path"]
+		if path == nil {
+			return nil, fmt.Errorf("file part has no class path metadata")
+		}
+		log.Debug("decoded class name: %s, path: ", name, path)
+		return NewClass(fmt.Sprintf("%v", name), fmt.Sprintf("%v", path), decoded), nil
 	}
 	return nil, fmt.Errorf("expected file part, got %s", part.PartKind())
 }
@@ -118,7 +125,7 @@ func MsgToTask(msg *protocol.Message) (Task, error) {
 			return nil, fmt.Errorf("failed to decode file part: %w", err)
 		}
 		meta := v.Metadata()
-		class := NewClass(fmt.Sprintf("%v", meta["class-name"]), decoded)
+		class := NewClass(fmt.Sprintf("%v", meta["class-name"]), fmt.Sprintf("%v", meta["class-path"]), decoded)
 		classes = append(classes, class)
 	}
 	return &task{

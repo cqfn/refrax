@@ -19,11 +19,6 @@ type agent struct {
 	fixer  domain.Fixer
 }
 
-// @todo #93:90min Handle classes with the same name.
-// Currently, we have a problem when classes might have the same name, which can lead to confusion
-// 'package-info.java' is one of the examples.
-// We need to ensure that we handle such cases correctly, possibly by using unique identifiers or
-// paths to differentiate between classes with the same name.
 func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	size, err := maxSize(t)
 	if err != nil {
@@ -40,14 +35,14 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	nreviewed := 0
 	untouched := make(map[string]domain.Class, 0)
 	for _, class := range t.Classes() {
-		untouched[class.Name()] = class
+		untouched[class.Path()] = class
 		tokens, _ := stats.Tokens(class.Content())
-		a.log.Info("class %s has %d tokens", class.Name(), tokens)
+		a.log.Info("class %s has %d tokens", class.Path(), tokens)
 		if tokens < 2_000 {
 			nreviewed++
 			go a.review(class, ch)
 		} else {
-			a.log.Warn("class %s has too many tokens (%d), skipping review", class.Name(), tokens)
+			a.log.Warn("class %s (%s) has too many tokens (%d), skipping review", class.Name(), class.Path(), tokens)
 		}
 	}
 	a.log.Info("number of classes to review: %d, untouched: %d", nreviewed, len(untouched))
@@ -72,18 +67,18 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	fixChannel := make(chan fixResult, len(mostImportant))
 	send := make(map[string]improvement, 0)
 	for _, imp := range mostImportant {
-		send[imp.class.Name()] = imp
-		delete(untouched, imp.class.Name())
+		send[imp.class.Path()] = imp
+		delete(untouched, imp.class.Path())
 		go a.fix(imp, example, fixChannel)
 	}
 	changed := 0
 	for range len(send) {
 		fixRes := <-fixChannel
-		classname := fixRes.class.Name()
 		if fixRes.err != nil {
-			panic(fmt.Sprintf("failed to fix class %s: %v", classname, fixRes.err))
+			panic(fmt.Sprintf("failed to fix class: %v", fixRes.err))
 		}
-		class := send[classname].class
+		path := fixRes.class.Path()
+		class := send[path].class
 		if changed >= size {
 			a.log.Warn("refactoring class %s would exceed max-size is %d (current %d), skipping refactoring", class.Name(), size, changed)
 			continue
@@ -91,7 +86,7 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 		modified := fixRes.class
 		refactored = append(refactored, modified)
 		diff := util.Diff(class.Content(), modified.Content())
-		a.log.Info("fixed class %s, changed content (diff %d)", modified.Name(), diff)
+		a.log.Info("fixed class %s (%s), changed content (diff %d)", modified.Name(), modified.Path(), diff)
 		changed += diff
 	}
 	for _, class := range untouched {
@@ -112,7 +107,7 @@ func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) 
 }
 
 func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
-	a.log.Info("received class for refactoring: %q", class.Name())
+	a.log.Info("received class for refactoring: %q", class.Path())
 	suggestions, err := a.critic.Review(class)
 	if err != nil {
 		ch <- improvementResult{err: fmt.Errorf("failed to ask critic: %w", err), important: improvement{class: class}}
@@ -120,7 +115,7 @@ func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
 	}
 	a.log.Info("received %d suggestions from critic", len(suggestions))
 	if len(suggestions) == 0 {
-		a.log.Info("no suggestions found for class %s", class.Name())
+		a.log.Info("no suggestions found for class %s", class.Path())
 		ch <- improvementResult{err: nil, important: improvement{class: class}}
 		return
 	}
@@ -218,13 +213,13 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 	return ires, nil
 }
 
-func findClass(improvements []improvement, className string) (domain.Class, error) {
+func findClass(improvements []improvement, path string) (domain.Class, error) {
 	for _, imp := range improvements {
-		if imp.class.Name() == className {
+		if imp.class.Path() == path {
 			return imp.class, nil
 		}
 	}
-	return nil, fmt.Errorf("class %s not found in improvements", className)
+	return nil, fmt.Errorf("class %s not found in improvements", path)
 }
 
 func maxSize(t domain.Task) (int, error) {

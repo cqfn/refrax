@@ -68,6 +68,11 @@ func (c *FilesystemClass) Content() string {
 	return c.content
 }
 
+// Path returns the filesystem path of the Java class file.
+func (c *FilesystemClass) Path() string {
+	return c.path
+}
+
 // SetContent updates the content of the Java class file and writes it to the filesystem.
 func (c *FilesystemClass) SetContent(content string) error {
 	c.content = content
