@@ -67,10 +67,11 @@ func (f *Fixer) Fix(class domain.Class, suggestions []domain.Suggestion, example
 	if example != nil {
 		msg.AddPart(protocol.NewFileBytes([]byte(example.Content())).
 			WithMetadata("class-name", example.Name()).
+			WithMetadata("class-path", example.Path()).
 			WithMetadata("example", true))
 	}
 	file := protocol.NewFileBytes([]byte(class.Content()))
-	msg = msg.AddPart(file.WithMetadata("class-name", class.Name()))
+	msg = msg.AddPart(file.WithMetadata("class-name", class.Name()).WithMetadata("class-path", class.Path()))
 	resp, err := fixer.SendMessage(protocol.NewMessageSendParams().WithMessage(msg))
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to fixer: %w", err)
@@ -139,6 +140,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	var code string
 	var suggestions []string
 	var class string
+	var path string
 	var example string
 	for _, part := range m.Parts {
 		if part.PartKind() == protocol.PartKindText {
@@ -159,6 +161,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 				code = content
 				name := file.Metadata()["class-name"]
 				class = fmt.Sprintf("%v", name)
+				path = fmt.Sprintf("%v", file.Metadata()["class-path"])
 			}
 
 		}
@@ -179,7 +182,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	f.log.Info("AI provided a fix for the Java code, sending response back...")
 	return protocol.NewMessage().
 		WithMessageID(m.MessageID).
-		AddPart(protocol.NewFileBytes([]byte(clean(answer))).WithMetadata("class-name", class)), nil
+		AddPart(protocol.NewFileBytes([]byte(clean(answer))).WithMetadata("class-path", path).WithMetadata("class-name", class)), nil
 }
 
 func clean(answer string) string {
