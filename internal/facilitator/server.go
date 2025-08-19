@@ -22,7 +22,7 @@ type A2AFacilitator struct {
 }
 
 // NewFacilitator creates a new instance of Facilitator to manage communication between agents.
-func NewFacilitator(ai brain.Brain, critic domain.Critic, fixer domain.Fixer, port int) *A2AFacilitator {
+func NewFacilitator(ai brain.Brain, critic domain.Critic, fixer domain.Fixer, reviewer domain.Reviewer, port int) *A2AFacilitator {
 	logger := log.NewPrefixed("facilitator", log.NewColored(log.Default(), log.Yellow))
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
 	server := protocol.NewServer(agentCard(port), port)
@@ -31,10 +31,11 @@ func NewFacilitator(ai brain.Brain, critic domain.Critic, fixer domain.Fixer, po
 		log:    logger,
 		port:   port,
 		original: &agent{
-			brain:  ai,
-			log:    logger,
-			critic: critic,
-			fixer:  fixer,
+			brain:    ai,
+			log:      logger,
+			critic:   critic,
+			fixer:    fixer,
+			reviewer: reviewer,
 		},
 	}
 	server.MsgHandler(facilitator.think)

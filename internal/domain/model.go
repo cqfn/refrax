@@ -19,6 +19,11 @@ type Facilitator interface {
 	Refactor(task Task) ([]Class, error)
 }
 
+// Reviewer represents an interface for a reviewer that can review changes made.
+type Reviewer interface {
+	Review() ([]Suggestion, error)
+}
+
 // Task represents a unit of work that contains classes and associated parameters.
 type Task interface {
 	Description() string

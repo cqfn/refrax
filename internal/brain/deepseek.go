@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/cqfn/refrax/internal/log"
 )
@@ -97,6 +96,6 @@ func (d *deepSeek) send(system, user string) (answer string, err error) {
 	if len(parsed.Choices) == 0 {
 		return "", errors.New("no choices in response")
 	}
-	answer = strings.TrimSpace(parsed.Choices[0].Message.Content)
+	answer = parsed.Choices[0].Message.Content
 	return answer, err
 }

@@ -4,7 +4,6 @@ package util
 import (
 	"encoding/base64"
 	"fmt"
-	"strings"
 )
 
 // DecodeFile decodes a base64 encoded string, trims whitespace, and returns the decoded string.
@@ -14,5 +13,5 @@ func DecodeFile(encoded string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to decode base64 string: %v", err)
 	}
-	return strings.TrimSpace(string(decoded)), err
+	return string(decoded), err
 }

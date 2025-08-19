@@ -58,6 +58,15 @@ type FilesystemClass struct {
 	path    string
 }
 
+// NewFilesystemClass creates a new FilesystemClass with the given name, path, and content.
+func NewFilesystemClass(name, path, content string) *FilesystemClass {
+	return &FilesystemClass{
+		name:    name,
+		path:    path,
+		content: content,
+	}
+}
+
 // Name returns the name of the Java class.
 func (c *FilesystemClass) Name() string {
 	return c.name

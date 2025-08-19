@@ -87,5 +87,5 @@ func (o *openAI) send(system, user string) (answer string, err error) {
 	if len(response.Choices) == 0 {
 		return "", errors.New("no choices in response")
 	}
-	return strings.TrimSpace(response.Choices[0].Message.Content), nil
+	return response.Choices[0].Message.Content, nil
 }
