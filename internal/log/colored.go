@@ -14,14 +14,15 @@ type Color string
 
 // Predefined terminal color escape codes.
 const (
-	Black   Color = "\033[30m" // Black color
-	Red     Color = "\033[31m" // Red color
-	Green   Color = "\033[32m" // Green color
-	Yellow  Color = "\033[33m" // Yellow color
-	Blue    Color = "\033[34m" // Blue color
-	Magenta Color = "\033[35m" // Magenta color
-	Cyan    Color = "\033[36m" // Cyan color
-	White   Color = "\033[37m" // White color
+	Black   Color = "\033[30m"       // Black color
+	Red     Color = "\033[31m"       // Red color
+	Green   Color = "\033[32m"       // Green color
+	Yellow  Color = "\033[33m"       // Yellow color
+	Blue    Color = "\033[34m"       // Blue color
+	Magenta Color = "\033[35m"       // Magenta color
+	Cyan    Color = "\033[36m"       // Cyan color
+	White   Color = "\033[37m"       // White color
+	Orange  Color = "\033[38;5;208m" // Orange color (using extended color)
 )
 
 // NewColored wraps an existing Logger and applies ANSI color to its messages.

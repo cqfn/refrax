@@ -8,15 +8,17 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/project"
 	"github.com/cqfn/refrax/internal/stats"
 	"github.com/cqfn/refrax/internal/util"
 )
 
 type agent struct {
-	brain  brain.Brain
-	log    log.Logger
-	critic domain.Critic
-	fixer  domain.Fixer
+	brain    brain.Brain
+	log      log.Logger
+	critic   domain.Critic
+	fixer    domain.Fixer
+	reviewer domain.Reviewer
 }
 
 func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
@@ -92,7 +94,75 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	for _, class := range untouched {
 		refactored = append(refactored, class)
 	}
+	for _, c := range refactored {
+		class := project.NewFilesystemClass(c.Name(), c.Path(), c.Content())
+		err = class.SetContent(c.Content())
+		a.log.Info("setting content for class %s (%s)", class.Name(), class.Path())
+		if err != nil {
+			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
+		}
+	}
+	err = a.stabilize(refactored)
+	if err != nil {
+		return nil, fmt.Errorf("failed to stabilize refactored classes: %w", err)
+	}
 	return refactored, nil
+}
+
+func (a *agent) stabilize(refactored []domain.Class) error {
+	a.log.Info("stabilizing refactored classes, number of classes: %d", len(refactored))
+	improvements, err := a.reviewer.Review()
+	a.log.Info("received %d suggestions from reviewer", len(improvements))
+	for _, improvement := range improvements {
+		log.Info("received suggestion: %s", improvement.Text())
+	}
+	counter := 3
+	for len(improvements) > 0 && counter > 0 {
+		if err != nil {
+			return fmt.Errorf("failed to review project: %w", err)
+		}
+		perclass := a.understandClasses(refactored, improvements)
+		for k, v := range perclass {
+			updated, uerr := a.fixer.Fix(k, v, nil)
+			if uerr != nil {
+				return fmt.Errorf("failed to fix project: %w", uerr)
+			}
+			class := project.NewFilesystemClass(k.Name(), k.Path(), k.Content())
+			a.log.Info("updating class %s (%s) with new content", class.Name(), class.Path())
+			a.log.Info("new content length: %s", updated.Content())
+			uerr = class.SetContent(updated.Content())
+			if uerr != nil {
+				return fmt.Errorf("failed to set content for class %s: %w", class.Name(), uerr)
+			}
+		}
+		counter--
+		improvements, err = a.reviewer.Review()
+	}
+	return nil
+}
+
+func (a *agent) understandClasses(clases []domain.Class, suggestions []domain.Suggestion) map[domain.Class][]domain.Suggestion {
+	names := make(map[string]domain.Class, len(clases))
+	for _, c := range clases {
+		names[c.Name()] = c
+	}
+	res := make(map[domain.Class][]domain.Suggestion, len(clases))
+	for _, sug := range suggestions {
+		for name, c := range names {
+			if strings.Contains(sug.Text(), name) {
+				res[c] = append(res[c], sug)
+			}
+		}
+	}
+	if len(res) == 0 {
+		a.log.Info("no suggestions found for any class, returning empty map")
+	}
+	for class, suggestions := range res {
+		for _, s := range suggestions {
+			a.log.Info("suggestion for class %s: %s", class.Name(), s.Text())
+		}
+	}
+	return res
 }
 
 func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) {

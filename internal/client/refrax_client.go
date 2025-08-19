@@ -16,6 +16,7 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/project"
 	"github.com/cqfn/refrax/internal/protocol"
+	"github.com/cqfn/refrax/internal/reviewer"
 	"github.com/cqfn/refrax/internal/stats"
 	"github.com/cqfn/refrax/internal/util"
 )
@@ -78,6 +79,18 @@ func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 	fxr := fixer.NewFixer(fixerBrain, fixerPort)
 	fxr.Handler(countStats(fixerStats))
 
+	reviewerStats := &stats.Stats{Name: "reviewer"}
+	reviewerBrain, err := mind(c.params, reviewerStats)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AI instance for reviewer: %w", err)
+	}
+	reviewerPort, err := util.FreePort()
+	if err != nil {
+		return nil, fmt.Errorf("failed to find free port for reviewer: %w", err)
+	}
+	rvwr := reviewer.NewReviewer(reviewerBrain, reviewerPort, "mvn clean test", "mvn qulice:check -Pqulice")
+	rvwr.Handler(countStats(reviewerStats))
+
 	facilitatorStats := &stats.Stats{Name: "facilitator"}
 	facilitatorBrain, err := mind(c.params, facilitatorStats)
 	if err != nil {
@@ -87,7 +100,7 @@ func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
-	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, facilitatorPort)
+	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, rvwr, facilitatorPort)
 	fclttor.Handler(countStats(facilitatorStats))
 
 	go func() {
@@ -108,34 +121,31 @@ func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
 			panic(fmt.Sprintf("failed to start critic server: %v", cerr))
 		}
 	}()
+	go func() {
+		rerr := rvwr.ListenAndServe()
+		if rerr != nil && rerr != http.ErrServerClosed {
+			panic(fmt.Sprintf("failed to start reviewer server: %v", rerr))
+		}
+	}()
 
 	defer shutdown(ctc)
 	defer shutdown(fclttor)
 	defer shutdown(fxr)
+	defer shutdown(rvwr)
 
 	<-ctc.Ready()
 	<-fclttor.Ready()
 	<-fxr.Ready()
+	<-rvwr.Ready()
 
-	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d", facilitatorPort, criticPort, fixerPort)
+	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d, reviewer %d", facilitatorPort, criticPort, fixerPort, reviewerPort)
 	log.Info("begin refactoring")
 	ch := make(chan refactoring, len(classes))
 	go refactor(fclttor, proj, c.params.MaxSize, ch)
 	for range len(classes) {
 		res := <-ch
-		if res.err != nil {
-			return nil, fmt.Errorf("failed to refactor class: %w", res.err)
-		}
-		if res.class == nil {
-			log.Warn("refactored class is nil, skipping this class")
-			continue
-		}
-		if res.content == "" {
-			return nil, fmt.Errorf("refactored class %s has empty content, after refactoring", res.class.Name())
-		}
-		err = res.class.SetContent(res.content)
-		if err != nil {
-			return nil, fmt.Errorf("failed to set content for class %s: %w", res.class.Name(), err)
+		if res.class != nil && res.content != "" {
+			log.Info("received refactored class: %s, content length: %d", res.class.Name(), len(res.content))
 		}
 	}
 	log.Info("refactoring is finished")
