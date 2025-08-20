@@ -1,13 +1,10 @@
-// Package project provides functionality for working with Java source files in a project structure.
-package project
+package domain
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/cqfn/refrax/internal/domain"
 )
 
 // FilesystemProject represents a project stored in the filesystem.
@@ -21,8 +18,8 @@ func NewFilesystem(path string) *FilesystemProject {
 }
 
 // Classes retrieves all Java classes in the project directory and its subdirectories.
-func (p *FilesystemProject) Classes() ([]domain.Class, error) {
-	var classes []domain.Class
+func (p *FilesystemProject) Classes() ([]Class, error) {
+	var classes []Class
 	err := filepath.Walk(p.path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

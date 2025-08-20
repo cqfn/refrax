@@ -1,11 +1,9 @@
-package project
+package domain
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/cqfn/refrax/internal/domain"
 )
 
 // MirrorProject decorates FilesystemProject with a mirror location to avoid modifying the original.
@@ -26,6 +24,6 @@ func NewMirrorProject(original *FilesystemProject, mirrorPath string) (*MirrorPr
 }
 
 // Classes retrieves all Java classes from the mirrored project.
-func (m *MirrorProject) Classes() ([]domain.Class, error) {
+func (m *MirrorProject) Classes() ([]Class, error) {
 	return m.mirror.Classes()
 }

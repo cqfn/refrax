@@ -12,7 +12,6 @@ import (
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/tool"
-	"github.com/google/uuid"
 )
 
 // Critic represents the main struct responsible for analyzing code critiques.
@@ -77,15 +76,11 @@ func (c *Critic) ListenAndServe() error {
 }
 
 // Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
-func (c *Critic) Review(class domain.Class) ([]domain.Suggestion, error) {
+func (c *Critic) Review(job *domain.Job) ([]domain.Suggestion, error) {
 	address := fmt.Sprintf("http://localhost:%d", c.port)
 	c.log.Info("asking critic (%s) to lint the class...", address)
 	critic := protocol.NewClient(address)
-	msg := protocol.NewMessage().
-		WithMessageID(uuid.NewString()).
-		AddPart(protocol.NewText("lint class")).
-		AddPart(protocol.NewFileBytes([]byte(class.Content())).WithMetadata("class-name", class.Name()).WithMetadata("class-path", class.Path()))
-	resp, err := critic.SendMessage(protocol.NewMessageSendParams().WithMessage(msg))
+	resp, err := critic.SendMessage(job.Marshal())
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to critic: %w", err)
 	}
@@ -123,11 +118,11 @@ func (c *Critic) think(ctx context.Context, m *protocol.Message) (*protocol.Mess
 
 func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Debug("received message: #%s", m.MessageID)
-	tsk, err := domain.MsgToTask(m)
+	tsk, err := domain.UnmarshalJob(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse task from message: %w", err)
 	}
-	class := tsk.Classes()[0]
+	class := tsk.Classes[0]
 	c.log.Info("received class %q for analysis", class.Name())
 	replacer := strings.NewReplacer(
 		"{{code}}", class.Content(),

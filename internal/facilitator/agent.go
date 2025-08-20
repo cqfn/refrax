@@ -8,7 +8,6 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
-	"github.com/cqfn/refrax/internal/project"
 	"github.com/cqfn/refrax/internal/stats"
 	"github.com/cqfn/refrax/internal/util"
 )
@@ -95,7 +94,7 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 		refactored = append(refactored, class)
 	}
 	for _, c := range refactored {
-		class := project.NewFilesystemClass(c.Name(), c.Path(), c.Content())
+		class := domain.NewFilesystemClass(c.Name(), c.Path(), c.Content())
 		err = class.SetContent(c.Content())
 		a.log.Info("setting content for class %s (%s)", class.Name(), class.Path())
 		if err != nil {
@@ -123,11 +122,18 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 		}
 		perclass := a.understandClasses(refactored, improvements)
 		for k, v := range perclass {
-			updated, uerr := a.fixer.Fix(k, v, nil)
+			job := domain.Job{
+				Descr: &domain.Description{
+					Text: "fix the class",
+				},
+				Classes:     []domain.Class{k},
+				Suggestions: v,
+			}
+			updated, uerr := a.fixer.Fix(&job)
 			if uerr != nil {
 				return fmt.Errorf("failed to fix project: %w", uerr)
 			}
-			class := project.NewFilesystemClass(k.Name(), k.Path(), k.Content())
+			class := domain.NewFilesystemClass(k.Name(), k.Path(), k.Content())
 			a.log.Info("updating class %s (%s) with new content", class.Name(), class.Path())
 			a.log.Info("new content length: %s", updated.Content())
 			uerr = class.SetContent(updated.Content())
@@ -168,7 +174,15 @@ func (a *agent) understandClasses(clases []domain.Class, suggestions []domain.Su
 func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) {
 	class := imp.class
 	suggestions := imp.suggestions
-	modified, err := a.fixer.Fix(class, suggestions, example)
+	job := domain.Job{
+		Descr: &domain.Description{
+			Text: "fix the class",
+		},
+		Classes:     []domain.Class{class},
+		Suggestions: suggestions,
+		Examples:    []domain.Class{example},
+	}
+	modified, err := a.fixer.Fix(&job)
 	if err != nil {
 		ch <- fixResult{fmt.Errorf("failed to ask fixer: %w", err), nil}
 		return
@@ -178,7 +192,13 @@ func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) 
 
 func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
 	a.log.Info("received class for refactoring: %q", class.Path())
-	suggestions, err := a.critic.Review(class)
+	job := domain.Job{
+		Descr: &domain.Description{
+			Text: "refactor the class",
+		},
+		Classes: []domain.Class{class},
+	}
+	suggestions, err := a.critic.Review(&job)
 	if err != nil {
 		ch <- improvementResult{err: fmt.Errorf("failed to ask critic: %w", err), important: improvement{class: class}}
 		return

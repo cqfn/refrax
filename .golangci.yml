@@ -29,9 +29,9 @@ linters:
          - singleCaseSwitch
          - ifElseChain
        enabled-tags:
-        - performance
-        - style
-        - experimental
+         - performance
+         - style
+         - experimental
      govet:
        enable:
          - shadow
@@ -39,6 +39,10 @@ linters:
        line-length: 140
      misspell:
        locale: US
+     revive:
+       rules:
+         - name: package-comments
+           disabled: true
 formatters:
   enable:
     - gci
