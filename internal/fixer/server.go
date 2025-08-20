@@ -11,8 +11,6 @@ import (
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
 	"github.com/cqfn/refrax/internal/protocol"
-	"github.com/cqfn/refrax/internal/util"
-	"github.com/google/uuid"
 )
 
 // Fixer is a server that fixes Java code based on suggestions provided.
@@ -54,25 +52,11 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 
 // Fix applies the given suggestions to the provided class and returns the modified class or an error.
 // It communicates with an external fixer service to perform the modifications.
-func (f *Fixer) Fix(class domain.Class, suggestions []domain.Suggestion, example domain.Class) (domain.Class, error) {
+func (f *Fixer) Fix(job *domain.Job) (domain.Class, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.port)
 	f.log.Info("asking fixer (%s) to apply suggestions...", address)
 	fixer := protocol.NewClient(address)
-	msg := protocol.NewMessage().
-		WithMessageID(uuid.NewString()).
-		AddPart(protocol.NewText("apply all the following suggestions"))
-	for _, suggestion := range suggestions {
-		msg.AddPart(protocol.NewText(suggestion.Text()).WithMetadata("suggestion", true))
-	}
-	if example != nil {
-		msg.AddPart(protocol.NewFileBytes([]byte(example.Content())).
-			WithMetadata("class-name", example.Name()).
-			WithMetadata("class-path", example.Path()).
-			WithMetadata("example", true))
-	}
-	file := protocol.NewFileBytes([]byte(class.Content()))
-	msg = msg.AddPart(file.WithMetadata("class-name", class.Name()).WithMetadata("class-path", class.Path()))
-	resp, err := fixer.SendMessage(protocol.NewMessageSendParams().WithMessage(msg))
+	resp, err := fixer.SendMessage(job.Marshal())
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to fixer: %w", err)
 	}
@@ -137,34 +121,23 @@ func (f *Fixer) thinkChan(m *protocol.Message) <-chan thought {
 
 func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	f.log.Info("received message: #%s", m.MessageID)
+	job, err := domain.UnmarshalJob(m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal job: %w", err)
+	}
 	var code string
-	var suggestions []string
+	suggestions := make([]string, 0, len(job.Suggestions))
 	var class string
 	var path string
 	var example string
-	for _, part := range m.Parts {
-		if part.PartKind() == protocol.PartKindText {
-			msg := part.(*protocol.TextPart).Text
-			if part.Metadata()["suggestion"] != nil {
-				suggestions = append(suggestions, msg)
-			}
-		} else if part.PartKind() == protocol.PartKindFile {
-			file := part.(*protocol.FilePart)
-			var err error
-			content, err := util.DecodeFile(file.File.(protocol.FileWithBytes).Bytes)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode code part: %w", err)
-			}
-			if part.Metadata()["example"] != nil {
-				example = content
-			} else {
-				code = content
-				name := file.Metadata()["class-name"]
-				class = fmt.Sprintf("%v", name)
-				path = fmt.Sprintf("%v", file.Metadata()["class-path"])
-			}
-
-		}
+	code = job.Classes[0].Content()
+	class = job.Classes[0].Name()
+	path = job.Classes[0].Path()
+	if len(job.Examples) > 0 {
+		example = job.Examples[0].Content()
+	}
+	for _, suggestion := range job.Suggestions {
+		suggestions = append(suggestions, suggestion.Text())
 	}
 	f.log.Info("trying to fix %q class...", class)
 	all := strings.Join(suggestions, "\n")

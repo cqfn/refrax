@@ -124,7 +124,7 @@ func TestCriticThink_ReturnsMessage(t *testing.T) {
 	msg := protocol.NewMessage().
 		WithMessageID("msg-123").
 		AddPart(protocol.NewText("review the code")).
-		AddPart(protocol.NewFileBytes([]byte("some code")))
+		AddPart(protocol.NewFileBytes([]byte("some code")).WithMetadata("type", "class"))
 
 	response, err := critic.think(context.Background(), msg)
 

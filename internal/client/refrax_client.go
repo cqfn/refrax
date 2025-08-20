@@ -14,7 +14,6 @@ import (
 	"github.com/cqfn/refrax/internal/facilitator"
 	"github.com/cqfn/refrax/internal/fixer"
 	"github.com/cqfn/refrax/internal/log"
-	"github.com/cqfn/refrax/internal/project"
 	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/reviewer"
 	"github.com/cqfn/refrax/internal/stats"
@@ -35,7 +34,7 @@ func NewRefraxClient(params *Params) *RefraxClient {
 }
 
 // Refactor initializes the refactoring process for the given project.
-func Refactor(params *Params) (project.Project, error) {
+func Refactor(params *Params) (domain.Project, error) {
 	proj, err := proj(*params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create project from params: %w", err)
@@ -44,7 +43,7 @@ func Refactor(params *Params) (project.Project, error) {
 }
 
 // Refactor performs refactoring on the given project using the RefraxClient.
-func (c *RefraxClient) Refactor(proj project.Project) (project.Project, error) {
+func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	log.Debug("starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
@@ -162,7 +161,7 @@ type refactoring struct {
 	err     error
 }
 
-func refactor(f domain.Facilitator, p project.Project, size int, ch chan<- refactoring) {
+func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refactoring) {
 	log.Debug("refactoring project %q", p)
 	all, err := p.Classes()
 	if err != nil {
@@ -256,16 +255,16 @@ func token(p Params) string {
 	return token
 }
 
-func proj(params Params) (project.Project, error) {
+func proj(params Params) (domain.Project, error) {
 	if params.MockProject {
 		log.Debug("using mock project")
-		return project.NewMock(), nil
+		return domain.NewMock(), nil
 	}
-	input := project.NewFilesystem(params.Input)
+	input := domain.NewFilesystem(params.Input)
 	output := params.Output
 	if output != "" {
 		log.Debug("copy project to %q", output)
-		return project.NewMirrorProject(input, output)
+		return domain.NewMirrorProject(input, output)
 	}
 	log.Debug("no output path provided, changing project in place %q", params.Input)
 	return input, nil

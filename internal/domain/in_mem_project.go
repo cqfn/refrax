@@ -1,21 +1,13 @@
-package project
+package domain
 
 import (
 	"fmt"
 	"strings"
-
-	"github.com/cqfn/refrax/internal/domain"
 )
-
-// Project represents an interface for managing Java classes within a project.
-type Project interface {
-	// Classes retrieves all Java classes within the project.
-	Classes() ([]domain.Class, error)
-}
 
 // InMemoryProject is an implementation of Project that stores its classes in memory.
 type InMemoryProject struct {
-	files map[string]domain.Class
+	files map[string]Class
 }
 
 // InMemoryJavaClass is an implementation of JavaClass that stores its data in memory.
@@ -26,13 +18,13 @@ type InMemoryJavaClass struct {
 
 // NewMock creates a mock project with predefined content for testing purposes.
 func NewMock() Project {
-	class := domain.NewClass("Main.java", ".", "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n")
+	class := NewClass("Main.java", ".", "public class Main {\n\tpublic static void main(String[] args) {\n\t\tString m = \"Hello, World\";\n\t\tSystem.out.println(m);\n\t}\n}\n")
 	return NewInMemory(class)
 }
 
 // NewInMemory creates a new in-memory project with the given map of file names to Java class content.
-func NewInMemory(classes ...domain.Class) Project {
-	res := make(map[string]domain.Class, len(classes))
+func NewInMemory(classes ...Class) Project {
+	res := make(map[string]Class, len(classes))
 	for _, class := range classes {
 		res[class.Path()] = class
 	}
@@ -42,8 +34,8 @@ func NewInMemory(classes ...domain.Class) Project {
 }
 
 // Classes retrieves all Java classes in the in-memory project.
-func (i *InMemoryProject) Classes() ([]domain.Class, error) {
-	res := make([]domain.Class, 0)
+func (i *InMemoryProject) Classes() ([]Class, error) {
+	res := make([]Class, 0)
 	for _, class := range i.files {
 		res = append(res, class)
 	}

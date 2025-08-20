@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/cqfn/refrax/internal/domain"
-	"github.com/cqfn/refrax/internal/project"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +17,7 @@ func TestRefraxClient_Creates_Successfully(t *testing.T) {
 
 func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
 	client := NewRefraxClient(NewMockParams())
-	origin := project.NewInMemory()
+	origin := domain.NewInMemory()
 
 	proj, err := client.Refactor(origin)
 
@@ -37,7 +36,7 @@ func TestRefraxClient_PrintsStatsIfEnabled(t *testing.T) {
 	out := bytes.Buffer{}
 	params.Log = NewSyncWriter(io.Writer(&out))
 	client := NewRefraxClient(params)
-	_, err := client.Refactor(project.NewInMemory(domain.NewClass("Foo.java", ".", "abstract class Foo {}")))
+	_, err := client.Refactor(domain.NewInMemory(domain.NewClass("Foo.java", ".", "abstract class Foo {}")))
 	assert.NoError(t, err)
 	assert.Contains(t, out.String(), "Total LLM messages asked", "Expected total messages asked to be logged")
 }
