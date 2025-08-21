@@ -76,7 +76,7 @@ func (c *Critic) ListenAndServe() error {
 }
 
 // Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
-func (c *Critic) Review(job *domain.Job) ([]domain.Suggestion, error) {
+func (c *Critic) Review(job *domain.Job) (*domain.Artifacts, error) {
 	address := fmt.Sprintf("http://localhost:%d", c.port)
 	c.log.Info("asking critic (%s) to lint the class...", address)
 	critic := protocol.NewClient(address)
@@ -84,7 +84,7 @@ func (c *Critic) Review(job *domain.Job) ([]domain.Suggestion, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to critic: %w", err)
 	}
-	return domain.RespToSuggestions(resp), nil
+	return domain.UnmarshalArtifacts(resp.Result.(*protocol.Message))
 }
 
 // Shutdown gracefully shuts down the Critic server.
@@ -133,21 +133,26 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
 	}
-	res := protocol.NewMessage().WithMessageID(m.MessageID)
 	suggestions := parseAnswer(answer)
 	suggestions = associated(suggestions, class.Path())
 	logSuggestions(c.log, suggestions)
-	c.log.Info("found %d possible improvements", len(suggestions))
+	all := make([]domain.Suggestion, 0, len(suggestions))
 	for _, suggestion := range suggestions {
-		c.log.Debug("suggestion: %s", suggestion)
 		if strings.EqualFold(suggestion, notFound) {
-			c.log.Info("no suggestions found")
-		} else {
-			res.AddPart(protocol.NewText(suggestion))
+			c.log.Info("no suggestions found for class %s", class.Name())
+			continue
 		}
+		s := domain.NewSuggestion(suggestion)
+		all = append(all, s)
 	}
-	c.log.Debug("sending response: %s", res.MessageID)
-	return res, nil
+	artifacts := domain.Artifacts{
+		Descr: &domain.Description{
+			Text: fmt.Sprintf("Critique for class %s", class.Name()),
+		},
+
+		Suggestions: all,
+	}
+	return artifacts.Marshal().Message, nil
 }
 
 func logSuggestions(logger log.Logger, suggestions []string) {

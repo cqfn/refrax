@@ -2,22 +2,22 @@ package domain
 
 // Facilitator represents an interface to refactor tasks into multiple classes.
 type Facilitator interface {
-	Refactor(task Task) ([]Class, error)
+	Refactor(job *Job) (*Artifacts, error)
 }
 
 // Critic represents an interface to review a class and provide suggestions.
 type Critic interface {
-	Review(job *Job) ([]Suggestion, error)
+	Review(job *Job) (*Artifacts, error)
 }
 
 // Fixer represents an interface to fix a class based on suggestions and an example.
 type Fixer interface {
-	Fix(job *Job) (Class, error)
+	Fix(job *Job) (*Artifacts, error)
 }
 
 // Reviewer represents an interface for a reviewer that can review changes made.
 type Reviewer interface {
-	Review() ([]Suggestion, error)
+	Review() (*Artifacts, error)
 }
 
 type Job struct {
@@ -27,9 +27,23 @@ type Job struct {
 	Examples    []Class
 }
 
+type Artifacts struct {
+	Descr       *Description
+	Classes     []Class
+	Suggestions []Suggestion
+}
+
 type Description struct {
 	Text string
-	meta map[string]any
+	Meta map[string]any
+}
+
+func (j *Job) Param(key string) (any, bool) {
+	if j.Descr == nil || j.Descr.Meta == nil {
+		return nil, false
+	}
+	res, ok := j.Descr.Meta[key]
+	return res, ok
 }
 
 func (j *Job) FirstClass() Class {

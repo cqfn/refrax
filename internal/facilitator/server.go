@@ -1,5 +1,3 @@
-// Package facilitator provides functionality for facilitating interactions between
-// critic and fixer agents in a code refactoring process.
 package facilitator
 
 import (
@@ -43,14 +41,13 @@ func NewFacilitator(ai brain.Brain, critic domain.Critic, fixer domain.Fixer, re
 }
 
 // Refactor sends a refactoring request to the facilitator server and returns the refactored classes.
-func (f *A2AFacilitator) Refactor(task domain.Task) ([]domain.Class, error) {
+func (f *A2AFacilitator) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	client := protocol.NewClient(fmt.Sprintf("http://localhost:%d", f.port))
-	resp, err := client.SendMessage(
-		protocol.NewMessageSendParams().WithMessage(domain.TaskToMsg(task)))
+	resp, err := client.SendMessage(job.Marshal())
 	if err != nil {
 		return nil, fmt.Errorf("failed to send refactoring request: %w", err)
 	}
-	return domain.RespToClasses(resp)
+	return domain.UnmarshalArtifacts(resp.Result.(*protocol.Message))
 }
 
 // ListenAndServe starts the facilitator server and prepares it for handling requests.
@@ -93,16 +90,16 @@ func (f *A2AFacilitator) think(ctx context.Context, m *protocol.Message) (*proto
 }
 
 func (f *A2AFacilitator) thinkLong(m *protocol.Message) (*protocol.Message, error) {
-	task, err := domain.MsgToTask(m)
+	job, err := domain.UnmarshalJob(m)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse task: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal job: %w", err)
 	}
-	resp, err := f.original.Refactor(task)
+	resp, err := f.original.Refactor(job)
 	if err != nil {
 		return nil, fmt.Errorf("failed to refactor task: %w", err)
 	}
-	f.log.Info("number of processed classes: %d", len(resp))
-	return domain.ClassesToMsg(resp), nil
+	f.log.Info("number of processed classes: %d", len(resp.Classes))
+	return resp.Marshal().Message, nil
 }
 
 func agentCard(port int) *protocol.AgentCard {

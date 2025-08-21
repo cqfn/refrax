@@ -11,7 +11,7 @@ func TestMarshalAndUnmarshalJob(t *testing.T) {
 	before := &Job{
 		Descr: &Description{
 			Text: "Test Job",
-			meta: map[string]any{"key": "value"},
+			Meta: map[string]any{"key": "value"},
 		},
 		Classes: []Class{
 			NewClass("TestClass", "test/path/TestClass.java", "public class TestClass {}"),

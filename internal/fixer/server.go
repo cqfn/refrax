@@ -52,7 +52,7 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 
 // Fix applies the given suggestions to the provided class and returns the modified class or an error.
 // It communicates with an external fixer service to perform the modifications.
-func (f *Fixer) Fix(job *domain.Job) (domain.Class, error) {
+func (f *Fixer) Fix(job *domain.Job) (*domain.Artifacts, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.port)
 	f.log.Info("asking fixer (%s) to apply suggestions...", address)
 	fixer := protocol.NewClient(address)
@@ -60,7 +60,7 @@ func (f *Fixer) Fix(job *domain.Job) (domain.Class, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send message to fixer: %w", err)
 	}
-	return domain.RespToClass(resp)
+	return domain.UnmarshalArtifacts(resp.Result.(*protocol.Message))
 }
 
 // ListenAndServe begins the Fixer server and signals readiness through the provided channel.
@@ -146,16 +146,21 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		question += "\n\n" + fmt.Sprintf(exampleNote, example)
 	}
 	f.log.Info("asking AI to fix java code...")
-	f.log.Debug("asking AI: %s", question)
 	answer, err := f.brain.Ask(question)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from AI: %w", err)
 	}
 	f.log.Debug("received answer from AI: %s", answer)
 	f.log.Info("AI provided a fix for the Java code, sending response back...")
-	return protocol.NewMessage().
-		WithMessageID(m.MessageID).
-		AddPart(protocol.NewFileBytes([]byte(clean(answer))).WithMetadata("class-path", path).WithMetadata("class-name", class)), nil
+	res := &domain.Artifacts{
+		Descr: &domain.Description{
+			Text: fmt.Sprintf("Fix for class %s", class),
+		},
+		Classes: []domain.Class{
+			domain.NewClass(class, path, clean(answer)),
+		},
+	}
+	return res.Marshal().Message, nil
 }
 
 func clean(answer string) string {

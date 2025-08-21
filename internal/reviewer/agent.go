@@ -19,7 +19,7 @@ type agent struct {
 	ai     brain.Brain
 }
 
-func (a *agent) Review() ([]domain.Suggestion, error) {
+func (a *agent) Review() (*domain.Artifacts, error) {
 	var res []domain.Suggestion
 	for _, cmd := range a.cmds {
 		suggestions, err := a.runCmd(cmd)
@@ -28,7 +28,11 @@ func (a *agent) Review() ([]domain.Suggestion, error) {
 		}
 		res = append(res, suggestions...)
 	}
-	return res, nil
+	artifacts := &domain.Artifacts{
+		Descr:       &domain.Description{Text: "suggestions based on command outputs"},
+		Suggestions: res,
+	}
+	return artifacts, nil
 }
 
 func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {

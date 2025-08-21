@@ -39,14 +39,15 @@ func NewReviewer(ai brain.Brain, port int, cmds ...string) *A2AReviewer {
 }
 
 // Review sends a request for review and returns suggestions.
-func (r *A2AReviewer) Review() ([]domain.Suggestion, error) {
+func (r *A2AReviewer) Review() (*domain.Artifacts, error) {
 	client := protocol.NewClient(fmt.Sprintf("http://localhost:%d", r.port))
 	resp, err := client.SendMessage(
-		protocol.NewMessageSendParams().WithMessage(protocol.NewMessage().AddPart(protocol.NewText("review"))))
+		protocol.NewMessageSendParams().WithMessage(protocol.NewMessage().AddPart(protocol.NewText("review"))),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send review request: %w", err)
 	}
-	return domain.RespToSuggestions(resp), nil
+	return domain.UnmarshalArtifacts(resp.Result.(*protocol.Message))
 }
 
 // ListenAndServe starts the reviewer server and listens for incoming requests.
@@ -88,21 +89,16 @@ func (r *A2AReviewer) think(ctx context.Context, m *protocol.Message) (*protocol
 	}
 }
 
-func (r *A2AReviewer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
-	suggestions, err := r.original.Review()
+func (r *A2AReviewer) thinkLong(_ *protocol.Message) (*protocol.Message, error) {
+	artifacts, err := r.original.Review()
 	if err != nil {
 		return nil, fmt.Errorf("failed to  task: %w", err)
 	}
+	suggestions := artifacts.Suggestions
 	r.log.Info("number of processed suggestions: %d", len(suggestions))
 	logSuggestions(r.log, suggestions)
 	r.log.Info("found %d possible fixes", len(suggestions))
-	res := protocol.NewMessage().WithMessageID(m.MessageID)
-	for _, suggestion := range suggestions {
-		r.log.Debug("suggestion: %s", suggestion)
-		res.AddPart(protocol.NewText(suggestion.Text()))
-	}
-	r.log.Info("sending response: %s", res.MessageID)
-	return res, nil
+	return artifacts.Marshal().Message, nil
 }
 
 func logSuggestions(logger log.Logger, suggestions []domain.Suggestion) {
