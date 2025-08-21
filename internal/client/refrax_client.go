@@ -173,13 +173,22 @@ func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refact
 	for _, c := range all {
 		before[c.Name()] = c
 	}
-	task := domain.NewTask("refactor the project", all, map[string]any{"max-size": fmt.Sprintf("%d", size)})
-	refactored, err := f.Refactor(task)
+	job := domain.Job{
+		Descr: &domain.Description{
+			Text: "refactor the project",
+			Meta: map[string]any{
+				"max-size": fmt.Sprintf("%d", size),
+			},
+		},
+		Classes: all,
+	}
+	artifacts, err := f.Refactor(&job)
 	if err != nil {
 		ch <- refactoring{err: fmt.Errorf("failed to refactor project %s: %w", p, err)}
 		close(ch)
 		return
 	}
+	refactored := artifacts.Classes
 	log.Info("refactored %d classes in project %s", len(refactored), p)
 	for _, c := range refactored {
 		log.Debug("rececived refactored class: ", c)

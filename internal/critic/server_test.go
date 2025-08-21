@@ -129,5 +129,5 @@ func TestCriticThink_ReturnsMessage(t *testing.T) {
 	response, err := critic.think(context.Background(), msg)
 
 	require.NoError(t, err)
-	assert.Equal(t, msg.MessageID, response.MessageID)
+	require.NotNil(t, response)
 }

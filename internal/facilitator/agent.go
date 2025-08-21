@@ -20,22 +20,24 @@ type agent struct {
 	reviewer domain.Reviewer
 }
 
-func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
-	size, err := maxSize(t)
+func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
+	size, err := maxSize(job)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get max size limit: %w", err)
 	}
-	if t.Description() != "refactor the project" {
+	if job.Descr.Text != "refactor the project" {
 		a.log.Warn("received a message that is not related to refactoring. ignoring.")
 		return nil, fmt.Errorf("received a message that is not related to refactoring")
 	}
-	a.log.Info("received request for refactoring, number of attached files: %d, max-size: %d", len(t.Classes()), size)
+	classes := job.Classes
+	nclasses := len(classes)
+	a.log.Info("received request for refactoring, number of attached files: %d, max-size: %d", nclasses, size)
 	var example domain.Class
-	improvements := make([]improvement, 0, len(t.Classes()))
-	ch := make(chan improvementResult, len(t.Classes()))
+	improvements := make([]improvement, 0, nclasses)
+	ch := make(chan improvementResult, nclasses)
 	nreviewed := 0
 	untouched := make(map[string]domain.Class, 0)
-	for _, class := range t.Classes() {
+	for _, class := range classes {
 		untouched[class.Path()] = class
 		tokens, _ := stats.Tokens(class.Content())
 		a.log.Info("class %s has %d tokens", class.Path(), tokens)
@@ -54,10 +56,13 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 		}
 		improvements = append(improvements, impr.important)
 	}
-
 	if len(improvements) == 0 {
 		a.log.Warn("no improvements found, returning original classes")
-		return t.Classes(), nil
+		res := &domain.Artifacts{
+			Descr:   &domain.Description{Text: "no improvements found"},
+			Classes: classes,
+		}
+		return res, nil
 	}
 	mostImportant, err := a.mostFrequent(improvements)
 	if err != nil {
@@ -105,12 +110,17 @@ func (a *agent) Refactor(t domain.Task) ([]domain.Class, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to stabilize refactored classes: %w", err)
 	}
-	return refactored, nil
+	res := &domain.Artifacts{
+		Descr:   &domain.Description{Text: "refactored classes"},
+		Classes: refactored,
+	}
+	return res, nil
 }
 
 func (a *agent) stabilize(refactored []domain.Class) error {
 	a.log.Info("stabilizing refactored classes, number of classes: %d", len(refactored))
-	improvements, err := a.reviewer.Review()
+	artifacts, err := a.reviewer.Review()
+	improvements := artifacts.Suggestions
 	a.log.Info("received %d suggestions from reviewer", len(improvements))
 	for _, improvement := range improvements {
 		log.Info("received suggestion: %s", improvement.Text())
@@ -129,20 +139,21 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 				Classes:     []domain.Class{k},
 				Suggestions: v,
 			}
-			updated, uerr := a.fixer.Fix(&job)
+			fixed, uerr := a.fixer.Fix(&job)
 			if uerr != nil {
 				return fmt.Errorf("failed to fix project: %w", uerr)
 			}
+			updated := fixed.Classes[0]
 			class := domain.NewFilesystemClass(k.Name(), k.Path(), k.Content())
 			a.log.Info("updating class %s (%s) with new content", class.Name(), class.Path())
-			a.log.Info("new content length: %s", updated.Content())
 			uerr = class.SetContent(updated.Content())
 			if uerr != nil {
 				return fmt.Errorf("failed to set content for class %s: %w", class.Name(), uerr)
 			}
 		}
 		counter--
-		improvements, err = a.reviewer.Review()
+		artifacts, err = a.reviewer.Review()
+		improvements = artifacts.Suggestions
 	}
 	return nil
 }
@@ -187,7 +198,7 @@ func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) 
 		ch <- fixResult{fmt.Errorf("failed to ask fixer: %w", err), nil}
 		return
 	}
-	ch <- fixResult{nil, modified}
+	ch <- fixResult{nil, modified.Classes[0]}
 }
 
 func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
@@ -203,8 +214,8 @@ func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
 		ch <- improvementResult{err: fmt.Errorf("failed to ask critic: %w", err), important: improvement{class: class}}
 		return
 	}
-	a.log.Info("received %d suggestions from critic", len(suggestions))
-	if len(suggestions) == 0 {
+	a.log.Info("received %d suggestions from critic", len(suggestions.Suggestions))
+	if len(suggestions.Suggestions) == 0 {
 		a.log.Info("no suggestions found for class %s", class.Path())
 		ch <- improvementResult{err: nil, important: improvement{class: class}}
 		return
@@ -213,7 +224,7 @@ func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
 		err: nil,
 		important: improvement{
 			class:       class,
-			suggestions: suggestions,
+			suggestions: suggestions.Suggestions,
 		},
 	}
 }
@@ -312,10 +323,11 @@ func findClass(improvements []improvement, path string) (domain.Class, error) {
 	return nil, fmt.Errorf("class %s not found in improvements", path)
 }
 
-func maxSize(t domain.Task) (int, error) {
+func maxSize(t *domain.Job) (int, error) {
 	size, ok := t.Param("max-size")
+	ssize := fmt.Sprintf("%v", size)
 	if !ok {
-		size = "200"
+		ssize = "200"
 	}
-	return strconv.Atoi(size)
+	return strconv.Atoi(ssize)
 }
