@@ -103,7 +103,7 @@ func (r *A2AReviewer) thinkLong(_ *protocol.Message) (*protocol.Message, error) 
 
 func logSuggestions(logger log.Logger, suggestions []domain.Suggestion) {
 	for i, suggestion := range suggestions {
-		logger.Info("suggestion #%d: %s", i+1, suggestion)
+		logger.Info("#%d: %s", i+1, suggestion.String())
 	}
 }
 

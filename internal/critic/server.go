@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
@@ -17,37 +16,10 @@ import (
 // Critic represents the main struct responsible for analyzing code critiques.
 type Critic struct {
 	server protocol.Server
-	brain  brain.Brain
 	log    log.Logger
 	port   int
-	tools  []tool.Tool
+	agent  *agent
 }
-
-const notFound = "No suggestions found"
-
-const prompt = `Analyze the following Java code:
-
-{{code}}
-
-Identify possible improvements or flaws such as:
-
-* grammar and spelling mistakes in comments,
-* variables that can be inlined or removed without changing functionality,
-* unnecessary comments inside methods,
-* redundant code.
-
-Don't suggest any changes that would alter the functionality of the code.
-Don't suggest any changes that would require moving code parts between files (like extract class or extract an interface).
-Don't suggest method renaming or class renaming.
-
-Keep in mind the following imperfections with Java code, identified by automated static analysis system:
-
-{{imperfections}}
-
-Respond with a few most relevant and important suggestion for improvement, formatted as a few lines of text. 
-If there are no suggestions or they are insignificant, respond with "{{not-found}}".
-Do not include any explanations, summaries, or extra text.
-`
 
 // NewCritic creates and initializes a new instance of Critic.
 func NewCritic(ai brain.Brain, port int, tools ...tool.Tool) *Critic {
@@ -55,10 +27,9 @@ func NewCritic(ai brain.Brain, port int, tools ...tool.Tool) *Critic {
 	server := protocol.NewServer(agentCard(port), port)
 	critic := &Critic{
 		server: server,
-		brain:  ai,
 		log:    logger,
 		port:   port,
-		tools:  tools,
+		agent:  &agent{brain: ai, log: logger, tools: tools},
 	}
 	server.MsgHandler(critic.think)
 	critic.log.Debug("preparing the Critic server on port %d with ai provider %s", port, ai)
@@ -122,62 +93,8 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse task from message: %w", err)
 	}
-	class := tsk.Classes[0]
-	c.log.Info("received class %q for analysis", class.Name())
-	replacer := strings.NewReplacer(
-		"{{code}}", class.Content(),
-		"{{imperfections}}", tool.NewCombined(c.tools...).Imperfections(),
-		"{{not-found}}", notFound,
-	)
-	answer, err := c.brain.Ask(replacer.Replace(prompt))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
-	}
-	suggestions := parseAnswer(answer)
-	suggestions = associated(suggestions, class.Path())
-	logSuggestions(c.log, suggestions)
-	all := make([]domain.Suggestion, 0, len(suggestions))
-	for _, suggestion := range suggestions {
-		if strings.EqualFold(suggestion, notFound) {
-			c.log.Info("no suggestions found for class %s", class.Name())
-			continue
-		}
-		s := domain.NewSuggestion(suggestion)
-		all = append(all, s)
-	}
-	artifacts := domain.Artifacts{
-		Descr: &domain.Description{
-			Text: fmt.Sprintf("Critique for class %s", class.Name()),
-		},
-
-		Suggestions: all,
-	}
-	return artifacts.Marshal().Message, nil
-}
-
-func logSuggestions(logger log.Logger, suggestions []string) {
-	for i, suggestion := range suggestions {
-		logger.Info("suggestion #%d: %s", i+1, suggestion)
-	}
-}
-
-func parseAnswer(answer string) []string {
-	lines := strings.Split(strings.TrimSpace(answer), "\n")
-	var suggestions []string
-	for _, line := range lines {
-		suggestion := strings.TrimSpace(line)
-		if suggestion != "" {
-			suggestions = append(suggestions, suggestion)
-		}
-	}
-	return suggestions
-}
-
-func associated(suggestions []string, classPath string) []string {
-	for i, suggestion := range suggestions {
-		suggestions[i] = fmt.Sprintf("%s: %s", classPath, suggestion)
-	}
-	return suggestions
+	artifacts, err := c.agent.Review(tsk)
+	return artifacts.Marshal().Message, err
 }
 
 func agentCard(port int) *protocol.AgentCard {

@@ -137,7 +137,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		example = job.Examples[0].Content()
 	}
 	for _, suggestion := range job.Suggestions {
-		suggestions = append(suggestions, suggestion.Text())
+		suggestions = append(suggestions, suggestion.Text)
 	}
 	f.log.Info("trying to fix %q class...", class)
 	all := strings.Join(suggestions, "\n")
@@ -157,7 +157,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 			Text: fmt.Sprintf("Fix for class %s", class),
 		},
 		Classes: []domain.Class{
-			domain.NewClass(class, path, clean(answer)),
+			domain.NewInMemoryClass(class, path, clean(answer)),
 		},
 	}
 	return res.Marshal().Message, nil

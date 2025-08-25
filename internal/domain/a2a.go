@@ -41,7 +41,7 @@ func UnmarshalArtifacts(msg *protocol.Message) (*Artifacts, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to unmarshal suggestion: %w", err)
 			}
-			suggestions = append(suggestions, s)
+			suggestions = append(suggestions, *s)
 		default:
 			return nil, fmt.Errorf("unknown part type %s", t)
 		}
@@ -85,7 +85,7 @@ func UnmarshalJob(msg *protocol.Message) (*Job, error) {
 			if err != nil {
 				return nil, fmt.Errorf("failed to unmarshal suggestion: %w", err)
 			}
-			suggestions = append(suggestions, s)
+			suggestions = append(suggestions, *s)
 		default:
 			return nil, fmt.Errorf("unknown part type %s", t)
 		}
@@ -96,9 +96,26 @@ func UnmarshalJob(msg *protocol.Message) (*Job, error) {
 	return job, nil
 }
 
-func UnmarshalSuggestion(part protocol.Part) (Suggestion, error) {
+func UnmarshalOldSuggestion(part protocol.Part) (OldSuggestion, error) {
 	if part.PartKind() == protocol.PartKindText {
-		suggestion := NewSuggestion(part.(*protocol.TextPart).Text)
+		suggestion := NewOldSuggestion(part.(*protocol.TextPart).Text)
+		return suggestion, nil
+	}
+	return nil, fmt.Errorf("expected text part for suggestion, got %s", part.PartKind())
+}
+
+func UnmarshalSuggestion(part protocol.Part) (*Suggestion, error) {
+	if part.PartKind() == protocol.PartKindText {
+		tp := part.(*protocol.TextPart)
+		text := tp.Text
+		path, ok := tp.Metadata()["class-path"].(string)
+		if !ok {
+			return nil, fmt.Errorf("missing or invalid class-path metadata in suggestion part")
+		}
+		suggestion := &Suggestion{
+			ClassPath: path,
+			Text:      text,
+		}
 		return suggestion, nil
 	}
 	return nil, fmt.Errorf("expected text part for suggestion, got %s", part.PartKind())
@@ -114,7 +131,7 @@ func UnmarshalClass(part protocol.Part) (Class, error) {
 		return nil, fmt.Errorf("failed to decode file part: %w", err)
 	}
 	meta := f.Metadata()
-	return NewClass(
+	return NewInMemoryClass(
 		fmt.Sprintf("%v", meta["class-name"]),
 		fmt.Sprintf("%v", meta["class-path"]),
 		decoded,
@@ -148,10 +165,7 @@ func (j *Job) Marshal() *protocol.MessageSendParams {
 	}
 	if len(j.Suggestions) > 0 {
 		for _, suggestion := range j.Suggestions {
-			if suggestion == nil {
-				continue
-			}
-			msg.AddPart(MarshalSuggestion(suggestion))
+			msg.AddPart(suggestion.Marshal())
 		}
 	}
 	if len(j.Examples) > 0 {
@@ -180,10 +194,7 @@ func (a *Artifacts) Marshal() *protocol.MessageSendParams {
 	}
 	if len(a.Suggestions) > 0 {
 		for _, suggestion := range a.Suggestions {
-			if suggestion == nil {
-				continue
-			}
-			msg.AddPart(MarshalSuggestion(suggestion))
+			msg.AddPart(suggestion.Marshal())
 		}
 	}
 	return protocol.NewMessageSendParams().WithMessage(msg)
@@ -197,6 +208,13 @@ func (d *Description) Marshal() protocol.Part {
 	return part
 }
 
+func (s *Suggestion) Marshal() protocol.Part {
+	part := protocol.NewText(s.Text).
+		WithMetadata("class-path", s.ClassPath).
+		WithMetadata("type", typeSuggestion)
+	return part
+}
+
 func MarshalClass(c Class, t string) protocol.Part {
 	return protocol.NewFileBytes([]byte(c.Content())).
 		WithMetadata("type", t).
@@ -204,6 +222,6 @@ func MarshalClass(c Class, t string) protocol.Part {
 		WithMetadata("class-path", c.Path())
 }
 
-func MarshalSuggestion(s Suggestion) protocol.Part {
+func MarshalSuggestion(s OldSuggestion) protocol.Part {
 	return protocol.NewText(s.Text()).WithMetadata("type", typeSuggestion)
 }
