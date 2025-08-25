@@ -59,21 +59,6 @@ func TestFilesystemProject_Classes_NonJavaFilesIgnored(t *testing.T) {
 	assert.Empty(t, classes)
 }
 
-func TestFilesystemProject_Classes_ErrorReadingFile(t *testing.T) {
-	SkipOnWindows(t)
-	tempDir := t.TempDir()
-	filePath := filepath.Join(tempDir, "Class1.java")
-	require.NoError(t, os.WriteFile(filePath, []byte("class Class1 {}"), 0o600))
-	require.NoError(t, os.Chmod(filePath, 0o200)) // Write-only
-
-	project := NewFilesystem(tempDir)
-
-	classes, err := project.Classes()
-
-	assert.Nil(t, classes)
-	assert.Error(t, err)
-}
-
 func TestFilesystemProject_Classes_ErrorDuringTraversal(t *testing.T) {
 	SkipOnWindows(t)
 	tempDir := t.TempDir()
@@ -89,25 +74,18 @@ func TestFilesystemProject_Classes_ErrorDuringTraversal(t *testing.T) {
 }
 
 func TestFilesystemClass_Name(t *testing.T) {
-	class := &FilesystemClass{name: "TestClass"}
+	class := &FSClass{name: "TestClass"}
 
 	assert.Equal(t, "TestClass", class.Name())
-}
-
-func TestFilesystemClass_Content(t *testing.T) {
-	class := &FilesystemClass{content: "class TestClass {}"}
-
-	assert.Equal(t, "class TestClass {}", class.Content())
 }
 
 func TestFilesystemClass_SetContent_Success(t *testing.T) {
 	tempDir := t.TempDir()
 	filePath := filepath.Join(tempDir, "TestClass.java")
 	require.NoError(t, os.WriteFile(filePath, []byte("class TestClass {}"), 0o600))
-	class := &FilesystemClass{
-		name:    "TestClass",
-		content: "class TestClass {}",
-		path:    filePath,
+	class := &FSClass{
+		name: "TestClass",
+		path: filePath,
 	}
 	newContent := "class UpdatedClass {}"
 

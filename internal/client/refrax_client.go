@@ -138,7 +138,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	<-rvwr.Ready()
 
 	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d, reviewer %d", facilitatorPort, criticPort, fixerPort, reviewerPort)
-	log.Info("begin refactoring")
+	log.Info("begin refactoring for project %s with %d classes", proj, len(classes))
 	ch := make(chan refactoring, len(classes))
 	go refactor(fclttor, proj, c.params.MaxSize, ch)
 	for range len(classes) {
@@ -184,6 +184,7 @@ func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refact
 	}
 	artifacts, err := f.Refactor(&job)
 	if err != nil {
+		log.Error("failed to refactor project %s: %v", p, err)
 		ch <- refactoring{err: fmt.Errorf("failed to refactor project %s: %w", p, err)}
 		close(ch)
 		return

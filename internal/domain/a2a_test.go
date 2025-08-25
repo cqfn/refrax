@@ -14,16 +14,16 @@ func TestMarshalAndUnmarshalJob(t *testing.T) {
 			Meta: map[string]any{"key": "value"},
 		},
 		Classes: []Class{
-			NewClass("TestClass", "test/path/TestClass.java", "public class TestClass {}"),
-			NewClass("AnotherClass", "test/path/AnotherClass.java", "public class AnotherClass {}"),
+			NewInMemoryClass("TestClass", "test/path/TestClass.java", "public class TestClass {}"),
+			NewInMemoryClass("AnotherClass", "test/path/AnotherClass.java", "public class AnotherClass {}"),
 		},
 		Examples: []Class{
-			NewClass("ExampleClass", "test/path/ExampleClass.java", "public class ExampleClass {}"),
+			NewInMemoryClass("ExampleClass", "test/path/ExampleClass.java", "public class ExampleClass {}"),
 		},
 		Suggestions: []Suggestion{
-			NewSuggestion("Improve TestClass"),
-			NewSuggestion("Add documentation to AnotherClass"),
-			NewSuggestion("Refactor ExampleClass"),
+			*NewSuggestion("Improve TestClass", "test/path/TestClass.java"),
+			*NewSuggestion("Add documentation to AnotherClass", "test/path/AnotherClass.java"),
+			*NewSuggestion("Refactor ExampleClass", "test/path/ExampleClass.java"),
 		},
 	}
 	after, err := UnmarshalJob(before.Marshal().Message)

@@ -61,7 +61,7 @@ func TestNewCritic_Success(t *testing.T) {
 
 	critic := NewCritic(ai, 18081)
 	require.NotNil(t, critic)
-	assert.Equal(t, ai, critic.brain)
+	assert.Equal(t, ai, critic.agent.brain)
 }
 
 func TestCriticStart_Success(t *testing.T) {

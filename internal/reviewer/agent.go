@@ -42,7 +42,6 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get current working directory: %w", err)
 	}
-
 	parts := strings.Split(cmd, " ")
 	command := exec.Command(parts[0], parts[1:]...) // #nosec G204
 	command.Stdout = &out
@@ -62,7 +61,7 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to ask AI for suggestions: %w", err)
 	}
-	parsed := parseSuggestions(raw)
+	parsed := a.parseSuggestions(raw)
 	return parsed, nil
 }
 
@@ -91,9 +90,12 @@ Please suggest specific, actionable steps to fix the problem.
 - Do not suggest new libraries or tools.
 
 Answer in the following format:
-		<java class name>: <suggestion 1>
-		<java class name>: <suggestion 2>
-		<java class name>: <suggestion 3>
+		<java class path>: <suggestion 1>
+		<java class path>: <suggestion 2>
+		<java class path>: <suggestion 3>
+
+Example: 
+		src/test/java/com/example/service/Example.java: "Fix the typo in the class comment"
 
 Use single-line suggestions, each starting with a class name followed by a colon and the suggestion text.
 `,
@@ -101,11 +103,18 @@ Use single-line suggestions, each starting with a class name followed by a colon
 	)
 }
 
-func parseSuggestions(output string) []domain.Suggestion {
+func (a *agent) parseSuggestions(output string) []domain.Suggestion {
 	lines := strings.Split(output, "\n")
 	res := make([]domain.Suggestion, 0, len(lines))
 	for _, line := range lines {
-		res = append(res, domain.NewSuggestion(line))
+		parts := strings.Split(line, ":")
+		if len(parts) < 2 {
+			a.logger.Warn("skipping malformed suggestion line: %q", line)
+			continue
+		}
+		path := strings.TrimSpace(parts[0])
+		text := strings.TrimSpace(strings.Join(parts[1:], ":"))
+		res = append(res, *domain.NewSuggestion(text, path))
 	}
 	return res
 }

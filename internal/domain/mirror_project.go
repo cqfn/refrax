@@ -12,7 +12,7 @@ type MirrorProject struct {
 }
 
 // NewMirrorProject creates a mirror of the original FilesystemProject at the given path.
-func NewMirrorProject(original *FilesystemProject, mirrorPath string) (*MirrorProject, error) {
+func NewMirrorProject(original *FSProj, mirrorPath string) (*MirrorProject, error) {
 	if err := os.RemoveAll(filepath.Clean(mirrorPath)); err != nil {
 		return nil, fmt.Errorf("failed to remove existing mirror path: %w", err)
 	}

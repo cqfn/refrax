@@ -1,5 +1,7 @@
 package domain
 
+import "fmt"
+
 // Facilitator represents an interface to refactor tasks into multiple classes.
 type Facilitator interface {
 	Refactor(job *Job) (*Artifacts, error)
@@ -27,6 +29,14 @@ type Job struct {
 	Examples    []Class
 }
 
+func (j *Job) Param(key string) (any, bool) {
+	if j.Descr == nil || j.Descr.Meta == nil {
+		return nil, false
+	}
+	res, ok := j.Descr.Meta[key]
+	return res, ok
+}
+
 type Artifacts struct {
 	Descr       *Description
 	Classes     []Class
@@ -38,17 +48,11 @@ type Description struct {
 	Meta map[string]any
 }
 
-func (j *Job) Param(key string) (any, bool) {
-	if j.Descr == nil || j.Descr.Meta == nil {
-		return nil, false
-	}
-	res, ok := j.Descr.Meta[key]
-	return res, ok
+type Suggestion struct {
+	ClassPath string
+	Text      string
 }
 
-func (j *Job) FirstClass() Class {
-	if len(j.Classes) == 0 {
-		return nil
-	}
-	return j.Classes[0]
+func (s *Suggestion) String() string {
+	return fmt.Sprintf("suggestion for %s: %s", s.ClassPath, s.Text)
 }

@@ -99,7 +99,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		refactored = append(refactored, class)
 	}
 	for _, c := range refactored {
-		class := domain.NewFilesystemClass(c.Name(), c.Path(), c.Content())
+		class := domain.NewFSClass(c.Name(), c.Path())
 		err = class.SetContent(c.Content())
 		a.log.Info("setting content for class %s (%s)", class.Name(), class.Path())
 		if err != nil {
@@ -123,7 +123,7 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 	improvements := artifacts.Suggestions
 	a.log.Info("received %d suggestions from reviewer", len(improvements))
 	for _, improvement := range improvements {
-		log.Info("received suggestion: %s", improvement.Text())
+		a.log.Info("received suggestion: %s", improvement)
 	}
 	counter := 3
 	for len(improvements) > 0 && counter > 0 {
@@ -144,7 +144,7 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 				return fmt.Errorf("failed to fix project: %w", uerr)
 			}
 			updated := fixed.Classes[0]
-			class := domain.NewFilesystemClass(k.Name(), k.Path(), k.Content())
+			class := domain.NewFSClass(k.Name(), k.Path())
 			a.log.Info("updating class %s (%s) with new content", class.Name(), class.Path())
 			uerr = class.SetContent(updated.Content())
 			if uerr != nil {
@@ -159,24 +159,16 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 }
 
 func (a *agent) understandClasses(clases []domain.Class, suggestions []domain.Suggestion) map[domain.Class][]domain.Suggestion {
-	names := make(map[string]domain.Class, len(clases))
-	for _, c := range clases {
-		names[c.Name()] = c
-	}
 	res := make(map[domain.Class][]domain.Suggestion, len(clases))
-	for _, sug := range suggestions {
-		for name, c := range names {
-			if strings.Contains(sug.Text(), name) {
-				res[c] = append(res[c], sug)
+	for _, s := range suggestions {
+		for _, c := range clases {
+			actual := s.ClassPath
+			expected := c.Path()
+			if actual == expected || strings.Contains(actual, expected) || strings.Contains(expected, actual) {
+				a.log.Info("associating suggestion %q with class %s", s.Text, c.Path())
+				res[c] = append(res[c], s)
+				break
 			}
-		}
-	}
-	if len(res) == 0 {
-		a.log.Info("no suggestions found for any class, returning empty map")
-	}
-	for class, suggestions := range res {
-		for _, s := range suggestions {
-			a.log.Info("suggestion for class %s: %s", class.Name(), s.Text())
 		}
 	}
 	return res
@@ -258,10 +250,18 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 		"3. If no group has more than one suggestion, return just one representative suggestion from the list." +
 		"4. Do not change the text of any suggestion." +
 		"5. Do not explain or comment. Output only the selected suggestion(s), each on its own line." +
-		"6. Do not remove or modify class names in any suggestion."
+		"6. Do not remove or modify class names in any suggestion." +
+		"Important! Return suggestions as they are. Literally!" +
+		" Answer in the following format: " +
+		"<java class path>: <suggestion 1> " +
+		"<java class path>: <suggestion 2> " +
+		"<java class path>: <suggestion 3> " +
+		"Example:  " +
+		"		src/test/java/com/example/service/Example.java: Fix the typo in the class comment"
+
 	var summary string
 	for _, s := range all {
-		summary += fmt.Sprintf("%s\n", s.Text())
+		summary += fmt.Sprintf("%s: %s\n", s.ClassPath, s.Text)
 	}
 	prompt = fmt.Sprintf(prompt, summary)
 	important, err := a.brain.Ask(prompt)
@@ -272,20 +272,26 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 		"Return only the suggestions from that group.\n" +
 		"Do not include group names, headers, or any explanations. Only output the suggestions.\n" +
 		"Do not modify any suggestion. Keep class names intact.\n\n" +
-		"```\n%s\n```"
+		"Important! Return suggestions as they are. Literally!" +
+		"```\n%s\n```" +
+		" Answer in the following format: " +
+		"<java class path>: <suggestion 1> " +
+		"<java class path>: <suggestion 2> " +
+		"<java class path>: <suggestion 3> " +
+		"Example:  " +
+		"		src/test/java/com/example/service/Example.java: Fix the typo in the class comment"
 	prompt = fmt.Sprintf(followup, important)
 	important, err = a.brain.Ask(prompt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ask brain for most frequent suggestion: %w", err)
 	}
-	res := make([]domain.Suggestion, 0, len(important))
 	classSuggestions := make(map[string][]string, 0)
 	for s := range strings.SplitSeq(strings.ReplaceAll(important, "\r\n", "\n"), "\n") {
+		a.log.Info("suggestion to consider: %s", s)
 		if !strings.Contains(s, ":") {
+			a.log.Warn("can't find a delimeter (:)")
 			continue
 		}
-		a.log.Info("suggestion to consider: %s", s)
-		res = append(res, domain.NewSuggestion(s))
 		split := strings.Split(s, ":")
 		if len(split) < 2 {
 			a.log.Warn("skipping suggestion without class name: %s", s)
@@ -304,7 +310,7 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 		}
 		var suggetions []domain.Suggestion
 		for _, s := range v {
-			suggetions = append(suggetions, domain.NewSuggestion(s))
+			suggetions = append(suggetions, *domain.NewSuggestion(s, class.Path()))
 		}
 		ires = append(ires, improvement{
 			class:       class,
