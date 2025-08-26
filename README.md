@@ -18,7 +18,7 @@ Refrax solves both of these issues by breaking down a large demand to
 polish the code into a series of smaller requests to a number of
 agents with their specific roles: a critic, a reviewer, an editor, and so on.
 You just start Refrax and in a few minutes (or hours) it makes your code
-better.
+better, running fully autonomously.
 
 Refrax integrates a number of LLMs communicating via the [A2A] protocol.
 
