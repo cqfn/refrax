@@ -101,4 +101,3 @@ final class ObjectXmlContent implements Xml {
         return this.all.stream().filter(ObjectXmlElement.class::isInstance);
     }
 }
-

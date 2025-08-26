@@ -37,7 +37,7 @@ Keep in mind the following imperfections with Java code, identified by automated
 
 {{imperfections}}
 
-Respond with a few most relevant and important suggestion for improvement, formatted as a few lines of text. 
+Respond with a few most relevant and important suggestion for improvement, formatted as a few lines of text.
 If there are no suggestions or they are insignificant, respond with "{{not-found}}".
 Do not include any explanations, summaries, or extra text.
 `

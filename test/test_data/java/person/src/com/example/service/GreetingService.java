@@ -37,4 +37,3 @@ public class GreetingService {
         System.out.println(greet(person));
     }
 }
-

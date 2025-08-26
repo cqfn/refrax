@@ -2,14 +2,32 @@
 
 [![codecov](https://codecov.io/gh/cqfn/refrax/branch/master/graph/badge.svg)](https://codecov.io/gh/cqfn/refrax)
 
-**Refrax** is an AI-powered refactoring agent for Java code, implemented in Go. It communicates using the [A2A protocol](https://google-a2a.github.io/A2A/latest/specification/).
-
 > ⚠️ Early prototype — subject to rapid change.
+
+**Refrax** is an AI-powered refactoring agent for Java code, implemented in Go.
+
+We often need our source code to be _polished_ by AI agents (like [Claude Code]),
+  for example typos to be fixed, small refactorings applied,
+  and JavaDoc blocks improved.
+  But we struggle to formulate the prompt correctly.
+A simple "make my code better" may not work for two reasons:
+the agent quickly gets lost when it deals with hundreds of files,
+and
+the agent requires regular interaction with the user.
+Refrax solves both of these issues by breaking down a large demand to
+polish the code into a series of smaller requests to a number of
+agents with their specific roles: a critic, a reviewer, an editor, and so on.
+You just start Refrax and in a few minutes (or hours) it makes your code
+better.
+
+Refrax integrates a number of LLMs communicating via the [A2A] protocol.
 
 ## Installation
 
 ### Releases
-Download the latest stable version from the [releases page](https://github.com/cqfn/refrax/releases). Pre-built binaries are available for macOS, Windows, and Linux.
+
+Download the latest stable version from the [releases] page.
+Pre-built binaries are available for macOS, Windows, and Linux.
 
 ### Using Go
 
@@ -25,7 +43,6 @@ To install a specific version, use:
 go install github.com/cqfn/refrax@v0.0.1
 ```
 
-[Releases page](https://github.com/cqfn/refrax/releases).
 
 ### From Source
 
@@ -52,7 +69,7 @@ Ensure that Go 1.24.1 or later is installed on your system.
 
 ## Usage
 
-*[![asciicast](https://asciinema.org/a/IHrW8v68VS81vVNfw8ByioG4T.svg)](https://asciinema.org/a/IHrW8v68VS81vVNfw8ByioG4T)
+[![asciicast](https://asciinema.org/a/IHrW8v68VS81vVNfw8ByioG4T.svg)](https://asciinema.org/a/IHrW8v68VS81vVNfw8ByioG4T)
 
 - `refrax refactor [path]`: Refactor Java code in the specified directory (defaults to current directory).
 - `refrax start [agent]`: Start the server for agents like fixer, critic, or facilitator.
@@ -101,7 +118,7 @@ Supported AI providers are:
 
 ### Environment Variable
 
-✅ The `DEEPSEEK_TOKEN` variable is the recommended option for `deepseep` AI provider
+✅ The `DEEPSEEK_TOKEN` variable is the recommended option for `deepseek` AI provider
 ✅ The `OPENAI_TOKEN` variable is the recommended option for `openai` AI provider
 ⚠️ The `TOKEN` variable is still supported for any AI provider but deprecated.
 
@@ -146,3 +163,7 @@ If you omit them, `refrax` will output the statistics directly to the console.
 ## License
 
 Licensed under the [MIT](LICENSE.txt) License.
+
+[A2A]: https://google-a2a.github.io/A2A/latest/specification/
+[releases]: https://github.com/cqfn/refrax/releases
+[Claude Code]: https://www.anthropic.com/claude-code

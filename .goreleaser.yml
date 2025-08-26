@@ -28,6 +28,5 @@ archives:
 release:
   header: "{{ .TagContents }}"
   github:
-    owner: cqfn 
+    owner: cqfn
     name: refrax
-

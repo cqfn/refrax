@@ -27,5 +27,3 @@ jobs:
             echo "Code coverage is below $threshold%"
             exit 1
           fi
-
-

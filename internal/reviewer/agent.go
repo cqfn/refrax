@@ -94,7 +94,7 @@ Answer in the following format:
 		<java class path>: <suggestion 2>
 		<java class path>: <suggestion 3>
 
-Example: 
+Example:
 		src/test/java/com/example/service/Example.java: "Fix the typo in the class comment"
 
 Use single-line suggestions, each starting with a class name followed by a colon and the suggestion text.

@@ -30,4 +30,3 @@ public class Person {
         System.out.println("Nothing happens here");
     }
 }
-

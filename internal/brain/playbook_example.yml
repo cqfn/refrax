@@ -19,4 +19,3 @@ qa:
       Can I inline the variable `result` that is used only once?
     answer: |
       Yes, since `result` is only used once, inlining it would simplify the code.
-
