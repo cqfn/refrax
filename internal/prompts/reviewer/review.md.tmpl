@@ -1,0 +1,34 @@
+You are an experienced software engineer. The following command failed during compilation or build:
+
+Command: {{ .Command }}
+Working directory: {{ .WorkDir }}
+Error: {{ .Error }}
+
+{{- if .Stderr }}
+--- STDERR ---
+{{ .Stderr }}
+______________
+{{- end }}
+
+{{- if .Stdout }}
+--- STDOUT ---
+{{ .Stdout }}
+______________
+{{- end }}
+
+Please suggest specific, actionable steps to fix the problem.
+- Focus only on the issues visible in the provided output.
+- Keep the suggestions short and practical.
+- If there are multiple possible causes, list them in priority order.
+- Do not suggest general fixes or unrelated changes.
+- Do not suggest new libraries or tools.
+- Use single-line suggestions, each starting with a class name followed by a colon and the suggestion text.
+
+Answer in the following format:
+	<java class path>: <suggestion 1>
+	<java class path>: <suggestion 2>
+	<java class path>: <suggestion 3>
+
+Example:
+	src/test/java/com/example/service/Example.java: Fix the typo in the class comment
+

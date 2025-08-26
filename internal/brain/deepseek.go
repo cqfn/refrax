@@ -13,9 +13,10 @@ import (
 
 // deepSeek represents a client for interacting with the deepSeek API.
 type deepSeek struct {
-	token string
-	url   string
-	model string
+	token  string
+	url    string
+	model  string
+	system string
 }
 
 type deepseekReq struct {
@@ -39,7 +40,7 @@ type deepseekMsg struct {
 }
 
 // NewDeepSeek creates a new deepSeek instance with the provided API key.
-func NewDeepSeek(apiKey string) Brain {
+func NewDeepSeek(apiKey, system string) Brain {
 	return &deepSeek{
 		token: apiKey,
 		url:   "https://api.deepseek.com/chat/completions",
@@ -50,7 +51,7 @@ func NewDeepSeek(apiKey string) Brain {
 // Ask sends a question to the deepSeek API and retrieves an answer.
 func (d *deepSeek) Ask(question string) (string, error) {
 	log.Debug("deepSeek: asking question: %s", question)
-	return d.send("You are a helpful assistant.", question)
+	return d.send(d.system, question)
 }
 
 func (d *deepSeek) send(system, user string) (answer string, err error) {

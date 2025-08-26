@@ -7,6 +7,7 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/prompts"
 	"github.com/cqfn/refrax/internal/tool"
 )
 
@@ -16,42 +17,31 @@ type agent struct {
 	tools []tool.Tool
 }
 
+// notFound is the message returned when no suggestions are found.
 const notFound = "No suggestions found"
 
-const prompt = `Analyze the following Java code:
-
-{{code}}
-
-Identify possible improvements or flaws such as:
-
-* grammar and spelling mistakes in comments,
-* variables that can be inlined or removed without changing functionality,
-* unnecessary comments inside methods,
-* redundant code.
-
-Don't suggest any changes that would alter the functionality of the code.
-Don't suggest any changes that would require moving code parts between files (like extract class or extract an interface).
-Don't suggest method renaming or class renaming.
-
-Keep in mind the following imperfections with Java code, identified by automated static analysis system:
-
-{{imperfections}}
-
-Respond with a few most relevant and important suggestion for improvement, formatted as a few lines of text.
-If there are no suggestions or they are insignificant, respond with "{{not-found}}".
-Do not include any explanations, summaries, or extra text.
-`
+// promptData holds the data to be injected into the prompt template.
+type promptData struct {
+	Code     string
+	Defects  []string
+	NotFound string
+}
 
 // Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
 func (c *agent) Review(job *domain.Job) (*domain.Artifacts, error) {
 	class := job.Classes[0]
 	c.log.Info("received class %q for analysis", class.Name())
-	replacer := strings.NewReplacer(
-		"{{code}}", class.Content(),
-		"{{imperfections}}", tool.NewCombined(c.tools...).Imperfections(),
-		"{{not-found}}", notFound,
-	)
-	answer, err := c.brain.Ask(replacer.Replace(prompt))
+	data := promptData{
+		Code:     class.Content(),
+		Defects:  []string{tool.NewCombined(c.tools...).Imperfections()},
+		NotFound: notFound,
+	}
+	prompt := prompts.User{
+		Data: data,
+		Name: "critic/critic.md.tmpl",
+	}
+	c.log.Debug("rendered prompt for class %s: %s", class.Name(), prompt)
+	answer, err := c.brain.Ask(prompt.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
 	}

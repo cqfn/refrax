@@ -1,4 +1,3 @@
-// Package fixer provides functionality for fixing Java code based on suggestions.
 package fixer
 
 import (
@@ -10,6 +9,7 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/prompts"
 	"github.com/cqfn/refrax/internal/protocol"
 )
 
@@ -21,18 +21,12 @@ type Fixer struct {
 	port   int
 }
 
-const prompt = "Fix '%s' code based on the listed suggestions.\n\n" +
-	"Code:\n" +
-	"```java\n%s\n\n```" +
-	"\n\nSuggestions:\n" +
-	"```suggestion\n%s\n\n```" +
-	"Do not rename class names.\n" +
-	"Do not remove JavaDoc comments.\n" +
-	"Return only the corrected Java code.\n" +
-	"Do not include explanations, comments, or any extra text.\n\n"
-
-const exampleNote = "This is an example of another refactored class. The same refactoring has been applied here." +
-	"```java\n%s\n```"
+// promptData holds the data to be injected into the prompt template.
+type promptData struct {
+	FilePath    string
+	Code        string
+	Suggestions []domain.Suggestion
+}
 
 // NewFixer creates a new Fixer instance with the provided AI brain and port.
 func NewFixer(ai brain.Brain, port int) *Fixer {
@@ -126,26 +120,22 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		return nil, fmt.Errorf("failed to unmarshal job: %w", err)
 	}
 	var code string
-	suggestions := make([]string, 0, len(job.Suggestions))
 	var class string
 	var path string
-	var example string
 	code = job.Classes[0].Content()
 	class = job.Classes[0].Name()
 	path = job.Classes[0].Path()
-	if len(job.Examples) > 0 {
-		example = job.Examples[0].Content()
+	f.log.Info("trying to fix the %q class...", class)
+	prompt := prompts.User{
+		Data: promptData{
+			FilePath:    path,
+			Code:        code,
+			Suggestions: job.Suggestions,
+		},
+		Name: "fixer/fix.md.tmpl",
 	}
-	for _, suggestion := range job.Suggestions {
-		suggestions = append(suggestions, suggestion.Text)
-	}
-	f.log.Info("trying to fix %q class...", class)
-	all := strings.Join(suggestions, "\n")
-	question := fmt.Sprintf(prompt, class, code, all)
-	if example != "" {
-		question += "\n\n" + fmt.Sprintf(exampleNote, example)
-	}
-	f.log.Info("asking AI to fix java code...")
+	question := prompt.String()
+	f.log.Info("asking the brain to fix the java code...")
 	answer, err := f.brain.Ask(question)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from AI: %w", err)

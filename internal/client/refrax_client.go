@@ -14,6 +14,7 @@ import (
 	"github.com/cqfn/refrax/internal/facilitator"
 	"github.com/cqfn/refrax/internal/fixer"
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/prompts"
 	"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/reviewer"
 	"github.com/cqfn/refrax/internal/stats"
@@ -55,7 +56,23 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	log.Debug("found %d classes in the project: %v", len(classes), classes)
 
 	criticStats := &stats.Stats{Name: "critic"}
-	criticBrain, err := mind(c.params, criticStats)
+	criticSystemPrompt := prompts.System{
+		AgentName:      "critic",
+		ProjectContext: "you are part of a team working on a Java project. Your role is to review Java classes and provide constructive feedback to improve code quality, maintainability, and adherence to best practices.",
+		Capabilities: []string{
+			"Analyze Java code for potential improvements",
+			"Identify code smells and suggest refactorings",
+			"Provide feedback on code structure and design patterns",
+			"Suggest improvements without altering functionality",
+		},
+		Constraints: []string{
+			"You cannot change the functionality of the code",
+			"You cannot suggest changes that require moving code between files",
+			"You cannot suggest renamimg classes or methods",
+			"You cannot suggest removing JavaDoc comments",
+		},
+	}
+	criticBrain, err := mind(c.params, &criticSystemPrompt, criticStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -67,7 +84,21 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	ctc.Handler(countStats(criticStats))
 
 	fixerStats := &stats.Stats{Name: "fixer"}
-	fixerBrain, err := mind(c.params, fixerStats)
+	fixerSystemPrompt := prompts.System{
+		AgentName:      "fixer",
+		ProjectContext: "you are part of a team working on a Java project. Your role is to fix Java classes based on the feedback provided by the Critic, ensuring that the code quality and maintainability are improved without altering the original functionality.",
+		Capabilities: []string{
+			"Apply suggested improvements to Java code",
+			"Refactor code to enhance readability and maintainability",
+		},
+		Constraints: []string{
+			"You cannot change the functionality of the code",
+			"You cannot change the code that require moving code between files",
+			"You cannot rename classes or methods",
+			"You cannot remove JavaDoc comments",
+		},
+	}
+	fixerBrain, err := mind(c.params, &fixerSystemPrompt, fixerStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -79,7 +110,20 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	fxr.Handler(countStats(fixerStats))
 
 	reviewerStats := &stats.Stats{Name: "reviewer"}
-	reviewerBrain, err := mind(c.params, reviewerStats)
+	reviewerSystemPrompt := prompts.System{
+		AgentName:      "reviewer",
+		ProjectContext: "you are part of a team working on a Java project. Your role is to review the refactored Java classes to ensure that the applied changes align with the original suggestions provided by the Critic and that the code quality has been improved without altering the original functionality.",
+		Capabilities: []string{
+			"Run build and test commands to validate code changes",
+			"Provide feedback on the success or failure of the build and tests",
+			"Suggest further improvements based on build and test results",
+		},
+		Constraints: []string{
+			"You cannot suggest changes that require moving code between files",
+			"You cannot suggest adding another dependencies",
+		},
+	}
+	reviewerBrain, err := mind(c.params, &reviewerSystemPrompt, reviewerStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance for reviewer: %w", err)
 	}
@@ -91,7 +135,18 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	rvwr.Handler(countStats(reviewerStats))
 
 	facilitatorStats := &stats.Stats{Name: "facilitator"}
-	facilitatorBrain, err := mind(c.params, facilitatorStats)
+	facilitatorSystemPrompt := prompts.System{
+		AgentName:      "facilitator",
+		ProjectContext: "you are part of a team working on a Java project. Your role is to facilitate the refactoring process by coordinating between the Critic, Fixer, and Reviewer agents to ensure that Java classes are effectively improved while maintaining their original functionality.",
+		Capabilities: []string{
+			"Understand the most important suggestions from the Critic",
+			"Group and prioritize suggestions for the Fixer",
+		},
+		Constraints: []string{
+			"You cannot change suggestions",
+		},
+	}
+	facilitatorBrain, err := mind(c.params, &facilitatorSystemPrompt, facilitatorStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -243,8 +298,8 @@ func printStats(p Params, s ...*stats.Stats) error {
 	return nil
 }
 
-func mind(p Params, s *stats.Stats) (brain.Brain, error) {
-	ai, err := brain.New(p.Provider, token(p), p.Playbook)
+func mind(p Params, system *prompts.System, s *stats.Stats) (brain.Brain, error) {
+	ai, err := brain.New(p.Provider, token(p), system.String(), p.Playbook)
 	if p.Stats {
 		ai = brain.NewMetricBrain(ai, s)
 	}

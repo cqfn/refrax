@@ -8,6 +8,7 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/prompts"
 	"github.com/cqfn/refrax/internal/stats"
 	"github.com/cqfn/refrax/internal/util"
 )
@@ -236,52 +237,39 @@ type improvement struct {
 	suggestions []domain.Suggestion
 }
 
+type groupPromptData struct {
+	Suggestions []domain.Suggestion
+}
+
+type choosePromoptData struct {
+	Groupped string
+}
+
 func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) {
-	a.log.Info("finding most imprtant suggestions from all the possible improvements...")
+	a.log.Info("groupping all suggestions...")
 	all := make([]domain.Suggestion, 0, len(improvements))
 	for _, imp := range improvements {
 		all = append(all, imp.suggestions...)
 	}
-	prompt := "Here is a list of code improvement suggestions: \n" +
-		"```\n%s\n```\n" +
-		"Your task:" +
-		"1. Group similar suggestions by their topic — for example: comments, naming, error handling, formatting, etc." +
-		"2. If a group contains multiple similar suggestions, return all suggestions from that group." +
-		"3. If no group has more than one suggestion, return just one representative suggestion from the list." +
-		"4. Do not change the text of any suggestion." +
-		"5. Do not explain or comment. Output only the selected suggestion(s), each on its own line." +
-		"6. Do not remove or modify class names in any suggestion." +
-		"Important! Return suggestions as they are. Literally!" +
-		" Answer in the following format: " +
-		"<java class path>: <suggestion 1> " +
-		"<java class path>: <suggestion 2> " +
-		"<java class path>: <suggestion 3> " +
-		"Example:  " +
-		"		src/test/java/com/example/service/Example.java: Fix the typo in the class comment"
-
-	var summary string
-	for _, s := range all {
-		summary += fmt.Sprintf("%s: %s\n", s.ClassPath, s.Text)
+	prompt := prompts.User{
+		Data: groupPromptData{
+			Suggestions: all,
+		},
+		Name: "facilitator/group.md.tmpl",
 	}
-	prompt = fmt.Sprintf(prompt, summary)
-	important, err := a.brain.Ask(prompt)
+	important, err := a.brain.Ask(prompt.String())
 	if err != nil {
-		return nil, fmt.Errorf("failed to ask brain for most frequent suggestion: %w", err)
+		return nil, fmt.Errorf("failed to ask the brain to group suggestions: %w", err)
 	}
-	followup := "Given the grouped suggestions below, identify the largest group (the one with the most suggestions).\n" +
-		"Return only the suggestions from that group.\n" +
-		"Do not include group names, headers, or any explanations. Only output the suggestions.\n" +
-		"Do not modify any suggestion. Keep class names intact.\n\n" +
-		"Important! Return suggestions as they are. Literally!" +
-		"```\n%s\n```" +
-		" Answer in the following format: " +
-		"<java class path>: <suggestion 1> " +
-		"<java class path>: <suggestion 2> " +
-		"<java class path>: <suggestion 3> " +
-		"Example:  " +
-		"		src/test/java/com/example/service/Example.java: Fix the typo in the class comment"
-	prompt = fmt.Sprintf(followup, important)
-	important, err = a.brain.Ask(prompt)
+
+	prompt = prompts.User{
+		Data: choosePromoptData{
+			Groupped: important,
+		},
+		Name: "facilitator/choose.md.tmpl",
+	}
+	a.log.Info("choosing the most important suggestions...")
+	important, err = a.brain.Ask(prompt.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to ask brain for most frequent suggestion: %w", err)
 	}
