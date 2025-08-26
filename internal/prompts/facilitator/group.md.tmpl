@@ -1,0 +1,23 @@
+Here is a list of code improvement suggestions:
+
+{{- range .Suggestions }}
+{{ .ClassPath }}: {{ .Text }}
+{{- end }}
+
+Your task:
+1. Group similar suggestions by topic (e.g., comments, naming, error handling, formatting).
+2. If a group contains multiple similar suggestions, return all suggestions from that group.
+4. Do **not** change the text of any suggestion.
+5. Do **not** explain or comment. Output only the selected suggestions, one per line.
+6. Do **not** remove or modify class names in any suggestion.
+
+Important: Return suggestions exactly as written, without alteration.
+
+Answer in the following format:
+<java class path>: <suggestion 1>
+<java class path>: <suggestion 2>
+<java class path>: <suggestion 3>
+
+Example:
+src/test/java/com/example/service/Example.java: Fix the typo in the class comment
+

@@ -11,7 +11,7 @@ func TestDeepSeek_Ask_PositiveCase(t *testing.T) {
 	server := NewEchoServer(t, "deepseek-chat", "test_api_key")
 	defer server.Close()
 
-	deepseek := NewDeepSeek("test_api_key")
+	deepseek := NewDeepSeek("test_api_key", "sysprompt")
 	deepseek.(*deepSeek).url = server.URL
 
 	answer, err := deepseek.Ask("This is a test question")
@@ -23,7 +23,7 @@ func TestDeepSeek_Ask_NegativeCase(t *testing.T) {
 	server := NewErrorServer(t)
 	defer server.Close()
 
-	deepseek := NewDeepSeek("test_api_key")
+	deepseek := NewDeepSeek("test_api_key", "deepseek system prompt")
 	deepseek.(*deepSeek).url = server.URL
 
 	answer, err := deepseek.Ask("This is a test question")

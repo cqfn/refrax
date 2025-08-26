@@ -10,7 +10,7 @@ func TestOpenAI_Ask_PositiveCase(t *testing.T) {
 	server := NewEchoServer(t, "gpt-3.5-turbo", "test_api_key")
 	defer server.Close()
 
-	openai := NewOpenAI("test_api_key")
+	openai := NewOpenAI("test_api_key", "openai sys prompt")
 	openai.(*openAI).url = server.URL
 
 	answer, err := openai.Ask("This is a test question")
@@ -23,7 +23,7 @@ func TestOpenAI_Ask_NegativeCase(t *testing.T) {
 	server := NewErrorServer(t)
 	defer server.Close()
 
-	openai := NewOpenAI("test_api_key")
+	openai := NewOpenAI("test_api_key", "openai system prompt")
 	openai.(*openAI).url = server.URL
 
 	answer, err := openai.Ask("This is a test question")

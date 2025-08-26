@@ -1,4 +1,3 @@
-// Package reviewer provides an implementation of a code review agent that uses AI to suggest fixes based on command output.
 package reviewer
 
 import (
@@ -11,12 +10,22 @@ import (
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/cqfn/refrax/internal/log"
+	"github.com/cqfn/refrax/internal/prompts"
 )
 
 type agent struct {
 	logger log.Logger
 	cmds   []string
 	ai     brain.Brain
+}
+
+// promptData holds all inputs for the template in one place.
+type promptData struct {
+	Command string
+	WorkDir string
+	Error   string
+	Stderr  string
+	Stdout  string
 }
 
 func (a *agent) Review() (*domain.Artifacts, error) {
@@ -57,50 +66,23 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 	a.logger.Info("asking AI to form suggestions based on the error output")
 	outb := out.Bytes()
 	errb := errOut.Bytes()
-	raw, err := a.ai.Ask(prompt(cmd, root, err, string(outb), string(errb)))
+	data := promptData{
+		Command: cmd,
+		WorkDir: root,
+		Error:   err.Error(),
+		Stderr:  string(errb),
+		Stdout:  string(outb),
+	}
+	prompt := prompts.User{
+		Data: data,
+		Name: "reviewer/review.md.tmpl",
+	}
+	raw, err := a.ai.Ask(prompt.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to ask AI for suggestions: %w", err)
 	}
 	parsed := a.parseSuggestions(raw)
 	return parsed, nil
-}
-
-func prompt(cmd, cwd string, runErr error, stdout, stderr string) string {
-	return fmt.Sprintf(
-		`You are an experienced software engineer. The following command failed during compilation or build:
-
-Command: %q
-Working directory: %s
-Error: %s
-
---- STDERR ---
-%s
-______________
-
---- STDOUT ---
-%s
-______________
-
-Please suggest specific, actionable steps to fix the problem.
-- Focus only on the issues visible in the provided output.
-- Keep the suggestions short and practical.
-- Number the suggestions starting from 1.
-- If there are multiple possible causes, list them in priority order.
-- Do not suggest general fixes or unrelated changes.
-- Do not suggest new libraries or tools.
-
-Answer in the following format:
-		<java class path>: <suggestion 1>
-		<java class path>: <suggestion 2>
-		<java class path>: <suggestion 3>
-
-Example:
-		src/test/java/com/example/service/Example.java: "Fix the typo in the class comment"
-
-Use single-line suggestions, each starting with a class name followed by a colon and the suggestion text.
-`,
-		cmd, cwd, runErr.Error(), stderr, stdout,
-	)
 }
 
 func (a *agent) parseSuggestions(output string) []domain.Suggestion {

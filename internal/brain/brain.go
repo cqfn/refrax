@@ -15,12 +15,12 @@ const openai = "openai"
 const mock = "mock"
 
 // New creates a new instance of Brain based on the provided provider and optional playbook strings.
-func New(provider, token string, playbook ...string) (Brain, error) {
+func New(provider, token, system string, playbook ...string) (Brain, error) {
 	switch provider {
 	case deepseek:
-		return NewDeepSeek(token), nil
+		return NewDeepSeek(token, system), nil
 	case openai:
-		return NewOpenAI(token), nil
+		return NewOpenAI(token, system), nil
 	case mock:
 		if len(playbook) == 0 {
 			return NewMock(), nil

@@ -12,9 +12,10 @@ import (
 
 // OpenAI represents a client for interacting with the OpenAI API
 type openAI struct {
-	token string
-	url   string
-	model string
+	token  string
+	url    string
+	model  string
+	system string
 }
 
 type openaiReq struct {
@@ -36,17 +37,18 @@ type openaiMsg struct {
 }
 
 // NewOpenAI creates a new OpenAI instance
-func NewOpenAI(apiKey string) Brain {
+func NewOpenAI(apiKey, system string) Brain {
 	return &openAI{
-		token: apiKey,
-		url:   "https://api.openai.com/v1/chat/completions",
-		model: "gpt-3.5-turbo", // Default model
+		token:  apiKey,
+		url:    "https://api.openai.com/v1/chat/completions",
+		model:  "gpt-3.5-turbo", // Default model
+		system: system,
 	}
 }
 
 // Ask sends a question to the OpenAI API
 func (o *openAI) Ask(question string) (string, error) {
-	return o.send("You are a helpful assistant.", question)
+	return o.send(o.system, question)
 }
 
 func (o *openAI) send(system, user string) (answer string, err error) {

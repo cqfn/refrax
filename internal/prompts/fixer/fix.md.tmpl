@@ -1,0 +1,31 @@
+# Fix Java Class — {{ .FilePath }}
+You are a precise Java code editor. Rewrite the class below by applying the given suggestions.
+
+## Path
+File: {{ .FilePath }}
+
+## Original Code
+
+```
+{{ .Code }}
+```
+
+## Suggestions
+{{- range .Suggestions }}
+{{ .ClassPath }}: {{ .Text }}
+{{- end }}
+
+## Rules
+- Return only the final Java source file, nothing else.
+- Output raw Java — **no** markdown fences, **no** diff markers, **no** comments or explanations.
+- Do **not** rename the class. Keep public API names unless a suggestion explicitly requires a change.
+- Do **not** remove JavaDoc comments; you may update them to stay accurate.
+- Preserve the existing package and imports unless a suggestion requires changing them.
+- Ensure the result compiles and includes the entire file content from the package line (if any) to the final }.
+- Do **not** add external dependencies unless explicitly requested by a suggestion.
+
+
+## Final check (silent)
+- No leading/trailing blank lines outside the code.
+- No backtick fences, no “diff” syntax, no headings.
+

@@ -7,10 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const system = "system prompt"
+
 func TestNew_WithDeepSeekProvider_ReturnsDeepSeekBrain(t *testing.T) {
 	token := "valid_token"
 
-	result, err := New(deepseek, token)
+	result, err := New(deepseek, token, system)
 
 	require.NoError(t, err, "Expected no error when creating DeepSeek brain")
 	_, ok := result.(*deepSeek)
@@ -20,7 +22,7 @@ func TestNew_WithDeepSeekProvider_ReturnsDeepSeekBrain(t *testing.T) {
 func TestNew_WithOpenAIProvider_ReturnsOpenAIBrain(t *testing.T) {
 	token := "valid_openai_token"
 
-	result, err := New(openai, token)
+	result, err := New(openai, token, system)
 
 	require.NoError(t, err, "Expected no error when creating OpenAI brain")
 	_, ok := result.(*openAI)
@@ -28,7 +30,7 @@ func TestNew_WithOpenAIProvider_ReturnsOpenAIBrain(t *testing.T) {
 }
 
 func TestNew_MockProviderNoPlaybook_ReturnsMockInstance(t *testing.T) {
-	result, err := New(mock, "test-token")
+	result, err := New(mock, "test-token", system)
 
 	require.NoError(t, err)
 	_, ok := result.(*mockBrain)
@@ -36,7 +38,7 @@ func TestNew_MockProviderNoPlaybook_ReturnsMockInstance(t *testing.T) {
 }
 
 func TestNew_UnknownProvider_ReturnsError(t *testing.T) {
-	b, err := New("unknown", "test-token")
+	b, err := New("unknown", "test-token", system)
 
 	require.Error(t, err)
 	assert.Nil(t, b)
