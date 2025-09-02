@@ -94,6 +94,17 @@ Or, if you are already in the `refrax` folder, simply run:
 refrax refactor --output="./out" --ai=deepseek test/test_data/java/person
 ```
 
+### Checking Results
+
+`refrax` does not inherently verify whether the applied changes are correct or cause any issues. 
+To address this, you can use the `--check` option to validate the changes. Multiple `--check` options can be provided, as shown below:
+
+```sh
+refrax refactor . --ai=deepseek --check="mvn clean test" --check="mvn qulice:check -Pqulice"
+```
+
+When at least one `--check` option is specified, the `reviewer` agent executes the provided checks and delivers feedback to the `facilitator` agent.
+
 ## Configuration
 
 - `--ai, -a`: Specify the AI provider (e.g., deepseek, openai).
