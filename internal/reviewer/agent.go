@@ -30,6 +30,7 @@ type promptData struct {
 
 func (a *agent) Review() (*domain.Artifacts, error) {
 	var res []domain.Suggestion
+	a.logger.Info("starting review using %d commands, %s", len(a.cmds), strings.Join(a.cmds, ", "))
 	for _, cmd := range a.cmds {
 		suggestions, err := a.runCmd(cmd)
 		if err != nil {

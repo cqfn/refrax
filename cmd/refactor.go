@@ -9,6 +9,7 @@ import (
 func newRefactorCmd(params *client.Params) *cobra.Command {
 	var output string
 	var maxSize int
+	var checks []string
 	command := &cobra.Command{
 		Use:     "refactor [path]",
 		Short:   "refactor code in the given directory (defaults to current)",
@@ -22,11 +23,13 @@ func newRefactorCmd(params *client.Params) *cobra.Command {
 			params.Input = path
 			params.Output = output
 			params.MaxSize = maxSize
+			params.Checks = checks
 			_, err := client.Refactor(params)
 			return err
 		},
 	}
 	command.Flags().StringVarP(&output, "output", "o", "", "output path for the refactored code")
 	command.Flags().IntVar(&maxSize, "max-size", 200, "maximum number of changes allowed in a single refactoring cycle")
+	command.Flags().StringSliceVar(&checks, "check", make([]string, 0), "check commands to run after refactoring")
 	return command
 }

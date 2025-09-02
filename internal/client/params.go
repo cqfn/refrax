@@ -17,6 +17,7 @@ type Params struct {
 	Output      string
 	MaxSize     int
 	Log         io.Writer
+	Checks      []string
 }
 
 // NewMockParams creates a new Params object with mock settings.
@@ -34,5 +35,6 @@ func NewMockParams() *Params {
 		Output:      "",
 		MaxSize:     200,
 		Log:         io.Discard, // Default to discard if no logging is needed
+		Checks:      []string{"mvn clean test"},
 	}
 }

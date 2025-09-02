@@ -131,7 +131,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for reviewer: %w", err)
 	}
-	rvwr := reviewer.NewReviewer(reviewerBrain, reviewerPort, "mvn clean test", "mvn qulice:check -Pqulice")
+	rvwr := reviewer.NewReviewer(reviewerBrain, reviewerPort, c.params.Checks...)
 	rvwr.Handler(countStats(reviewerStats))
 
 	facilitatorStats := &stats.Stats{Name: "facilitator"}
