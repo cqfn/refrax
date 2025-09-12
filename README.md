@@ -171,6 +171,18 @@ This command generates a `stats.csv` file containing the interaction statistics.
 The `--stats-output` and `--stats-format` parameters are optional.
 If you omit them, `refrax` will output the statistics directly to the console.
 
+## Reviewer Agent
+
+The reviewer agent is responsible for verifying the results of refactoring.
+It executes a set of predefined commands to ensure the repository's stability and the correctness of the refactoring changes.
+Since the commands may vary between projects, you can configure them using the `--check` option. For example:
+
+```
+refrax refactor . --ai=deepseek --check="mvn clean test" --check="mvn qulice:check -Pqulice"
+```
+
+Note that multiple `--check` commands can be used.
+
 ## License
 
 Licensed under the [MIT](LICENSE.txt) License.
