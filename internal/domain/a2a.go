@@ -3,7 +3,7 @@ package domain
 import (
 	"fmt"
 
-	"github.com/cqfn/refrax/internal/protocol"
+"github.com/cqfn/refrax/internal/protocol"
 	"github.com/cqfn/refrax/internal/util"
 	"github.com/google/uuid"
 )
