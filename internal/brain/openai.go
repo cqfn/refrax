@@ -71,7 +71,7 @@ func (o *openAI) send(system, user string) (answer string, err error) {
 	req.Header.Set("Authorization", "Bearer "+o.token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("api request failed: %w", err)
+		return "", fmt.Errorf("API request failed: %w", err)
 	}
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
