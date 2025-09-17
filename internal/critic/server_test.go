@@ -89,7 +89,7 @@ func TestCriticStart_ServerStartError(t *testing.T) {
 	err := critic.ListenAndServe()
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to start critic server")
+	assert.Contains(t, err.Error(), "failed to start critic server")
 }
 
 func TestCriticClose_Success(t *testing.T) {
@@ -113,7 +113,7 @@ func TestCriticClose_ServerNotStartedError(t *testing.T) {
 	err := critic.Shutdown()
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "Failed to stop critic server")
+	assert.Contains(t, err.Error(), "failed to stop critic server")
 }
 
 func TestCriticThink_ReturnsMessage(t *testing.T) {

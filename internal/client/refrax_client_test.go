@@ -23,7 +23,7 @@ func TestRefraxClient_Refactors_EmptyProject(t *testing.T) {
 
 	assert.Equal(t, origin, proj, "Refactoring an empty project should return the same project")
 	assert.Error(t, err, "Expected an error when refactoring an empty project")
-	assert.Equal(t, "No java classes found in the project [empty project], add java files to the appropriate directory", err.Error(), "Error message should indicate no classes found")
+	assert.Equal(t, "no java classes found in the project [empty project], add java files to the appropriate directory", err.Error(), "Error message should indicate no classes found")
 }
 
 // TestRefraxClient_Refactors_SingleClass tests the refactoring of a single class
