@@ -1,3 +1,4 @@
+// Package domain is for the domain.
 package domain
 
 import (

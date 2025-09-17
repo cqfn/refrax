@@ -1,4 +1,4 @@
-// Fixer
+// Package fixer is for the fixer.
 package fixer
 
 import (

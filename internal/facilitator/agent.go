@@ -1,4 +1,3 @@
-// Agent
 package facilitator
 
 import (

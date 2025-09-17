@@ -1,4 +1,4 @@
-// Facilitator
+// Package facilitator is for the facilitator.
 package facilitator
 
 import (
