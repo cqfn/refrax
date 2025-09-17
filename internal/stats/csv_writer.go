@@ -1,4 +1,3 @@
-// Package stats provides functionality to write statistics.
 package stats
 
 import (

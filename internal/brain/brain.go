@@ -1,4 +1,3 @@
-// Package brain provides an interface and implementations for asking questions programmatically.
 package brain
 
 import "fmt"

@@ -153,11 +153,11 @@ func basic(ctx context.Context, mh MsgHandler) Handler {
 			resp := success(id, msg)
 			return &resp, nil
 		case "message/stream":
-			panic("Message/stream is not implemented yet")
+			panic("message/stream is not implemented yet")
 		case "tasks/get":
-			panic("Tasks/get is not implemented yet")
+			panic("tasks/get is not implemented yet")
 		case "tasks/cancel":
-			panic("Tasks/get is not implemented yet")
+			panic("tasks/get is not implemented yet")
 		default:
 			resp := failure(id, ErrCodeMethodNotFound, "Method not found")
 			return &resp, nil
