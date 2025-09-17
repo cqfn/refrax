@@ -28,8 +28,8 @@ func newRefactorCmd(params *client.Params) *cobra.Command {
 			return err
 		},
 	}
-	command.Flags().StringVarP(&output, "output", "o", "", "output path for the refactored code")
-	command.Flags().IntVar(&maxSize, "max-size", 200, "maximum number of changes allowed in a single refactoring cycle")
-	command.Flags().StringSliceVar(&checks, "check", make([]string, 0), "check commands to run after refactoring")
+	command.Flags().StringVarP(&output, "output", "o", "", "Output path for the refactored code")
+	command.Flags().IntVar(&maxSize, "max-size", 200, "Maximum number of changes allowed in a single refactoring cycle")
+	command.Flags().StringSliceVar(&checks, "check", make([]string, 0), "Check commands to run after refactoring")
 	return command
 }

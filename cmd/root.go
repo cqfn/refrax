@@ -27,14 +27,14 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 		Long:             "Refrax is an AI-powered refactoring agent for Java code. It communicates using the A2A protocol",
 		PersistentPreRun: func(_ *cobra.Command, _ []string) { params.Log = out },
 	}
-	root.PersistentFlags().StringVarP(&params.Provider, "ai", "a", "none", "AI provider to use (e.g., openai, deepseek, none, etc.)")
+	root.PersistentFlags().StringVarP(&params.Provider, "ai", "a", "none", "AI provider to use (openai, deepseek, none)")
 	root.PersistentFlags().StringVarP(&params.Token, "token", "t", "", "Token for the AI provider (if required)")
 	root.PersistentFlags().StringVar(&params.Playbook, "playbook", "", "Path to a user-defined YAML playbook for AI integration")
 	root.PersistentFlags().BoolVar(&params.MockProject, "mock-project", false, "Use mock project")
 	root.PersistentFlags().BoolVarP(&params.Debug, "debug", "d", false, "Print debug logs")
 	root.PersistentFlags().BoolVar(&params.Stats, "stats", false, "Print internal interaction statistics")
-	root.PersistentFlags().StringVar(&params.Format, "stats-format", "std", "Format for statistics output (e.g., std, csv, etc.)")
-	root.PersistentFlags().StringVar(&params.Soutput, "stats-output", "stats", "Output path for statistics (default: stats)")
+	root.PersistentFlags().StringVar(&params.Format, "stats-format", "std", "Format for statistics output (std, csv)")
+	root.PersistentFlags().StringVar(&params.Soutput, "stats-output", "stats", "Output path for statistics")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(),
