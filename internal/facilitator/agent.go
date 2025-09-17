@@ -27,7 +27,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		return nil, fmt.Errorf("failed to get max size limit: %w", err)
 	}
 	if job.Descr.Text != "refactor the project" {
-		a.log.Warn("received a message that is not related to refactoring. ignoring.")
+		a.log.Warn("received a message that is not related to refactoring, ignoring")
 		return nil, fmt.Errorf("received a message that is not related to refactoring")
 	}
 	classes := job.Classes
@@ -87,7 +87,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		path := fixRes.class.Path()
 		class := send[path].class
 		if changed >= size {
-			a.log.Warn("refactoring class %s would exceed max-size is %d (current %d), skipping refactoring", class.Name(), size, changed)
+			a.log.Warn("refactoring class %s would exceed max-size of %d (current %d), skipping refactoring", class.Name(), size, changed)
 			continue
 		}
 		modified := fixRes.class
@@ -246,7 +246,7 @@ type choosePromoptData struct {
 }
 
 func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) {
-	a.log.Info("groupping all suggestions...")
+	a.log.Info("grouping all suggestions...")
 	all := make([]domain.Suggestion, 0, len(improvements))
 	for _, imp := range improvements {
 		all = append(all, imp.suggestions...)
@@ -277,7 +277,7 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 	for s := range strings.SplitSeq(strings.ReplaceAll(important, "\r\n", "\n"), "\n") {
 		a.log.Info("suggestion to consider: %s", s)
 		if !strings.Contains(s, ":") {
-			a.log.Warn("can't find a delimeter (:)")
+			a.log.Warn("can't find a delimiter ':'")
 			continue
 		}
 		split := strings.Split(s, ":")

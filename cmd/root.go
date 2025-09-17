@@ -29,7 +29,7 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 	}
 	root.PersistentFlags().StringVarP(&params.Provider, "ai", "a", "none", "AI provider to use (e.g., openai, deepseek, none, etc.)")
 	root.PersistentFlags().StringVarP(&params.Token, "token", "t", "", "Token for the AI provider (if required)")
-	root.PersistentFlags().StringVar(&params.Playbook, "playbook", "", "Path to a user-defined YAML playbook for AI integration.")
+	root.PersistentFlags().StringVar(&params.Playbook, "playbook", "", "Path to a user-defined YAML playbook for AI integration")
 	root.PersistentFlags().BoolVar(&params.MockProject, "mock-project", false, "Use mock project")
 	root.PersistentFlags().BoolVarP(&params.Debug, "debug", "d", false, "print debug logs")
 	root.PersistentFlags().BoolVar(&params.Stats, "stats", false, "Print internal interaction statistics")

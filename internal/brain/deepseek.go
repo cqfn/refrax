@@ -56,7 +56,7 @@ func (d *deepSeek) Ask(question string) (string, error) {
 
 func (d *deepSeek) send(system, user string) (answer string, err error) {
 	content := trimmed(user)
-	log.Debug("deepSeek: sending request with system promt: '%s' and userPrompt: '%s'", system, content)
+	log.Debug("DeepSeek: sending request with system prompt: '%s' and userPrompt: '%s'", system, content)
 	temp := float64(0.0)
 	body := deepseekReq{
 		Model: d.model,

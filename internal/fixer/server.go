@@ -135,7 +135,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		Name: "fixer/fix.md.tmpl",
 	}
 	question := prompt.String()
-	f.log.Info("asking the brain to fix the java code...")
+	f.log.Info("Asking the brain to fix the Java code...")
 	answer, err := f.brain.Ask(question)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from AI: %w", err)

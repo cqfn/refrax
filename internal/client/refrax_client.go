@@ -247,7 +247,7 @@ func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refact
 	refactored := artifacts.Classes
 	log.Info("refactored %d classes in project %s", len(refactored), p)
 	for _, c := range refactored {
-		log.Debug("rececived refactored class: ", c)
+		log.Debug("Received refactored class: ", c)
 		ch <- refactoring{class: before[c.Name()], content: c.Content(), err: nil}
 	}
 	close(ch)
