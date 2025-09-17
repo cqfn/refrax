@@ -80,7 +80,7 @@ func (o *openAI) send(system, user string) (answer string, err error) {
 	}()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("api error: %s", body)
+		return "", fmt.Errorf("API error: %s", body)
 	}
 	var response openaiResp
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {

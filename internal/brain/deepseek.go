@@ -88,7 +88,7 @@ func (d *deepSeek) send(system, user string) (answer string, err error) {
 	}()
 	if resp.StatusCode != 200 {
 		content, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("api error: %s", content)
+		return "", fmt.Errorf("API error: %s", content)
 	}
 	var parsed deepseekResp
 	if err = json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
