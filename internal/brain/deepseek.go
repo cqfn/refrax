@@ -40,7 +40,7 @@ type deepseekMsg struct {
 }
 
 // NewDeepSeek creates a new deepSeek instance with the provided API key.
-func NewDeepSeek(apiKey, system string) Brain {
+func NewDeepSeek(apiKey, _ string) Brain {
 	return &deepSeek{
 		token: apiKey,
 		url:   "https://api.deepseek.com/chat/completions",

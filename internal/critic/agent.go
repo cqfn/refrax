@@ -74,15 +74,15 @@ func parseAnswer(answer string) []string {
 	return suggestions
 }
 
-func (a *agent) associated(suggestions []string, class string) []domain.Suggestion {
+func (c *agent) associated(suggestions []string, class string) []domain.Suggestion {
 	res := make([]domain.Suggestion, 0)
 	for i, suggestion := range suggestions {
 		if strings.EqualFold(suggestion, notFound) {
-			a.log.Info("No suggestions found for the class #%d: %s", i+1, class)
+			c.log.Info("No suggestions found for the class #%d: %s", i+1, class)
 		} else {
 			res = append(res, *domain.NewSuggestion(suggestion, class))
 		}
 	}
-	a.log.Info("Total suggestions associated with class %s: %d", class, len(res))
+	c.log.Info("Total suggestions associated with class %s: %d", class, len(res))
 	return res
 }
