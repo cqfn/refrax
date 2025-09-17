@@ -27,12 +27,12 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		return nil, fmt.Errorf("failed to get max size limit: %w", err)
 	}
 	if job.Descr.Text != "refactor the project" {
-		a.log.Warn("received a message that is not related to refactoring, ignoring")
-		return nil, fmt.Errorf("received a message that is not related to refactoring")
+		a.log.Warn("Received a message that is not related to refactoring, ignoring")
+		return nil, fmt.Errorf("Received a message that is not related to refactoring")
 	}
 	classes := job.Classes
 	nclasses := len(classes)
-	a.log.Info("received request for refactoring, number of attached files: %d, max-size: %d", nclasses, size)
+	a.log.Info("Received request for refactoring, number of attached files: %d, max-size: %d", nclasses, size)
 	var example domain.Class
 	improvements := make([]improvement, 0, nclasses)
 	ch := make(chan improvementResult, nclasses)
@@ -41,15 +41,15 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	for _, class := range classes {
 		untouched[class.Path()] = class
 		tokens, _ := stats.Tokens(class.Content())
-		a.log.Info("class %s has %d tokens", class.Path(), tokens)
+		a.log.Info("Class %s has %d tokens", class.Path(), tokens)
 		if tokens < 2_000 {
 			nreviewed++
 			go a.review(class, ch)
 		} else {
-			a.log.Warn("class %s (%s) has too many tokens (%d), skipping review", class.Name(), class.Path(), tokens)
+			a.log.Warn("Class %s (%s) has too many tokens (%d), skipping review", class.Name(), class.Path(), tokens)
 		}
 	}
-	a.log.Info("number of classes to review: %d, untouched: %d", nreviewed, len(untouched))
+	a.log.Info("Number of classes to review: %d, untouched: %d", nreviewed, len(untouched))
 	for range nreviewed {
 		impr := <-ch
 		if impr.err != nil {
@@ -58,7 +58,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		improvements = append(improvements, impr.important)
 	}
 	if len(improvements) == 0 {
-		a.log.Warn("no improvements found, returning original classes")
+		a.log.Warn("No improvements found, returning original classes")
 		res := &domain.Artifacts{
 			Descr:   &domain.Description{Text: "no improvements found"},
 			Classes: classes,
@@ -69,7 +69,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get most frequent suggestions: %w", err)
 	}
-	a.log.Info("received %d most frequent suggestions from brain", len(mostImportant))
+	a.log.Info("Received %d most frequent suggestions from brain", len(mostImportant))
 	refactored := make([]domain.Class, 0)
 	fixChannel := make(chan fixResult, len(mostImportant))
 	send := make(map[string]improvement, 0)
@@ -87,13 +87,13 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		path := fixRes.class.Path()
 		class := send[path].class
 		if changed >= size {
-			a.log.Warn("refactoring class %s would exceed max-size of %d (current %d), skipping refactoring", class.Name(), size, changed)
+			a.log.Warn("Refactoring class %s would exceed max-size of %d (current %d), skipping refactoring", class.Name(), size, changed)
 			continue
 		}
 		modified := fixRes.class
 		refactored = append(refactored, modified)
 		diff := util.Diff(class.Content(), modified.Content())
-		a.log.Info("fixed class %s (%s), changed content (diff %d)", modified.Name(), modified.Path(), diff)
+		a.log.Info("Fixed class %s (%s), changed content (diff %d)", modified.Name(), modified.Path(), diff)
 		changed += diff
 	}
 	for _, class := range untouched {
@@ -102,7 +102,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	for _, c := range refactored {
 		class := domain.NewFSClass(c.Name(), c.Path())
 		err = class.SetContent(c.Content())
-		a.log.Info("setting content for class %s (%s)", class.Name(), class.Path())
+		a.log.Info("Setting content for class %s (%s)", class.Name(), class.Path())
 		if err != nil {
 			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
 		}
@@ -119,12 +119,12 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 }
 
 func (a *agent) stabilize(refactored []domain.Class) error {
-	a.log.Info("stabilizing refactored classes, number of classes: %d", len(refactored))
+	a.log.Info("Stabilizing refactored classes, number of classes: %d", len(refactored))
 	artifacts, err := a.reviewer.Review()
 	improvements := artifacts.Suggestions
-	a.log.Info("received %d suggestions from reviewer", len(improvements))
+	a.log.Info("Received %d suggestions from reviewer", len(improvements))
 	for _, improvement := range improvements {
-		a.log.Info("received suggestion: %s", improvement)
+		a.log.Info("Received suggestion: %s", improvement)
 	}
 	counter := 3
 	for len(improvements) > 0 && counter > 0 {
@@ -146,7 +146,7 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 			}
 			updated := fixed.Classes[0]
 			class := domain.NewFSClass(k.Name(), k.Path())
-			a.log.Info("updating class %s (%s) with new content", class.Name(), class.Path())
+			a.log.Info("Updating class %s (%s) with new content", class.Name(), class.Path())
 			uerr = class.SetContent(updated.Content())
 			if uerr != nil {
 				return fmt.Errorf("failed to set content for class %s: %w", class.Name(), uerr)
@@ -166,7 +166,7 @@ func (a *agent) understandClasses(clases []domain.Class, suggestions []domain.Su
 			actual := s.ClassPath
 			expected := c.Path()
 			if actual == expected || strings.Contains(actual, expected) || strings.Contains(expected, actual) {
-				a.log.Info("associating suggestion %q with class %s", s.Text, c.Path())
+				a.log.Info("Associating suggestion %q with class %s", s.Text, c.Path())
 				res[c] = append(res[c], s)
 				break
 			}
@@ -195,7 +195,7 @@ func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) 
 }
 
 func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
-	a.log.Info("received class for refactoring: %q", class.Path())
+	a.log.Info("Received class for refactoring: %q", class.Path())
 	job := domain.Job{
 		Descr: &domain.Description{
 			Text: "refactor the class",
@@ -207,9 +207,9 @@ func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
 		ch <- improvementResult{err: fmt.Errorf("failed to ask critic: %w", err), important: improvement{class: class}}
 		return
 	}
-	a.log.Info("received %d suggestions from critic", len(suggestions.Suggestions))
+	a.log.Info("Received %d suggestions from critic", len(suggestions.Suggestions))
 	if len(suggestions.Suggestions) == 0 {
-		a.log.Info("no suggestions found for class %s", class.Path())
+		a.log.Info("No suggestions found for class %s", class.Path())
 		ch <- improvementResult{err: nil, important: improvement{class: class}}
 		return
 	}
@@ -246,7 +246,7 @@ type choosePromoptData struct {
 }
 
 func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) {
-	a.log.Info("grouping all suggestions...")
+	a.log.Info("Grouping all suggestions...")
 	all := make([]domain.Suggestion, 0, len(improvements))
 	for _, imp := range improvements {
 		all = append(all, imp.suggestions...)
@@ -268,28 +268,28 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 		},
 		Name: "facilitator/choose.md.tmpl",
 	}
-	a.log.Info("choosing the most important suggestions...")
+	a.log.Info("Choosing the most important suggestions...")
 	important, err = a.brain.Ask(prompt.String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to ask brain for most frequent suggestion: %w", err)
 	}
 	classSuggestions := make(map[string][]string, 0)
 	for s := range strings.SplitSeq(strings.ReplaceAll(important, "\r\n", "\n"), "\n") {
-		a.log.Info("suggestion to consider: %s", s)
+		a.log.Info("Suggestion to consider: %s", s)
 		if !strings.Contains(s, ":") {
-			a.log.Warn("can't find a delimiter ':'")
+			a.log.Warn("Can't find a delimiter ':'")
 			continue
 		}
 		split := strings.Split(s, ":")
 		if len(split) < 2 {
-			a.log.Warn("skipping suggestion without class name: %s", s)
+			a.log.Warn("Skipping suggestion without class name: %s", s)
 			continue
 		}
 		className := strings.TrimSpace(split[0])
 		classSuggestion := strings.TrimSpace(split[1])
 		classSuggestions[className] = append(classSuggestions[className], classSuggestion)
 	}
-	a.log.Info("received %d suggestions from brain", len(classSuggestions))
+	a.log.Info("Received %d suggestions from brain", len(classSuggestions))
 	ires := make([]improvement, 0)
 	for k, v := range classSuggestions {
 		class, err := findClass(improvements, k)
