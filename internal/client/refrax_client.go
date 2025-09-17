@@ -45,7 +45,7 @@ func Refactor(params *Params) (domain.Project, error) {
 
 // Refactor performs refactoring on the given project using the RefraxClient.
 func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
-	log.Debug("starting refactoring for project %s", proj)
+	log.Debug("Starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get classes from project %s: %w", proj, err)
@@ -53,7 +53,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if len(classes) == 0 {
 		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
-	log.Debug("found %d classes in the project: %v", len(classes), classes)
+	log.Debug("Found %d classes in the project: %v", len(classes), classes)
 
 	criticStats := &stats.Stats{Name: "critic"}
 	criticSystemPrompt := prompts.System{
@@ -160,25 +160,25 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	go func() {
 		faerr := fclttor.ListenAndServe()
 		if faerr != nil && faerr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start facilitator server: %v", faerr))
+			panic(fmt.Sprintf("Failed to start facilitator server: %v", faerr))
 		}
 	}()
 	go func() {
 		ferr := fxr.ListenAndServe()
 		if ferr != nil && ferr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start fixer server: %v", ferr))
+			panic(fmt.Sprintf("Failed to start fixer server: %v", ferr))
 		}
 	}()
 	go func() {
 		cerr := ctc.ListenAndServe()
 		if cerr != nil && cerr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start critic server: %v", cerr))
+			panic(fmt.Sprintf("Failed to start critic server: %v", cerr))
 		}
 	}()
 	go func() {
 		rerr := rvwr.ListenAndServe()
 		if rerr != nil && rerr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start reviewer server: %v", rerr))
+			panic(fmt.Sprintf("Failed to start reviewer server: %v", rerr))
 		}
 	}()
 
@@ -192,17 +192,17 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	<-fxr.Ready()
 	<-rvwr.Ready()
 
-	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d, reviewer %d", facilitatorPort, criticPort, fixerPort, reviewerPort)
-	log.Info("begin refactoring for project %s with %d classes", proj, len(classes))
+	log.Info("All servers are ready: facilitator %d, critic %d, fixer %d, reviewer %d", facilitatorPort, criticPort, fixerPort, reviewerPort)
+	log.Info("Begin refactoring for project %s with %d classes", proj, len(classes))
 	ch := make(chan refactoring, len(classes))
 	go refactor(fclttor, proj, c.params.MaxSize, ch)
 	for range len(classes) {
 		res := <-ch
 		if res.class != nil && res.content != "" {
-			log.Info("received refactored class: %s, content length: %d", res.class.Name(), len(res.content))
+			log.Info("Received refactored class: %s, content length: %d", res.class.Name(), len(res.content))
 		}
 	}
-	log.Info("refactoring is finished")
+	log.Info("Refactoring is finished")
 	err = printStats(c.params, criticStats, fixerStats, facilitatorStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to print statistics: %w", err)
@@ -217,7 +217,7 @@ type refactoring struct {
 }
 
 func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refactoring) {
-	log.Debug("refactoring project %q", p)
+	log.Debug("Refactoring project %q", p)
 	all, err := p.Classes()
 	if err != nil {
 		ch <- refactoring{err: fmt.Errorf("failed to get classes from project %s: %w", p, err)}
@@ -239,15 +239,15 @@ func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refact
 	}
 	artifacts, err := f.Refactor(&job)
 	if err != nil {
-		log.Error("failed to refactor project %s: %v", p, err)
+		log.Error("Failed to refactor project %s: %v", p, err)
 		ch <- refactoring{err: fmt.Errorf("failed to refactor project %s: %w", p, err)}
 		close(ch)
 		return
 	}
 	refactored := artifacts.Classes
-	log.Info("refactored %d classes in project %s", len(refactored), p)
+	log.Info("Refactored %d classes in project %s", len(refactored), p)
 	for _, c := range refactored {
-		log.Debug("rececived refactored class: ", c)
+		log.Debug("Received refactored class: ", c)
 		ch <- refactoring{class: before[c.Name()], content: c.Content(), err: nil}
 	}
 	close(ch)
@@ -259,7 +259,7 @@ type shudownable interface {
 
 func shutdown(s shudownable) {
 	if cerr := s.Shutdown(); cerr != nil {
-		panic(fmt.Sprintf("failed to close resource: %v", cerr))
+		panic(fmt.Sprintf("Failed to close resource: %v", cerr))
 	}
 }
 
@@ -275,14 +275,14 @@ func printStats(p Params, s ...*stats.Stats) error {
 	if p.Stats {
 		var swriter stats.Writer
 		if p.Format == "csv" {
-			log.Info("using csv file for statistics output")
+			log.Info("Using csv file for statistics output")
 			output := p.Soutput
 			if output == "" {
 				output = "stats.csv"
 			}
 			swriter = stats.NewCSVWriter(output)
 		} else {
-			log.Info("using stdout format for statistics output")
+			log.Info("Using stdout format for statistics output")
 			swriter = stats.NewStdWriter(log.Default())
 		}
 		var res []*stats.Stats
@@ -307,31 +307,31 @@ func mind(p Params, system *prompts.System, s *stats.Stats) (brain.Brain, error)
 }
 
 func token(p Params) string {
-	log.Debug("refactoring provider: %s", p.Provider)
-	log.Debug("project path to refactor: %s", p.Input)
+	log.Debug("Refactoring provider: %s", p.Provider)
+	log.Debug("Project path to refactor: %s", p.Input)
 	var token string
 	if p.Token != "" {
 		token = p.Token
 	} else {
-		log.Info("token not provided, trying to find token in .env file")
+		log.Info("Token not provided, trying to find token in .env file")
 		token = env.Token(".env", p.Provider)
 	}
-	log.Debug("using provided token: %s...", mask(token))
+	log.Debug("Using provided token: %s...", mask(token))
 	return token
 }
 
 func proj(params Params) (domain.Project, error) {
 	if params.MockProject {
-		log.Debug("using mock project")
+		log.Debug("Using mock project")
 		return domain.NewMock(), nil
 	}
 	input := domain.NewFilesystem(params.Input)
 	output := params.Output
 	if output != "" {
-		log.Debug("copy project to %q", output)
+		log.Debug("Copy project to %q", output)
 		return domain.NewMirrorProject(input, output)
 	}
-	log.Debug("no output path provided, changing project in place %q", params.Input)
+	log.Debug("No output path provided, changing project in place %q", params.Input)
 	return input, nil
 }
 

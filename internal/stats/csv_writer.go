@@ -63,6 +63,6 @@ func (c *csvWriter) Print(stats ...*Stats) error {
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path: %v", err)
 	}
-	log.Info("statistics written to %s", abs)
+	log.Info("Statistics written to %s", abs)
 	return nil
 }

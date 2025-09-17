@@ -1,3 +1,4 @@
+// Package prompts is for the prompts.
 package prompts
 
 import (

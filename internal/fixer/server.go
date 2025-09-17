@@ -1,3 +1,4 @@
+// Package fixer is for the fixer.
 package fixer
 
 import (
@@ -40,7 +41,7 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 		port:   port,
 	}
 	server.MsgHandler(fixer.think)
-	fixer.log.Debug("preparing the Fixer server on port %d with ai provider %s", port, ai)
+	fixer.log.Debug("Preparing the Fixer server on port %d with ai provider %s", port, ai)
 	return fixer
 }
 
@@ -48,7 +49,7 @@ func NewFixer(ai brain.Brain, port int) *Fixer {
 // It communicates with an external fixer service to perform the modifications.
 func (f *Fixer) Fix(job *domain.Job) (*domain.Artifacts, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.port)
-	f.log.Info("asking fixer (%s) to apply suggestions...", address)
+	f.log.Info("Asking fixer (%s) to apply suggestions...", address)
 	fixer := protocol.NewClient(address)
 	resp, err := fixer.SendMessage(job.Marshal())
 	if err != nil {
@@ -59,7 +60,7 @@ func (f *Fixer) Fix(job *domain.Job) (*domain.Artifacts, error) {
 
 // ListenAndServe begins the Fixer server and signals readiness through the provided channel.
 func (f *Fixer) ListenAndServe() error {
-	f.log.Info("starting fixer server on port %d...", f.port)
+	f.log.Info("Starting fixer server on port %d...", f.port)
 	var err error
 	if err = f.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start fixer server: %w", err)
@@ -69,11 +70,11 @@ func (f *Fixer) ListenAndServe() error {
 
 // Shutdown gracefully stops the Fixer server.
 func (f *Fixer) Shutdown() error {
-	f.log.Info("stopping fixer server...")
+	f.log.Info("Stopping fixer server...")
 	if err := f.server.Shutdown(); err != nil {
 		return fmt.Errorf("failed to stop fixer server: %w", err)
 	}
-	f.log.Info("fixer server stopped successfully")
+	f.log.Info("Fixer server stopped successfully")
 	return nil
 }
 
@@ -114,7 +115,7 @@ func (f *Fixer) thinkChan(m *protocol.Message) <-chan thought {
 }
 
 func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
-	f.log.Info("received message: #%s", m.MessageID)
+	f.log.Info("Received message: #%s", m.MessageID)
 	job, err := domain.UnmarshalJob(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal job: %w", err)
@@ -125,7 +126,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	code = job.Classes[0].Content()
 	class = job.Classes[0].Name()
 	path = job.Classes[0].Path()
-	f.log.Info("trying to fix the %q class...", class)
+	f.log.Info("Trying to fix the %q class...", class)
 	prompt := prompts.User{
 		Data: promptData{
 			FilePath:    path,
@@ -135,12 +136,12 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		Name: "fixer/fix.md.tmpl",
 	}
 	question := prompt.String()
-	f.log.Info("asking the brain to fix the java code...")
+	f.log.Info("Asking the brain to fix the Java code...")
 	answer, err := f.brain.Ask(question)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from AI: %w", err)
 	}
-	f.log.Debug("received answer from AI: %s", answer)
+	f.log.Debug("Received answer from AI: %s", answer)
 	f.log.Info("AI provided a fix for the Java code, sending response back...")
 	res := &domain.Artifacts{
 		Descr: &domain.Description{

@@ -1,3 +1,4 @@
+// Package facilitator is for the facilitator.
 package facilitator
 
 import (
@@ -52,7 +53,7 @@ func (f *A2AFacilitator) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 
 // ListenAndServe starts the facilitator server and prepares it for handling requests.
 func (f *A2AFacilitator) ListenAndServe() error {
-	f.log.Info("starting facilitator server on port %d...", f.port)
+	f.log.Info("Starting facilitator server on port %d...", f.port)
 	var err error
 	if err = f.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start facilitator server: %w", err)
@@ -62,11 +63,11 @@ func (f *A2AFacilitator) ListenAndServe() error {
 
 // Shutdown stops the facilitator server and releases resources.
 func (f *A2AFacilitator) Shutdown() error {
-	f.log.Info("stopping facilitator server...")
+	f.log.Info("Stopping facilitator server...")
 	if err := f.server.Shutdown(); err != nil {
 		return fmt.Errorf("failed to stop facilitator server: %w", err)
 	}
-	f.log.Info("facilitator server stopped successfully")
+	f.log.Info("Facilitator server stopped successfully")
 	return nil
 }
 
@@ -98,7 +99,7 @@ func (f *A2AFacilitator) thinkLong(m *protocol.Message) (*protocol.Message, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to refactor task: %w", err)
 	}
-	f.log.Info("number of processed classes: %d", len(resp.Classes))
+	f.log.Info("Number of processed classes: %d", len(resp.Classes))
 	return resp.Marshal().Message, nil
 }
 

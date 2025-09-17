@@ -36,7 +36,7 @@ func Error(msg string, args ...any) {
 // Set sets the provided logger as the default logger.
 func Set(logger Logger) {
 	if logger == nil {
-		panic("logger cannot be nil")
+		panic("Logger cannot be nil")
 	}
 	single = logger
 }
@@ -44,7 +44,7 @@ func Set(logger Logger) {
 // Default returns the currently set default logger.
 func Default() Logger {
 	if single == nil {
-		panic("logger is not set")
+		panic("Logger is not set")
 	}
 	return single
 }
