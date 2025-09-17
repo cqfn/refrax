@@ -41,7 +41,7 @@ func (c *Critic) ListenAndServe() error {
 	c.log.Info("Starting critic server on port %d...", c.port)
 	var err error
 	if err = c.server.ListenAndServe(); err != nil && http.ErrServerClosed != err {
-		return fmt.Errorf("Failed to start critic server: %w", err)
+		return fmt.Errorf("failed to start critic server: %w", err)
 	}
 	return err
 }
@@ -53,7 +53,7 @@ func (c *Critic) Review(job *domain.Job) (*domain.Artifacts, error) {
 	critic := protocol.NewClient(address)
 	resp, err := critic.SendMessage(job.Marshal())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to send message to critic: %w", err)
+		return nil, fmt.Errorf("failed to send message to critic: %w", err)
 	}
 	return domain.UnmarshalArtifacts(resp.Result.(*protocol.Message))
 }
@@ -62,7 +62,7 @@ func (c *Critic) Review(job *domain.Job) (*domain.Artifacts, error) {
 func (c *Critic) Shutdown() error {
 	c.log.Info("Stopping critic server...")
 	if err := c.server.Shutdown(); err != nil {
-		return fmt.Errorf("Failed to stop critic server: %w", err)
+		return fmt.Errorf("failed to stop critic server: %w", err)
 	}
 	c.log.Info("Critic server stopped successfully")
 	return nil
@@ -81,7 +81,7 @@ func (c *Critic) Ready() <-chan bool {
 func (c *Critic) think(ctx context.Context, m *protocol.Message) (*protocol.Message, error) {
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("Context canceled: %w", ctx.Err())
+		return nil, fmt.Errorf("context canceled: %w", ctx.Err())
 	default:
 		return c.thinkLong(m)
 	}
@@ -91,7 +91,7 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 	c.log.Debug("Received message: #%s", m.MessageID)
 	tsk, err := domain.UnmarshalJob(m)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse task from message: %w", err)
+		return nil, fmt.Errorf("failed to parse task from message: %w", err)
 	}
 	artifacts, err := c.agent.Review(tsk)
 	return artifacts.Marshal().Message, err

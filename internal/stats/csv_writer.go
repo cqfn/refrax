@@ -24,7 +24,7 @@ func NewCSVWriter(path string) Writer {
 func (c *csvWriter) Print(stats ...*Stats) error {
 	file, err := os.Create(c.path)
 	if err != nil {
-		return fmt.Errorf("Failed to create file: %v", err)
+		return fmt.Errorf("failed to create file: %v", err)
 	}
 	defer func() { _ = file.Close() }()
 	w := csv.NewWriter(file)
@@ -35,7 +35,7 @@ func (c *csvWriter) Print(stats ...*Stats) error {
 		header = append(header, s.Name)
 	}
 	if err = w.Write(header); err != nil {
-		return fmt.Errorf("Failed to write header: %v", err)
+		return fmt.Errorf("failed to write header: %v", err)
 	}
 	values := make(map[string][]string, 0)
 	order := make([]string, 0)
@@ -56,12 +56,12 @@ func (c *csvWriter) Print(stats ...*Stats) error {
 		line = append(line, v...)
 		err = w.Write(line)
 		if err != nil {
-			return fmt.Errorf("Failed to write entry %s: %v", k, err)
+			return fmt.Errorf("failed to write entry %s: %v", k, err)
 		}
 	}
 	abs, err := filepath.Abs(c.path)
 	if err != nil {
-		return fmt.Errorf("Failed to get absolute path: %v", err)
+		return fmt.Errorf("failed to get absolute path: %v", err)
 	}
 	log.Info("Statistics written to %s", abs)
 	return nil

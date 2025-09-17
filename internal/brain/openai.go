@@ -71,7 +71,7 @@ func (o *openAI) send(system, user string) (answer string, err error) {
 	req.Header.Set("Authorization", "Bearer "+o.token)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("API request failed: %w", err)
+		return "", fmt.Errorf("api request failed: %w", err)
 	}
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -80,7 +80,7 @@ func (o *openAI) send(system, user string) (answer string, err error) {
 	}()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("API error: %s", body)
+		return "", fmt.Errorf("api error: %s", body)
 	}
 	var response openaiResp
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {

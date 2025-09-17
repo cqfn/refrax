@@ -38,7 +38,7 @@ func NewRefraxClient(params *Params) *RefraxClient {
 func Refactor(params *Params) (domain.Project, error) {
 	proj, err := proj(*params)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create project from params: %w", err)
+		return nil, fmt.Errorf("failed to create project from params: %w", err)
 	}
 	return NewRefraxClient(params).Refactor(proj)
 }
@@ -48,10 +48,10 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	log.Debug("Starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get classes from project %s: %w", proj, err)
+		return nil, fmt.Errorf("failed to get classes from project %s: %w", proj, err)
 	}
 	if len(classes) == 0 {
-		return proj, fmt.Errorf("No java classes found in the project %s, add java files to the appropriate directory", proj)
+		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
 	log.Debug("Found %d classes in the project: %v", len(classes), classes)
 
@@ -74,11 +74,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	criticBrain, err := mind(c.params, &criticSystemPrompt, criticStats)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create AI instance: %w", err)
+		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
 	criticPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to find free port for critic: %w", err)
+		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
 	ctc := critic.NewCritic(criticBrain, criticPort)
 	ctc.Handler(countStats(criticStats))
@@ -100,11 +100,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	fixerBrain, err := mind(c.params, &fixerSystemPrompt, fixerStats)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create AI instance: %w", err)
+		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
 	fixerPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to find free port for fixer: %w", err)
+		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
 	}
 	fxr := fixer.NewFixer(fixerBrain, fixerPort)
 	fxr.Handler(countStats(fixerStats))
@@ -125,11 +125,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	reviewerBrain, err := mind(c.params, &reviewerSystemPrompt, reviewerStats)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create AI instance for reviewer: %w", err)
+		return nil, fmt.Errorf("failed to create AI instance for reviewer: %w", err)
 	}
 	reviewerPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to find free port for reviewer: %w", err)
+		return nil, fmt.Errorf("failed to find free port for reviewer: %w", err)
 	}
 	rvwr := reviewer.NewReviewer(reviewerBrain, reviewerPort, c.params.Checks...)
 	rvwr.Handler(countStats(reviewerStats))
@@ -148,11 +148,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	facilitatorBrain, err := mind(c.params, &facilitatorSystemPrompt, facilitatorStats)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create AI instance: %w", err)
+		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
 	facilitatorPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to find free port for facilitator: %w", err)
+		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
 	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, rvwr, facilitatorPort)
 	fclttor.Handler(countStats(facilitatorStats))
@@ -205,7 +205,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	log.Info("Refactoring is finished")
 	err = printStats(c.params, criticStats, fixerStats, facilitatorStats)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to print statistics: %w", err)
+		return nil, fmt.Errorf("failed to print statistics: %w", err)
 	}
 	return proj, err
 }
@@ -220,7 +220,7 @@ func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refact
 	log.Debug("Refactoring project %q", p)
 	all, err := p.Classes()
 	if err != nil {
-		ch <- refactoring{err: fmt.Errorf("Failed to get classes from project %s: %w", p, err)}
+		ch <- refactoring{err: fmt.Errorf("failed to get classes from project %s: %w", p, err)}
 		close(ch)
 		return
 	}
@@ -240,7 +240,7 @@ func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refact
 	artifacts, err := f.Refactor(&job)
 	if err != nil {
 		log.Error("Failed to refactor project %s: %v", p, err)
-		ch <- refactoring{err: fmt.Errorf("Failed to refactor project %s: %w", p, err)}
+		ch <- refactoring{err: fmt.Errorf("failed to refactor project %s: %w", p, err)}
 		close(ch)
 		return
 	}
@@ -349,24 +349,24 @@ func countStats(s *stats.Stats) protocol.Handler {
 		start := time.Now()
 		resp, err := next(nil, r)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to process request: %w", err)
+			return nil, fmt.Errorf("failed to process request: %w", err)
 		}
 		duration := time.Since(start)
 		jsonresp, err := json.Marshal(resp)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to marshal response: %w", err)
+			return nil, fmt.Errorf("failed to marshal response: %w", err)
 		}
 		jsonreq, err := json.Marshal(r)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to marshal request: %w", err)
+			return nil, fmt.Errorf("failed to marshal request: %w", err)
 		}
 		reqt, err := stats.Tokens(string(jsonreq))
 		if err != nil {
-			return nil, fmt.Errorf("Failed to count tokens for request: %w", err)
+			return nil, fmt.Errorf("failed to count tokens for request: %w", err)
 		}
 		respt, err := stats.Tokens(string(jsonresp))
 		if err != nil {
-			return nil, fmt.Errorf("Failed to count tokens for response: %w", err)
+			return nil, fmt.Errorf("failed to count tokens for response: %w", err)
 		}
 		s.A2AReq(duration, reqt, respt, len(jsonreq), len(jsonresp))
 		return resp, err

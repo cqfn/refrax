@@ -24,11 +24,11 @@ type agent struct {
 func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	size, err := maxSize(job)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get max size limit: %w", err)
+		return nil, fmt.Errorf("failed to get max size limit: %w", err)
 	}
 	if job.Descr.Text != "refactor the project" {
 		a.log.Warn("Received a message that is not related to refactoring, ignoring")
-		return nil, fmt.Errorf("Received a message that is not related to refactoring")
+		return nil, fmt.Errorf("received a message that is not related to refactoring")
 	}
 	classes := job.Classes
 	nclasses := len(classes)
@@ -53,7 +53,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	for range nreviewed {
 		impr := <-ch
 		if impr.err != nil {
-			return nil, fmt.Errorf("Failed to review class: %w", impr.err)
+			return nil, fmt.Errorf("failed to review class: %w", impr.err)
 		}
 		improvements = append(improvements, impr.important)
 	}
@@ -67,7 +67,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	}
 	mostImportant, err := a.mostFrequent(improvements)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get most frequent suggestions: %w", err)
+		return nil, fmt.Errorf("failed to get most frequent suggestions: %w", err)
 	}
 	a.log.Info("Received %d most frequent suggestions from brain", len(mostImportant))
 	refactored := make([]domain.Class, 0)
@@ -104,12 +104,12 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		err = class.SetContent(c.Content())
 		a.log.Info("Setting content for class %s (%s)", class.Name(), class.Path())
 		if err != nil {
-			return nil, fmt.Errorf("Failed to set content for class %s: %w", class.Name(), err)
+			return nil, fmt.Errorf("failed to set content for class %s: %w", class.Name(), err)
 		}
 	}
 	err = a.stabilize(refactored)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to stabilize refactored classes: %w", err)
+		return nil, fmt.Errorf("failed to stabilize refactored classes: %w", err)
 	}
 	res := &domain.Artifacts{
 		Descr:   &domain.Description{Text: "refactored classes"},
@@ -129,7 +129,7 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 	counter := 3
 	for len(improvements) > 0 && counter > 0 {
 		if err != nil {
-			return fmt.Errorf("Failed to review project: %w", err)
+			return fmt.Errorf("failed to review project: %w", err)
 		}
 		perclass := a.understandClasses(refactored, improvements)
 		for k, v := range perclass {
@@ -142,14 +142,14 @@ func (a *agent) stabilize(refactored []domain.Class) error {
 			}
 			fixed, uerr := a.fixer.Fix(&job)
 			if uerr != nil {
-				return fmt.Errorf("Failed to fix project: %w", uerr)
+				return fmt.Errorf("failed to fix project: %w", uerr)
 			}
 			updated := fixed.Classes[0]
 			class := domain.NewFSClass(k.Name(), k.Path())
 			a.log.Info("Updating class %s (%s) with new content", class.Name(), class.Path())
 			uerr = class.SetContent(updated.Content())
 			if uerr != nil {
-				return fmt.Errorf("Failed to set content for class %s: %w", class.Name(), uerr)
+				return fmt.Errorf("failed to set content for class %s: %w", class.Name(), uerr)
 			}
 		}
 		counter--
@@ -188,7 +188,7 @@ func (a *agent) fix(imp improvement, example domain.Class, ch chan<- fixResult) 
 	}
 	modified, err := a.fixer.Fix(&job)
 	if err != nil {
-		ch <- fixResult{fmt.Errorf("Failed to ask fixer: %w", err), nil}
+		ch <- fixResult{fmt.Errorf("failed to ask fixer: %w", err), nil}
 		return
 	}
 	ch <- fixResult{nil, modified.Classes[0]}
@@ -204,7 +204,7 @@ func (a *agent) review(class domain.Class, ch chan<- improvementResult) {
 	}
 	suggestions, err := a.critic.Review(&job)
 	if err != nil {
-		ch <- improvementResult{err: fmt.Errorf("Failed to ask critic: %w", err), important: improvement{class: class}}
+		ch <- improvementResult{err: fmt.Errorf("failed to ask critic: %w", err), important: improvement{class: class}}
 		return
 	}
 	a.log.Info("Received %d suggestions from critic", len(suggestions.Suggestions))
@@ -259,7 +259,7 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 	}
 	important, err := a.brain.Ask(prompt.String())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to ask the brain to group suggestions: %w", err)
+		return nil, fmt.Errorf("failed to ask the brain to group suggestions: %w", err)
 	}
 
 	prompt = prompts.User{
@@ -271,7 +271,7 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 	a.log.Info("Choosing the most important suggestions...")
 	important, err = a.brain.Ask(prompt.String())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to ask brain for most frequent suggestion: %w", err)
+		return nil, fmt.Errorf("failed to ask brain for most frequent suggestion: %w", err)
 	}
 	classSuggestions := make(map[string][]string, 0)
 	for s := range strings.SplitSeq(strings.ReplaceAll(important, "\r\n", "\n"), "\n") {
@@ -294,7 +294,7 @@ func (a *agent) mostFrequent(improvements []improvement) ([]improvement, error) 
 	for k, v := range classSuggestions {
 		class, err := findClass(improvements, k)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to find class %s in improvements: %w", k, err)
+			return nil, fmt.Errorf("failed to find class %s in improvements: %w", k, err)
 		}
 		var suggetions []domain.Suggestion
 		for _, s := range v {
@@ -314,7 +314,7 @@ func findClass(improvements []improvement, path string) (domain.Class, error) {
 			return imp.class, nil
 		}
 	}
-	return nil, fmt.Errorf("Class %s not found in improvements", path)
+	return nil, fmt.Errorf("class %s not found in improvements", path)
 }
 
 func maxSize(t *domain.Job) (int, error) {

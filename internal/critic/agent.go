@@ -43,7 +43,7 @@ func (c *agent) Review(job *domain.Job) (*domain.Artifacts, error) {
 	c.log.Debug("Rendered prompt for class %s: %s", class.Name(), prompt)
 	answer, err := c.brain.Ask(prompt.String())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get answer from brain: %w", err)
+		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
 	}
 	suggestions := c.associated(parseAnswer(answer), class.Path())
 	logSuggestions(c.log, suggestions)

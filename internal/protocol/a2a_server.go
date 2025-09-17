@@ -61,11 +61,11 @@ func (serv *a2aServer) ListenAndServe() error {
 	address := fmt.Sprintf(":%d", serv.port)
 	l, err := net.Listen("tcp", address)
 	if err != nil {
-		return fmt.Errorf("Failed to listen on port %d: %w", serv.port, err)
+		return fmt.Errorf("failed to listen on port %d: %w", serv.port, err)
 	}
 	close(serv.ready)
 	if err = serv.server.Serve(l); err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("Failed to start server on port %d: %w", serv.port, err)
+		return fmt.Errorf("failed to start server on port %d: %w", serv.port, err)
 	}
 	return err
 }
@@ -103,7 +103,7 @@ func (serv *a2aServer) handleRequest(w http.ResponseWriter, r *http.Request) {
 func (serv *a2aServer) handleJSONRPC(w http.ResponseWriter, r *http.Request) error {
 	log.Debug("JSON-RPC request received: %s", r.URL.Path)
 	if r.Method != http.MethodPost {
-		return fmt.Errorf("Method not allowed: %s", r.Method)
+		return fmt.Errorf("method not allowed: %s", r.Method)
 	}
 	var req JSONRPCRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

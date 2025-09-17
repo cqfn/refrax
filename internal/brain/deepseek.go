@@ -69,7 +69,7 @@ func (d *deepSeek) send(system, user string) (answer string, err error) {
 	}
 	data, err := json.Marshal(body)
 	if err != nil {
-		return "", fmt.Errorf("Error marshaling request body: %w", err)
+		return "", fmt.Errorf("error marshaling request body: %w", err)
 	}
 	req, err := http.NewRequest("POST", d.url, bytes.NewBuffer(data))
 	if err != nil {
@@ -79,23 +79,23 @@ func (d *deepSeek) send(system, user string) (answer string, err error) {
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", d.token))
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("Error making request to deepseek api: %w", err)
+		return "", fmt.Errorf("error making request to deepseek api: %w", err)
 	}
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
-			err = fmt.Errorf("Error closing response body: %w", cerr)
+			err = fmt.Errorf("error closing response body: %w", cerr)
 		}
 	}()
 	if resp.StatusCode != 200 {
 		content, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("API error: %s", content)
+		return "", fmt.Errorf("api error: %s", content)
 	}
 	var parsed deepseekResp
 	if err = json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return "", fmt.Errorf("Error decoding response: %w", err)
+		return "", fmt.Errorf("error decoding response: %w", err)
 	}
 	if len(parsed.Choices) == 0 {
-		return "", errors.New("No choices in response")
+		return "", errors.New("no choices in response")
 	}
 	answer = parsed.Choices[0].Message.Content
 	return answer, err

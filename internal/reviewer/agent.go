@@ -35,7 +35,7 @@ func (a *agent) Review() (*domain.Artifacts, error) {
 	for _, cmd := range a.cmds {
 		suggestions, err := a.runCmd(cmd)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to run command %s: %w", cmd, err)
+			return nil, fmt.Errorf("failed to run command %s: %w", cmd, err)
 		}
 		res = append(res, suggestions...)
 	}
@@ -51,7 +51,7 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 	var errOut bytes.Buffer
 	root, err := os.Getwd()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get current working directory: %w", err)
+		return nil, fmt.Errorf("failed to get current working directory: %w", err)
 	}
 	parts := strings.Split(cmd, " ")
 	command := exec.Command(parts[0], parts[1:]...) // #nosec G204
@@ -81,7 +81,7 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 	}
 	raw, err := a.ai.Ask(prompt.String())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to ask AI for suggestions: %w", err)
+		return nil, fmt.Errorf("failed to ask AI for suggestions: %w", err)
 	}
 	parsed := a.parseSuggestions(raw)
 	return parsed, nil
