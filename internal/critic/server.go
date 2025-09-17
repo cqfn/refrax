@@ -94,7 +94,13 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		return nil, fmt.Errorf("failed to parse task from message: %w", err)
 	}
 	artifacts, err := c.agent.Review(tsk)
-	return artifacts.Marshal().Message, err
+	if err != nil {
+		return nil, fmt.Errorf("agent review failed: %w", err)
+	}
+	if artifacts == nil {
+		return nil, fmt.Errorf("agent review returned nil artifacts")
+	}
+	return artifacts.Marshal().Message, nil
 }
 
 func agentCard(port int) *protocol.AgentCard {

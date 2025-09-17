@@ -94,6 +94,9 @@ func (r *A2AReviewer) thinkLong(_ *protocol.Message) (*protocol.Message, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to  task: %w", err)
 	}
+	if artifacts == nil {
+		return nil, fmt.Errorf("review returned nil artifacts")
+	}
 	suggestions := artifacts.Suggestions
 	r.log.Info("number of processed suggestions: %d", len(suggestions))
 	logSuggestions(r.log, suggestions)

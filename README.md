@@ -96,7 +96,7 @@ refrax refactor --output="./out" --ai=deepseek test/test_data/java/person
 
 ### Checking Results
 
-`refrax` does not inherently verify whether the applied changes are correct or cause any issues. 
+`refrax` does not inherently verify whether the applied changes are correct or cause any issues.
 To address this, you can use the `--check` option to validate the changes. Multiple `--check` options can be provided, as shown below:
 
 ```sh

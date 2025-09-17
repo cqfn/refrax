@@ -180,6 +180,9 @@ func (j *Job) Marshal() *protocol.MessageSendParams {
 }
 
 func (a *Artifacts) Marshal() *protocol.MessageSendParams {
+	if a == nil {
+		return protocol.NewMessageSendParams().WithMessage(protocol.NewMessage().WithMessageID(uuid.NewString()))
+	}
 	msg := protocol.NewMessage().WithMessageID(uuid.NewString())
 	if a.Descr != nil {
 		msg.AddPart(a.Descr.Marshal())

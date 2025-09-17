@@ -30,3 +30,10 @@ func TestMarshalAndUnmarshalJob(t *testing.T) {
 	require.NoError(t, err, "Unmarshaling job should not return an error")
 	assert.Equal(t, before, after, "Jobs should be equal after marshaling and unmarshaling")
 }
+
+func TestArtifactsMarshalDoesNotPanicOnNilReceiver(t *testing.T) {
+	var artifacts *Artifacts
+	result := artifacts.Marshal()
+	require.NotNil(t, result, "Marshal should not return nil even with nil receiver")
+	require.NotNil(t, result.Message, "Message should not be nil even with nil receiver")
+}
