@@ -18,6 +18,8 @@ linters:
     - unused
     - goconst
   settings:
+     staticcheck:
+       checks: ["all", "-ST1005"]
      goconst:
        min-len: 2
        min-occurrences: 2
