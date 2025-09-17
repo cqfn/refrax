@@ -32,16 +32,16 @@ func NewCritic(ai brain.Brain, port int, tools ...tool.Tool) *Critic {
 		agent:  &agent{brain: ai, log: logger, tools: tools},
 	}
 	server.MsgHandler(critic.think)
-	critic.log.Debug("preparing the Critic server on port %d with ai provider %s", port, ai)
+	critic.log.Debug("Preparing the Critic server on port %d with ai provider %s", port, ai)
 	return critic
 }
 
 // ListenAndServe starts the Critic server and signals readiness via the provided channel.
 func (c *Critic) ListenAndServe() error {
-	c.log.Info("starting critic server on port %d...", c.port)
+	c.log.Info("Starting critic server on port %d...", c.port)
 	var err error
 	if err = c.server.ListenAndServe(); err != nil && http.ErrServerClosed != err {
-		return fmt.Errorf("failed to start critic server: %w", err)
+		return fmt.Errorf("Failed to start critic server: %w", err)
 	}
 	return err
 }
@@ -49,22 +49,22 @@ func (c *Critic) ListenAndServe() error {
 // Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
 func (c *Critic) Review(job *domain.Job) (*domain.Artifacts, error) {
 	address := fmt.Sprintf("http://localhost:%d", c.port)
-	c.log.Info("asking critic (%s) to lint the class...", address)
+	c.log.Info("Asking critic (%s) to lint the class...", address)
 	critic := protocol.NewClient(address)
 	resp, err := critic.SendMessage(job.Marshal())
 	if err != nil {
-		return nil, fmt.Errorf("failed to send message to critic: %w", err)
+		return nil, fmt.Errorf("Failed to send message to critic: %w", err)
 	}
 	return domain.UnmarshalArtifacts(resp.Result.(*protocol.Message))
 }
 
 // Shutdown gracefully shuts down the Critic server.
 func (c *Critic) Shutdown() error {
-	c.log.Info("stopping critic server...")
+	c.log.Info("Stopping critic server...")
 	if err := c.server.Shutdown(); err != nil {
-		return fmt.Errorf("failed to stop critic server: %w", err)
+		return fmt.Errorf("Failed to stop critic server: %w", err)
 	}
-	c.log.Info("critic server stopped successfully")
+	c.log.Info("Critic server stopped successfully")
 	return nil
 }
 
@@ -81,17 +81,17 @@ func (c *Critic) Ready() <-chan bool {
 func (c *Critic) think(ctx context.Context, m *protocol.Message) (*protocol.Message, error) {
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("context canceled: %w", ctx.Err())
+		return nil, fmt.Errorf("Context canceled: %w", ctx.Err())
 	default:
 		return c.thinkLong(m)
 	}
 }
 
 func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
-	c.log.Debug("received message: #%s", m.MessageID)
+	c.log.Debug("Received message: #%s", m.MessageID)
 	tsk, err := domain.UnmarshalJob(m)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse task from message: %w", err)
+		return nil, fmt.Errorf("Failed to parse task from message: %w", err)
 	}
 	artifacts, err := c.agent.Review(tsk)
 	return artifacts.Marshal().Message, err

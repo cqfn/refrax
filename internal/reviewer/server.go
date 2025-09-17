@@ -52,7 +52,7 @@ func (r *A2AReviewer) Review() (*domain.Artifacts, error) {
 
 // ListenAndServe starts the reviewer server and listens for incoming requests.
 func (r *A2AReviewer) ListenAndServe() error {
-	r.log.Info("starting reviewer server on port %d...", r.port)
+	r.log.Info("Starting reviewer server on port %d...", r.port)
 	var err error
 	if err = r.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("failed to start reviewer server: %w", err)
@@ -62,11 +62,11 @@ func (r *A2AReviewer) ListenAndServe() error {
 
 // Shutdown gracefully shuts down the reviewer server.
 func (r *A2AReviewer) Shutdown() error {
-	r.log.Info("stopping reviewer server...")
+	r.log.Info("Stopping reviewer server...")
 	if err := r.server.Shutdown(); err != nil {
 		return fmt.Errorf("failed to stop reviewer server: %w", err)
 	}
-	r.log.Info("reviewer server stopped successfully")
+	r.log.Info("Reviewer server stopped successfully")
 	return nil
 }
 
@@ -92,12 +92,12 @@ func (r *A2AReviewer) think(ctx context.Context, m *protocol.Message) (*protocol
 func (r *A2AReviewer) thinkLong(_ *protocol.Message) (*protocol.Message, error) {
 	artifacts, err := r.original.Review()
 	if err != nil {
-		return nil, fmt.Errorf("failed to review task: %w", err)
+		return nil, fmt.Errorf("Failed to review task: %w", err)
 	}
 	suggestions := artifacts.Suggestions
-	r.log.Info("number of processed suggestions: %d", len(suggestions))
+	r.log.Info("Number of processed suggestions: %d", len(suggestions))
 	logSuggestions(r.log, suggestions)
-	r.log.Info("found %d possible fixes", len(suggestions))
+	r.log.Info("Found %d possible fixes", len(suggestions))
 	return artifacts.Marshal().Message, nil
 }
 

@@ -30,11 +30,11 @@ type promptData struct {
 
 func (a *agent) Review() (*domain.Artifacts, error) {
 	var res []domain.Suggestion
-	a.logger.Info("starting review using %d commands, %s", len(a.cmds), strings.Join(a.cmds, ", "))
+	a.logger.Info("Starting review using %d commands, %s", len(a.cmds), strings.Join(a.cmds, ", "))
 	for _, cmd := range a.cmds {
 		suggestions, err := a.runCmd(cmd)
 		if err != nil {
-			return nil, fmt.Errorf("failed to run command %s: %w", cmd, err)
+			return nil, fmt.Errorf("Failed to run command %s: %w", cmd, err)
 		}
 		res = append(res, suggestions...)
 	}
@@ -50,21 +50,21 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 	var errOut bytes.Buffer
 	root, err := os.Getwd()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current working directory: %w", err)
+		return nil, fmt.Errorf("Failed to get current working directory: %w", err)
 	}
 	parts := strings.Split(cmd, " ")
 	command := exec.Command(parts[0], parts[1:]...) // #nosec G204
 	command.Stdout = &out
 	command.Stderr = &errOut
 	command.Dir = root
-	a.logger.Info("running review command: %s in %s", cmd, root)
+	a.logger.Info("Running review command: %s in %s", cmd, root)
 	err = command.Run()
 	if err == nil {
-		a.logger.Info("review command completed successfully: %s", cmd)
+		a.logger.Info("Review command completed successfully: %s", cmd)
 		return make([]domain.Suggestion, 0), nil
 	}
-	a.logger.Info("failed to run review command: %s, error: %v", cmd, err)
-	a.logger.Info("asking AI to form suggestions based on the error output")
+	a.logger.Info("Failed to run review command: %s, error: %v", cmd, err)
+	a.logger.Info("Asking AI to form suggestions based on the error output")
 	outb := out.Bytes()
 	errb := errOut.Bytes()
 	data := promptData{
@@ -80,7 +80,7 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 	}
 	raw, err := a.ai.Ask(prompt.String())
 	if err != nil {
-		return nil, fmt.Errorf("failed to ask AI for suggestions: %w", err)
+		return nil, fmt.Errorf("Failed to ask AI for suggestions: %w", err)
 	}
 	parsed := a.parseSuggestions(raw)
 	return parsed, nil
@@ -92,7 +92,7 @@ func (a *agent) parseSuggestions(output string) []domain.Suggestion {
 	for _, line := range lines {
 		parts := strings.Split(line, ":")
 		if len(parts) < 2 {
-			a.logger.Warn("skipping malformed suggestion line: %q", line)
+			a.logger.Warn("Skipping malformed suggestion line: %q", line)
 			continue
 		}
 		path := strings.TrimSpace(parts[0])

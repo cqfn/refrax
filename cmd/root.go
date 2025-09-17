@@ -31,7 +31,7 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 	root.PersistentFlags().StringVarP(&params.Token, "token", "t", "", "Token for the AI provider (if required)")
 	root.PersistentFlags().StringVar(&params.Playbook, "playbook", "", "Path to a user-defined YAML playbook for AI integration")
 	root.PersistentFlags().BoolVar(&params.MockProject, "mock-project", false, "Use mock project")
-	root.PersistentFlags().BoolVarP(&params.Debug, "debug", "d", false, "print debug logs")
+	root.PersistentFlags().BoolVarP(&params.Debug, "debug", "d", false, "Print debug logs")
 	root.PersistentFlags().BoolVar(&params.Stats, "stats", false, "Print internal interaction statistics")
 	root.PersistentFlags().StringVar(&params.Format, "stats-format", "std", "Format for statistics output (e.g., std, csv, etc.)")
 	root.PersistentFlags().StringVar(&params.Soutput, "stats-output", "stats", "Output path for statistics (default: stats)")

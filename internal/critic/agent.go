@@ -30,7 +30,7 @@ type promptData struct {
 // Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
 func (c *agent) Review(job *domain.Job) (*domain.Artifacts, error) {
 	class := job.Classes[0]
-	c.log.Info("received class %q for analysis", class.Name())
+	c.log.Info("Received class %q for analysis", class.Name())
 	data := promptData{
 		Code:     class.Content(),
 		Defects:  []string{tool.NewCombined(c.tools...).Imperfections()},
@@ -40,10 +40,10 @@ func (c *agent) Review(job *domain.Job) (*domain.Artifacts, error) {
 		Data: data,
 		Name: "critic/critic.md.tmpl",
 	}
-	c.log.Debug("rendered prompt for class %s: %s", class.Name(), prompt)
+	c.log.Debug("Rendered prompt for class %s: %s", class.Name(), prompt)
 	answer, err := c.brain.Ask(prompt.String())
 	if err != nil {
-		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
+		return nil, fmt.Errorf("Failed to get answer from brain: %w", err)
 	}
 	suggestions := c.associated(parseAnswer(answer), class.Path())
 	logSuggestions(c.log, suggestions)
@@ -78,11 +78,11 @@ func (a *agent) associated(suggestions []string, class string) []domain.Suggesti
 	res := make([]domain.Suggestion, 0)
 	for i, suggestion := range suggestions {
 		if strings.EqualFold(suggestion, notFound) {
-			a.log.Info("no suggestions found for the class #%d: %s", i+1, class)
+			a.log.Info("No suggestions found for the class #%d: %s", i+1, class)
 		} else {
 			res = append(res, *domain.NewSuggestion(suggestion, class))
 		}
 	}
-	a.log.Info("total suggestions associated with class %s: %d", class, len(res))
+	a.log.Info("Total suggestions associated with class %s: %d", class, len(res))
 	return res
 }

@@ -11,7 +11,7 @@ func newStartCmd() *cobra.Command {
 		Args:    cobra.MaximumNArgs(1),
 		Aliases: []string{"st"},
 		RunE: func(_ *cobra.Command, _ []string) error {
-			panic("start command is not implemented yet")
+			panic("Start command is not implemented yet")
 		},
 	}
 	return command

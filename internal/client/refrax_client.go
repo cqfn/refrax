@@ -38,22 +38,22 @@ func NewRefraxClient(params *Params) *RefraxClient {
 func Refactor(params *Params) (domain.Project, error) {
 	proj, err := proj(*params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create project from params: %w", err)
+		return nil, fmt.Errorf("Failed to create project from params: %w", err)
 	}
 	return NewRefraxClient(params).Refactor(proj)
 }
 
 // Refactor performs refactoring on the given project using the RefraxClient.
 func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
-	log.Debug("starting refactoring for project %s", proj)
+	log.Debug("Starting refactoring for project %s", proj)
 	classes, err := proj.Classes()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get classes from project %s: %w", proj, err)
+		return nil, fmt.Errorf("Failed to get classes from project %s: %w", proj, err)
 	}
 	if len(classes) == 0 {
-		return proj, fmt.Errorf("no java classes found in the project %s, add java files to the appropriate directory", proj)
+		return proj, fmt.Errorf("No java classes found in the project %s, add java files to the appropriate directory", proj)
 	}
-	log.Debug("found %d classes in the project: %v", len(classes), classes)
+	log.Debug("Found %d classes in the project: %v", len(classes), classes)
 
 	criticStats := &stats.Stats{Name: "critic"}
 	criticSystemPrompt := prompts.System{
@@ -74,11 +74,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	criticBrain, err := mind(c.params, &criticSystemPrompt, criticStats)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AI instance: %w", err)
+		return nil, fmt.Errorf("Failed to create AI instance: %w", err)
 	}
 	criticPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
+		return nil, fmt.Errorf("Failed to find free port for critic: %w", err)
 	}
 	ctc := critic.NewCritic(criticBrain, criticPort)
 	ctc.Handler(countStats(criticStats))
@@ -100,11 +100,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	fixerBrain, err := mind(c.params, &fixerSystemPrompt, fixerStats)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AI instance: %w", err)
+		return nil, fmt.Errorf("Failed to create AI instance: %w", err)
 	}
 	fixerPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
+		return nil, fmt.Errorf("Failed to find free port for fixer: %w", err)
 	}
 	fxr := fixer.NewFixer(fixerBrain, fixerPort)
 	fxr.Handler(countStats(fixerStats))
@@ -125,11 +125,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	reviewerBrain, err := mind(c.params, &reviewerSystemPrompt, reviewerStats)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AI instance for reviewer: %w", err)
+		return nil, fmt.Errorf("Failed to create AI instance for reviewer: %w", err)
 	}
 	reviewerPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find free port for reviewer: %w", err)
+		return nil, fmt.Errorf("Failed to find free port for reviewer: %w", err)
 	}
 	rvwr := reviewer.NewReviewer(reviewerBrain, reviewerPort, c.params.Checks...)
 	rvwr.Handler(countStats(reviewerStats))
@@ -148,11 +148,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	}
 	facilitatorBrain, err := mind(c.params, &facilitatorSystemPrompt, facilitatorStats)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create AI instance: %w", err)
+		return nil, fmt.Errorf("Failed to create AI instance: %w", err)
 	}
 	facilitatorPort, err := util.FreePort()
 	if err != nil {
-		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
+		return nil, fmt.Errorf("Failed to find free port for facilitator: %w", err)
 	}
 	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, rvwr, facilitatorPort)
 	fclttor.Handler(countStats(facilitatorStats))
@@ -160,25 +160,25 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	go func() {
 		faerr := fclttor.ListenAndServe()
 		if faerr != nil && faerr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start facilitator server: %v", faerr))
+			panic(fmt.Sprintf("Failed to start facilitator server: %v", faerr))
 		}
 	}()
 	go func() {
 		ferr := fxr.ListenAndServe()
 		if ferr != nil && ferr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start fixer server: %v", ferr))
+			panic(fmt.Sprintf("Failed to start fixer server: %v", ferr))
 		}
 	}()
 	go func() {
 		cerr := ctc.ListenAndServe()
 		if cerr != nil && cerr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start critic server: %v", cerr))
+			panic(fmt.Sprintf("Failed to start critic server: %v", cerr))
 		}
 	}()
 	go func() {
 		rerr := rvwr.ListenAndServe()
 		if rerr != nil && rerr != http.ErrServerClosed {
-			panic(fmt.Sprintf("failed to start reviewer server: %v", rerr))
+			panic(fmt.Sprintf("Failed to start reviewer server: %v", rerr))
 		}
 	}()
 
@@ -192,20 +192,20 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	<-fxr.Ready()
 	<-rvwr.Ready()
 
-	log.Info("all servers are ready: facilitator %d, critic %d, fixer %d, reviewer %d", facilitatorPort, criticPort, fixerPort, reviewerPort)
-	log.Info("begin refactoring for project %s with %d classes", proj, len(classes))
+	log.Info("All servers are ready: facilitator %d, critic %d, fixer %d, reviewer %d", facilitatorPort, criticPort, fixerPort, reviewerPort)
+	log.Info("Begin refactoring for project %s with %d classes", proj, len(classes))
 	ch := make(chan refactoring, len(classes))
 	go refactor(fclttor, proj, c.params.MaxSize, ch)
 	for range len(classes) {
 		res := <-ch
 		if res.class != nil && res.content != "" {
-			log.Info("received refactored class: %s, content length: %d", res.class.Name(), len(res.content))
+			log.Info("Received refactored class: %s, content length: %d", res.class.Name(), len(res.content))
 		}
 	}
-	log.Info("refactoring is finished")
+	log.Info("Refactoring is finished")
 	err = printStats(c.params, criticStats, fixerStats, facilitatorStats)
 	if err != nil {
-		return nil, fmt.Errorf("failed to print statistics: %w", err)
+		return nil, fmt.Errorf("Failed to print statistics: %w", err)
 	}
 	return proj, err
 }
@@ -217,10 +217,10 @@ type refactoring struct {
 }
 
 func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refactoring) {
-	log.Debug("refactoring project %q", p)
+	log.Debug("Refactoring project %q", p)
 	all, err := p.Classes()
 	if err != nil {
-		ch <- refactoring{err: fmt.Errorf("failed to get classes from project %s: %w", p, err)}
+		ch <- refactoring{err: fmt.Errorf("Failed to get classes from project %s: %w", p, err)}
 		close(ch)
 		return
 	}
@@ -239,13 +239,13 @@ func refactor(f domain.Facilitator, p domain.Project, size int, ch chan<- refact
 	}
 	artifacts, err := f.Refactor(&job)
 	if err != nil {
-		log.Error("failed to refactor project %s: %v", p, err)
-		ch <- refactoring{err: fmt.Errorf("failed to refactor project %s: %w", p, err)}
+		log.Error("Failed to refactor project %s: %v", p, err)
+		ch <- refactoring{err: fmt.Errorf("Failed to refactor project %s: %w", p, err)}
 		close(ch)
 		return
 	}
 	refactored := artifacts.Classes
-	log.Info("refactored %d classes in project %s", len(refactored), p)
+	log.Info("Refactored %d classes in project %s", len(refactored), p)
 	for _, c := range refactored {
 		log.Debug("Received refactored class: ", c)
 		ch <- refactoring{class: before[c.Name()], content: c.Content(), err: nil}
@@ -259,7 +259,7 @@ type shudownable interface {
 
 func shutdown(s shudownable) {
 	if cerr := s.Shutdown(); cerr != nil {
-		panic(fmt.Sprintf("failed to close resource: %v", cerr))
+		panic(fmt.Sprintf("Failed to close resource: %v", cerr))
 	}
 }
 
@@ -275,14 +275,14 @@ func printStats(p Params, s ...*stats.Stats) error {
 	if p.Stats {
 		var swriter stats.Writer
 		if p.Format == "csv" {
-			log.Info("using csv file for statistics output")
+			log.Info("Using csv file for statistics output")
 			output := p.Soutput
 			if output == "" {
 				output = "stats.csv"
 			}
 			swriter = stats.NewCSVWriter(output)
 		} else {
-			log.Info("using stdout format for statistics output")
+			log.Info("Using stdout format for statistics output")
 			swriter = stats.NewStdWriter(log.Default())
 		}
 		var res []*stats.Stats
@@ -307,31 +307,31 @@ func mind(p Params, system *prompts.System, s *stats.Stats) (brain.Brain, error)
 }
 
 func token(p Params) string {
-	log.Debug("refactoring provider: %s", p.Provider)
-	log.Debug("project path to refactor: %s", p.Input)
+	log.Debug("Refactoring provider: %s", p.Provider)
+	log.Debug("Project path to refactor: %s", p.Input)
 	var token string
 	if p.Token != "" {
 		token = p.Token
 	} else {
-		log.Info("token not provided, trying to find token in .env file")
+		log.Info("Token not provided, trying to find token in .env file")
 		token = env.Token(".env", p.Provider)
 	}
-	log.Debug("using provided token: %s...", mask(token))
+	log.Debug("Using provided token: %s...", mask(token))
 	return token
 }
 
 func proj(params Params) (domain.Project, error) {
 	if params.MockProject {
-		log.Debug("using mock project")
+		log.Debug("Using mock project")
 		return domain.NewMock(), nil
 	}
 	input := domain.NewFilesystem(params.Input)
 	output := params.Output
 	if output != "" {
-		log.Debug("copy project to %q", output)
+		log.Debug("Copy project to %q", output)
 		return domain.NewMirrorProject(input, output)
 	}
-	log.Debug("no output path provided, changing project in place %q", params.Input)
+	log.Debug("No output path provided, changing project in place %q", params.Input)
 	return input, nil
 }
 
@@ -349,24 +349,24 @@ func countStats(s *stats.Stats) protocol.Handler {
 		start := time.Now()
 		resp, err := next(nil, r)
 		if err != nil {
-			return nil, fmt.Errorf("failed to process request: %w", err)
+			return nil, fmt.Errorf("Failed to process request: %w", err)
 		}
 		duration := time.Since(start)
 		jsonresp, err := json.Marshal(resp)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal response: %w", err)
+			return nil, fmt.Errorf("Failed to marshal response: %w", err)
 		}
 		jsonreq, err := json.Marshal(r)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal request: %w", err)
+			return nil, fmt.Errorf("Failed to marshal request: %w", err)
 		}
 		reqt, err := stats.Tokens(string(jsonreq))
 		if err != nil {
-			return nil, fmt.Errorf("failed to count tokens for request: %w", err)
+			return nil, fmt.Errorf("Failed to count tokens for request: %w", err)
 		}
 		respt, err := stats.Tokens(string(jsonresp))
 		if err != nil {
-			return nil, fmt.Errorf("failed to count tokens for response: %w", err)
+			return nil, fmt.Errorf("Failed to count tokens for response: %w", err)
 		}
 		s.A2AReq(duration, reqt, respt, len(jsonreq), len(jsonresp))
 		return resp, err
