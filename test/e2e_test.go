@@ -27,7 +27,7 @@ func TestEndToEnd_Agents_FromCLI_WithoutAI_WithEmptyProject(t *testing.T) {
 	assert.Contains(
 		t,
 		err.Error(),
-		"no java classes found in the project",
+		"No java classes found in the project",
 		"Expected the output to indicate no AI provider was used and no classes were found",
 	)
 }
