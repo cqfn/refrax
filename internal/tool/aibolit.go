@@ -1,4 +1,3 @@
-// Package tool provides tools for identifying refactoring opportunities in code.
 package tool
 
 import (

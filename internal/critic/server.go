@@ -1,4 +1,3 @@
-// Package critic provides functionality for analyzing and critiquing Java code.
 package critic
 
 import (
