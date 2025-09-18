@@ -93,6 +93,9 @@ func (c *Critic) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		return nil, fmt.Errorf("failed to parse task from message: %w", err)
 	}
 	artifacts, err := c.agent.Review(tsk)
+	if err != nil {
+		return nil, fmt.Errorf("failed to review the task: %w", err)
+	}
 	return artifacts.Marshal().Message, err
 }
 

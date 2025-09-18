@@ -8,7 +8,17 @@ import (
 
 	"github.com/cqfn/refrax/internal/domain"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestTokenNotFound(t *testing.T) {
+	params := NewMockParams()
+	params.Token = ""
+	client := NewRefraxClient(params)
+	_, err := client.Refactor(domain.NewMock())
+	require.Error(t, err)
+	require.Equal(t, "failed to find token: token not found, please provide it via --token flag or in .env file", err.Error())
+}
 
 func TestRefraxClient_Creates_Successfully(t *testing.T) {
 	client := NewRefraxClient(NewMockParams())
