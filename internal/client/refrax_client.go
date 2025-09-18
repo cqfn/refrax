@@ -72,7 +72,11 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 			"You cannot suggest removing JavaDoc comments",
 		},
 	}
-	criticBrain, err := mind(c.params, &criticSystemPrompt, criticStats)
+	token, err := token(c.params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find token: %w", err)
+	}
+	criticBrain, err := mind(c.params, token, &criticSystemPrompt, criticStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -98,7 +102,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 			"You cannot remove JavaDoc comments",
 		},
 	}
-	fixerBrain, err := mind(c.params, &fixerSystemPrompt, fixerStats)
+	fixerBrain, err := mind(c.params, token, &fixerSystemPrompt, fixerStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -123,7 +127,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 			"You cannot suggest adding another dependencies",
 		},
 	}
-	reviewerBrain, err := mind(c.params, &reviewerSystemPrompt, reviewerStats)
+	reviewerBrain, err := mind(c.params, token, &reviewerSystemPrompt, reviewerStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance for reviewer: %w", err)
 	}
@@ -146,7 +150,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 			"You cannot change suggestions",
 		},
 	}
-	facilitatorBrain, err := mind(c.params, &facilitatorSystemPrompt, facilitatorStats)
+	facilitatorBrain, err := mind(c.params, token, &facilitatorSystemPrompt, facilitatorStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -298,15 +302,15 @@ func printStats(p Params, s ...*stats.Stats) error {
 	return nil
 }
 
-func mind(p Params, system *prompts.System, s *stats.Stats) (brain.Brain, error) {
-	ai, err := brain.New(p.Provider, token(p), system.String(), p.Playbook)
+func mind(p Params, token string, system *prompts.System, s *stats.Stats) (brain.Brain, error) {
+	ai, err := brain.New(p.Provider, token, system.String(), p.Playbook)
 	if p.Stats {
 		ai = brain.NewMetricBrain(ai, s)
 	}
 	return ai, err
 }
 
-func token(p Params) string {
+func token(p Params) (string, error) {
 	log.Debug("Refactoring provider: %s", p.Provider)
 	log.Debug("Project path to refactor: %s", p.Input)
 	var token string
@@ -316,8 +320,11 @@ func token(p Params) string {
 		log.Info("Token not provided, trying to find token in .env file")
 		token = env.Token(".env", p.Provider)
 	}
+	if token == "" {
+		return "", fmt.Errorf("token not found, please provide it via --token flag or in .env file")
+	}
 	log.Debug("Using provided token: %s...", mask(token))
-	return token
+	return token, nil
 }
 
 func proj(params Params) (domain.Project, error) {
