@@ -11,6 +11,11 @@ builds:
       - linux
       - windows
       - darwin
+    ldflags:
+      - -s -w
+      - -X github.com/cqfn/refrax/internal/util.version={{.Version}}
+      - -X github.com/cqfn/refrax/internal/util.commit={{.FullCommit}}
+      - -X github.com/cqfn/refrax/internal/util.datetime={{.Date}}
 
 archives:
   - formats: [tar.gz]

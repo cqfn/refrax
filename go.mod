@@ -2,12 +2,14 @@ module github.com/cqfn/refrax
 
 go 1.24.2
 
-require github.com/spf13/cobra v1.9.1
+require (
+	github.com/google/uuid v1.3.0
+	github.com/spf13/cobra v1.9.1
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

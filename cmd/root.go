@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/cqfn/refrax/internal/client"
+	"github.com/cqfn/refrax/internal/util"
 	"github.com/spf13/cobra"
 )
 
@@ -39,5 +40,7 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 		newRefactorCmd(&params),
 		newStartCmd(),
 	)
+	root.Version = util.Version()
+	root.SetVersionTemplate("refrax {{.Version}}\n")
 	return root
 }
