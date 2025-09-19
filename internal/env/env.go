@@ -12,9 +12,9 @@ import (
 func Token(path, provider string) string {
 	switch provider {
 	case "deepseek":
-		return find(path, "DEEPSEEK_TOKEN")
+		return find(path, "DEEPSEEK_API_KEY")
 	case "openai":
-		return find(path, "OPENAI_TOKEN")
+		return find(path, "OPENAI_API_KEY")
 	case "mock":
 		return find(path, "MOCK_TOKEN")
 	default:
