@@ -36,6 +36,7 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 	root.PersistentFlags().BoolVar(&params.Stats, "stats", false, "Print internal interaction statistics")
 	root.PersistentFlags().StringVar(&params.Format, "stats-format", "std", "Format for statistics output (std, csv)")
 	root.PersistentFlags().StringVar(&params.Soutput, "stats-output", "stats", "Output path for statistics")
+	root.PersistentFlags().BoolVar(&params.Colorless, "no-colors", false, "Disable colored output")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(),

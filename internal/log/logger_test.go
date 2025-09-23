@@ -89,3 +89,36 @@ func TestLogger_Error(t *testing.T) {
 
 	assert.Contains(t, mock.buf.String(), "ERROR: This is an error message", "Expected error message to be logged")
 }
+
+func TestNew_WithColorlessTrue_ReturnsDefaultLogger(t *testing.T) {
+	p := "colorless-prefix"
+	cl := true
+	c := Red
+
+	l := New(p, c, cl)
+
+	require.NotNil(t, l, "Logger should not be nil")
+	assert.IsType(t, &prefixed{}, l, "Expected a PrefixedLogger")
+	pl, ok := l.(*prefixed)
+	require.True(t, ok, "Logger should be of type *PrefixedLogger")
+	assert.Equal(t, p, pl.prefix, "Prefix should match the input")
+	assert.IsType(t, Default(), pl.original, "Inner logger should be ColoredLogger")
+}
+
+func TestNew_WithColorlessFalse_ReturnsColoredLogger(t *testing.T) {
+	p := "colorfull-prefix"
+	cl := false
+	c := Green
+
+	l := New(p, c, cl)
+
+	require.NotNil(t, l, "Logger should not be nil")
+	assert.IsType(t, &prefixed{}, l, "Expected a PrefixedLogger")
+	pl, ok := l.(*prefixed)
+	require.True(t, ok, "Logger should be of type *PrefixedLogger")
+	assert.Equal(t, p, pl.prefix, "Prefix should match the input")
+	assert.IsType(t, &colored{}, pl.original, "Inner logger should be ColoredLogger")
+	clogger, ok := pl.original.(*colored)
+	require.True(t, ok, "Inner logger should be of type *ColoredLogger")
+	assert.Equal(t, c, clogger.color, "Color should match the input")
+}

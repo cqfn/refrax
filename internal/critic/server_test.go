@@ -59,7 +59,7 @@ type MockBrain struct{}
 func TestNewCritic_Success(t *testing.T) {
 	ai := brain.NewMock()
 
-	critic := NewCritic(ai, 18081)
+	critic := NewCritic(ai, 18081, false)
 	require.NotNil(t, critic)
 	assert.Equal(t, ai, critic.agent.brain)
 }
@@ -68,7 +68,7 @@ func TestCriticStart_Success(t *testing.T) {
 	ai := brain.NewMock()
 	port, err := util.FreePort()
 	require.NoError(t, err)
-	critic := NewCritic(ai, port)
+	critic := NewCritic(ai, port, false)
 	var listen error
 	var shutdown error
 
@@ -83,7 +83,7 @@ func TestCriticStart_Success(t *testing.T) {
 
 func TestCriticStart_ServerStartError(t *testing.T) {
 	ai := brain.NewMock()
-	critic := NewCritic(ai, 18081)
+	critic := NewCritic(ai, 18081, false)
 	critic.server = &mock{started: true}
 
 	err := critic.ListenAndServe()
@@ -95,7 +95,7 @@ func TestCriticStart_ServerStartError(t *testing.T) {
 func TestCriticClose_Success(t *testing.T) {
 	ai := brain.NewMock()
 	server := &mock{started: true}
-	critic := NewCritic(ai, 18081)
+	critic := NewCritic(ai, 18081, false)
 	critic.server = server
 
 	err := critic.Shutdown()
@@ -107,7 +107,7 @@ func TestCriticClose_Success(t *testing.T) {
 func TestCriticClose_ServerNotStartedError(t *testing.T) {
 	ai := brain.NewMock()
 	server := &mock{}
-	critic := NewCritic(ai, 18081, tool.NewEmpty())
+	critic := NewCritic(ai, 18081, false, tool.NewEmpty())
 	critic.server = server
 
 	err := critic.Shutdown()
@@ -119,7 +119,7 @@ func TestCriticClose_ServerNotStartedError(t *testing.T) {
 func TestCriticThink_ReturnsMessage(t *testing.T) {
 	ai := brain.NewMock()
 	server := &mock{}
-	critic := NewCritic(ai, 18081, tool.NewEmpty())
+	critic := NewCritic(ai, 18081, false, tool.NewEmpty())
 	critic.server = server
 	msg := protocol.NewMessage().
 		WithMessageID("msg-123").

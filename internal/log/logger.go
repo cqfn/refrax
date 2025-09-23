@@ -11,7 +11,16 @@ type Logger interface {
 	Error(string, ...any)
 }
 
-var single = NewZerolog(os.Stdout, "info")
+var single = NewZerolog(os.Stdout, "info", false)
+
+// Create a new logger with the specified prefix and color settings.
+func New(prefix string, color Color, colorless bool) Logger {
+	if colorless {
+		return NewPrefixed(prefix, Default())
+	} else {
+		return NewPrefixed(prefix, NewColored(Default(), color))
+	}
+}
 
 // Info logs an informational message using the default logger.
 func Info(msg string, args ...any) {

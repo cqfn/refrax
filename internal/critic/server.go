@@ -21,8 +21,8 @@ type Critic struct {
 }
 
 // NewCritic creates and initializes a new instance of Critic.
-func NewCritic(ai brain.Brain, port int, tools ...tool.Tool) *Critic {
-	logger := log.NewPrefixed("critic", log.NewColored(log.Default(), log.Cyan))
+func NewCritic(ai brain.Brain, port int, colorless bool, tools ...tool.Tool) *Critic {
+	logger := log.New("critic", log.Cyan, colorless)
 	server := protocol.NewServer(agentCard(port), port)
 	critic := &Critic{
 		server: server,
