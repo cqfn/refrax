@@ -84,7 +84,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for critic: %w", err)
 	}
-	ctc := critic.NewCritic(criticBrain, criticPort)
+	ctc := critic.NewCritic(criticBrain, criticPort, c.params.Colorless)
 	ctc.Handler(countStats(criticStats))
 
 	fixerStats := &stats.Stats{Name: "fixer"}
@@ -110,7 +110,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for fixer: %w", err)
 	}
-	fxr := fixer.NewFixer(fixerBrain, fixerPort)
+	fxr := fixer.NewFixer(fixerBrain, fixerPort, c.params.Colorless)
 	fxr.Handler(countStats(fixerStats))
 
 	reviewerStats := &stats.Stats{Name: "reviewer"}
@@ -135,7 +135,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for reviewer: %w", err)
 	}
-	rvwr := reviewer.NewReviewer(reviewerBrain, reviewerPort, c.params.Checks...)
+	rvwr := reviewer.NewReviewer(reviewerBrain, reviewerPort, c.params.Colorless, c.params.Checks...)
 	rvwr.Handler(countStats(reviewerStats))
 
 	facilitatorStats := &stats.Stats{Name: "facilitator"}
@@ -158,7 +158,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
-	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, rvwr, facilitatorPort)
+	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, rvwr, facilitatorPort, c.params.Colorless)
 	fclttor.Handler(countStats(facilitatorStats))
 
 	go func() {
@@ -269,9 +269,9 @@ func shutdown(s shudownable) {
 
 func initLogger(params *Params) {
 	if params.Debug {
-		log.Set(log.NewZerolog(params.Log, "debug"))
+		log.Set(log.NewZerolog(params.Log, "debug", params.Colorless))
 	} else {
-		log.Set(log.NewZerolog(params.Log, "info"))
+		log.Set(log.NewZerolog(params.Log, "info", params.Colorless))
 	}
 }
 

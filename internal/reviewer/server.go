@@ -20,8 +20,8 @@ type A2AReviewer struct {
 }
 
 // NewReviewer creates a new instance of A2AReviewer.
-func NewReviewer(ai brain.Brain, port int, cmds ...string) *A2AReviewer {
-	logger := log.NewPrefixed("reviewer", log.NewColored(log.Default(), log.Orange))
+func NewReviewer(ai brain.Brain, port int, colorless bool, cmds ...string) *A2AReviewer {
+	logger := log.New("reviewer", log.Orange, colorless)
 	logger.Debug("preparing server on port %d", port)
 	server := protocol.NewServer(agentCard(port), port)
 	reviewer := &A2AReviewer{

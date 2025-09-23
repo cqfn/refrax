@@ -29,8 +29,8 @@ type promptData struct {
 }
 
 // NewFixer creates a new Fixer instance with the provided AI brain and port.
-func NewFixer(ai brain.Brain, port int) *Fixer {
-	logger := log.NewPrefixed("fixer", log.NewColored(log.Default(), log.Magenta))
+func NewFixer(ai brain.Brain, port int, colorless bool) *Fixer {
+	logger := log.New("fixer", log.Magenta, colorless)
 	logger.Debug("preparing server on port %d with ai provider %s", port, ai)
 	server := protocol.NewServer(agentCard(port), port)
 	fixer := &Fixer{

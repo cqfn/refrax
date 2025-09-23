@@ -12,13 +12,13 @@ type zero struct {
 
 // NewZerolog creates a new Logger with the specified log level and writer.
 // Details: https://github.com/rs/zerolog
-func NewZerolog(writer io.Writer, level string) Logger {
+func NewZerolog(writer io.Writer, level string, colorless bool) Logger {
 	zlevel, err := zerolog.ParseLevel(level)
 	if err != nil {
 		zlevel = zerolog.InfoLevel
 	}
 	return &zero{
-		logger: zerolog.New(zerolog.ConsoleWriter{Out: writer}).Level(zlevel).With().Timestamp().Logger(),
+		logger: zerolog.New(zerolog.ConsoleWriter{Out: writer, NoColor: colorless}).Level(zlevel).With().Timestamp().Logger(),
 	}
 }
 
