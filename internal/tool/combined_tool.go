@@ -16,6 +16,10 @@ func NewCombined(tls ...Tool) Tool {
 func (c *CombinedTool) Imperfections() string {
 	var result strings.Builder
 	for pos, t := range c.tools {
+		i := strings.TrimSpace(t.Imperfections())
+		if i == "" || i == "\n" {
+			continue
+		}
 		result.WriteString(t.Imperfections())
 		if pos < len(c.tools)-1 {
 			result.WriteString("\n")
