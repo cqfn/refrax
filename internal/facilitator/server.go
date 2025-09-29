@@ -34,6 +34,7 @@ func NewFacilitator(ai brain.Brain, critic domain.Critic, fixer domain.Fixer, re
 			critic:   critic,
 			fixer:    fixer,
 			reviewer: reviewer,
+			frounds:  3,
 		},
 	}
 	server.MsgHandler(facilitator.think)

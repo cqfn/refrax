@@ -3,24 +3,28 @@ Analyze the following Java code:
 {{ .Code }}
 
 Identify issues such as:
-* grammar and spelling mistakes in comments,
-* variables that can be inlined or removed,
-* unnecessary comments inside methods,
-* redundant code.
+* Grammar and spelling mistakes in comments.
+* Variables that can be inlined or removed.
+* Unnecessary comments inside methods.
+* Redundant code.
 
 Do **not** suggest any changes that alter functionality.
 Do **not** suggest moving code between files (e.g., extract class or interface).
 Do **not** suggest renaming methods or classes.
 Do **not** suggest upgrading or replacing libraries.
 
-Consider the following imperfections reported by static analysis:
 {{- if .Defects }}
+Consider the following imperfections reported by static analysis:
 {{- range .Defects }}
 - {{ . }}
 {{- end }}
-{{- else }}
-(none)
 {{- end }}
 
 Respond with plain text, one suggestion per line.
+
+Example:
+<suggestion1>
+<suggestion2>
+<suggestion3>
+
 If there are no significant issues, respond with: {{ .NotFound }}

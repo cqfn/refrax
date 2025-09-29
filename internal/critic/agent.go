@@ -31,20 +31,27 @@ type promptData struct {
 func (c *agent) Review(job *domain.Job) (*domain.Artifacts, error) {
 	class := job.Classes[0]
 	c.log.Info("Received class %q for analysis", class.Name())
+	imperfections := tool.NewCombined(c.tools...).Imperfections()
+	var imp []string
+	if imperfections != "" {
+		imp = strings.Split(imperfections, "\n")
+	}
 	data := promptData{
 		Code:     class.Content(),
-		Defects:  []string{tool.NewCombined(c.tools...).Imperfections()},
+		Defects:  imp,
 		NotFound: notFound,
 	}
 	prompt := prompts.User{
 		Data: data,
 		Name: "critic/critic.md.tmpl",
 	}
-	c.log.Debug("Rendered prompt for class %s: %s", class.Name(), prompt)
-	answer, err := c.brain.Ask(prompt.String())
+	p := prompt.String()
+	c.log.Debug("Rendered prompt for class %s: %s", class.Name(), p)
+	answer, err := c.brain.Ask(p)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from brain: %w", err)
 	}
+	c.log.Debug("Received answer from brain for class %s: %s", class.Name(), answer)
 	suggestions := c.associated(parseAnswer(answer), class.Path())
 	logSuggestions(c.log, suggestions)
 	artifacts := domain.Artifacts{
