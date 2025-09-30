@@ -64,7 +64,7 @@ func (a *agent) runCmd(cmd string) ([]domain.Suggestion, error) {
 		return make([]domain.Suggestion, 0), nil
 	}
 	a.logger.Info("Failed to run review command: %s, error: %v", cmd, err)
-	a.logger.Info("Asking AI to form suggestions based on the error output")
+	a.logger.Debug("Asking AI to form suggestions based on the error output")
 	outb := out.Bytes()
 	errb := errOut.Bytes()
 	data := promptData{

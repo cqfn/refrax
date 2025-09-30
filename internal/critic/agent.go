@@ -30,7 +30,7 @@ type promptData struct {
 // Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
 func (c *agent) Review(job *domain.Job) (*domain.Artifacts, error) {
 	class := job.Classes[0]
-	c.log.Info("Received class %q for analysis", class.Name())
+	c.log.Debug("Received class %q for analysis", class.Name())
 	imperfections := tool.NewCombined(c.tools...).Imperfections()
 	var imp []string
 	if imperfections != "" {
@@ -81,15 +81,13 @@ func parseAnswer(answer string) []string {
 	return suggestions
 }
 
-func (c *agent) associated(suggestions []string, class string) []domain.Suggestion {
+func (c *agent) associated(critique []string, class string) []domain.Suggestion {
 	res := make([]domain.Suggestion, 0)
-	for i, suggestion := range suggestions {
-		if strings.EqualFold(suggestion, notFound) {
-			c.log.Info("No suggestions found for the class #%d: %s", i+1, class)
-		} else {
-			res = append(res, *domain.NewSuggestion(suggestion, class))
+	for _, c := range critique {
+		if !strings.EqualFold(c, notFound) {
+			res = append(res, *domain.NewSuggestion(c, class))
 		}
 	}
-	c.log.Info("Total suggestions associated with class %s: %d", class, len(res))
+	c.log.Info("Found %d suggestions for %s", len(res), class)
 	return res
 }

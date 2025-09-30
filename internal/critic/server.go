@@ -48,7 +48,7 @@ func (c *Critic) ListenAndServe() error {
 // Review sends the provided Java class to the Critic for analysis and returns suggested improvements.
 func (c *Critic) Review(job *domain.Job) (*domain.Artifacts, error) {
 	address := fmt.Sprintf("http://localhost:%d", c.port)
-	c.log.Info("Asking critic (%s) to lint the class...", address)
+	c.log.Debug("Asking critic (%s) to lint the class...", address)
 	critic := protocol.NewClient(address)
 	resp, err := critic.SendMessage(job.Marshal())
 	if err != nil {

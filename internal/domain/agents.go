@@ -1,6 +1,9 @@
 package domain
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Facilitator represents an interface to refactor tasks into multiple classes.
 type Facilitator interface {
@@ -35,6 +38,15 @@ func (j *Job) Param(key string) (any, bool) {
 	}
 	res, ok := j.Descr.Meta[key]
 	return res, ok
+}
+
+func (j *Job) MaxSize() (int, error) {
+	size, ok := j.Param("max-size")
+	ssize := fmt.Sprintf("%v", size)
+	if !ok {
+		ssize = "200"
+	}
+	return strconv.Atoi(ssize)
 }
 
 type Artifacts struct {
