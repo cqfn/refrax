@@ -48,7 +48,7 @@ func NewFixer(ai brain.Brain, port int, colorless bool) *Fixer {
 // It communicates with an external fixer service to perform the modifications.
 func (f *Fixer) Fix(job *domain.Job) (*domain.Artifacts, error) {
 	address := fmt.Sprintf("http://localhost:%d", f.port)
-	f.log.Info("Asking fixer (%s) to apply suggestions...", address)
+	f.log.Debug("Asking fixer (%s) to apply suggestions...", address)
 	fixer := protocol.NewClient(address)
 	resp, err := fixer.SendMessage(job.Marshal())
 	if err != nil {
@@ -135,7 +135,7 @@ func (f *Fixer) thinkLong(m *protocol.Message) (*protocol.Message, error) {
 		Name: "fixer/fix.md.tmpl",
 	}
 	question := prompt.String()
-	f.log.Info("Asking the brain to fix the Java code...")
+	f.log.Debug("Asking the brain to fix the Java code...")
 	answer, err := f.brain.Ask(question)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get answer from AI: %w", err)

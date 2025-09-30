@@ -147,7 +147,7 @@ func basic(ctx context.Context, mh MsgHandler) Handler {
 			msg := params.Message
 			msg, err = mh(ctx, msg)
 			if err != nil {
-				resp := failure(id, ErrCodeInternalError, fmt.Sprintf("Failed to handle message send: %v", err))
+				resp := failure(id, ErrCodeInternalError, fmt.Sprintf("failed to handle message send: %v", err))
 				return &resp, nil
 			}
 			resp := success(id, msg)

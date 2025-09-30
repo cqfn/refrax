@@ -27,7 +27,7 @@ func TestPrefixed_Info(t *testing.T) {
 	pref.Info("info message")
 
 	require.Len(t, mock.Messages, 1)
-	assert.Equal(t, "mock info: test-prefix: info message", mock.Messages[0])
+	assert.Equal(t, "mock info: test-prefix:      info message", mock.Messages[0])
 }
 
 func TestPrefixed_Debug(t *testing.T) {
@@ -38,7 +38,7 @@ func TestPrefixed_Debug(t *testing.T) {
 	pref.Debug("debug message")
 
 	require.Len(t, mock.Messages, 1)
-	assert.Equal(t, "mock debug: debug-prefix: debug message", mock.Messages[0])
+	assert.Equal(t, "mock debug: debug-prefix:     debug message", mock.Messages[0])
 }
 
 func TestPrefixed_Warn(t *testing.T) {
@@ -49,7 +49,7 @@ func TestPrefixed_Warn(t *testing.T) {
 	pref.Warn("warn message")
 
 	require.Len(t, mock.Messages, 1)
-	assert.Equal(t, "mock warn: warn-prefix: warn message", mock.Messages[0])
+	assert.Equal(t, "mock warn: warn-prefix:      warn message", mock.Messages[0])
 }
 
 func TestPrefixed_Error(t *testing.T) {
@@ -60,7 +60,7 @@ func TestPrefixed_Error(t *testing.T) {
 	pref.Error("error message")
 
 	require.Len(t, mock.Messages, 1)
-	assert.Equal(t, "mock error: error-prefix: error message", mock.Messages[0])
+	assert.Equal(t, "mock error: error-prefix:     error message", mock.Messages[0])
 }
 
 func TestPrefixed_WithArgs(t *testing.T) {
@@ -75,8 +75,8 @@ func TestPrefixed_WithArgs(t *testing.T) {
 
 	// Assert each message was logged with the correct prefix
 	require.Len(t, mock.Messages, 4)
-	assert.Equal(t, "mock info: arg-prefix: message with args: arg1, 42", mock.Messages[0])
-	assert.Equal(t, "mock debug: arg-prefix: debug with args: arg2, true", mock.Messages[1])
-	assert.Equal(t, "mock warn: arg-prefix: warn with args: arg3", mock.Messages[2])
-	assert.Equal(t, "mock error: arg-prefix: error with args: arg4 3.14", mock.Messages[3])
+	assert.Equal(t, "mock info: arg-prefix:       message with args: arg1, 42", mock.Messages[0])
+	assert.Equal(t, "mock debug: arg-prefix:       debug with args: arg2, true", mock.Messages[1])
+	assert.Equal(t, "mock warn: arg-prefix:       warn with args: arg3", mock.Messages[2])
+	assert.Equal(t, "mock error: arg-prefix:       error with args: arg4 3.14", mock.Messages[3])
 }

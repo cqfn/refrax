@@ -7,11 +7,15 @@ Identify issues such as:
 * Variables that can be inlined or removed.
 * Unnecessary comments inside methods.
 * Redundant code.
+* Long methods.
+* Complex logic that can be simplified.
 
 Do **not** suggest any changes that alter functionality.
 Do **not** suggest moving code between files (e.g., extract class or interface).
 Do **not** suggest renaming methods or classes.
 Do **not** suggest upgrading or replacing libraries.
+Do **not** suggest formatting changes (e.g., indentation, line breaks).
+Do **not** propose altering license notes and comments.
 
 {{- if .Defects }}
 Consider the following imperfections reported by static analysis:
