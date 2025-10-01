@@ -5,11 +5,12 @@ Analyze the following Java code:
 Identify issues such as:
 * Grammar and spelling mistakes in comments.
 * Variables that can be inlined or removed.
-* Unnecessary comments inside methods.
+* Unnecessary comments inside methods, but not javadocs
 * Redundant code.
 * Long methods.
 * Complex logic that can be simplified.
 
+Do **not** suggest removing JavaDoc comments.
 Do **not** suggest any changes that alter functionality.
 Do **not** suggest moving code between files (e.g., extract class or interface).
 Do **not** suggest renaming methods or classes.

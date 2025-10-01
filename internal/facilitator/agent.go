@@ -212,7 +212,7 @@ func (a *agent) repair(refactored []domain.Class) error {
 	suggestions := artifacts.Suggestions
 	a.log.Info("Received %d suggestions from reviewer", len(suggestions))
 	for _, s := range suggestions {
-		a.log.Info("Received suggestion: %s", s)
+		a.log.Info("Received suggestion: %s: %s", s.ClassPath, s.Text)
 	}
 	counter := a.frounds
 	for len(suggestions) > 0 {
