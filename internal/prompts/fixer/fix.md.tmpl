@@ -20,6 +20,9 @@ File: {{ .FilePath }}
 - Output raw Java — **no** markdown fences, **no** diff markers, **no** comments or explanations.
 - Do **not** rename the class. Keep public API names unless a suggestion explicitly requires a change.
 - Do **not** remove JavaDoc comments; you may update them to stay accurate.
+- Keep JavaDoc comments!
+- Do **not** change functionality unless a suggestion explicitly requires it.
+- Do **not** remove License comments.
 - Preserve the existing package and imports unless a suggestion requires changing them.
 - Ensure the result compiles and includes the entire file content from the package line (if any) to the final }.
 - Do **not** add external dependencies unless explicitly requested by a suggestion.
