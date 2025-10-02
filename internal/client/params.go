@@ -18,6 +18,7 @@ type Params struct {
 	Log         io.Writer
 	Checks      []string
 	Colorless   bool
+	Model       string
 }
 
 // NewMockParams creates a new Params object with mock settings.
@@ -37,5 +38,6 @@ func NewMockParams() *Params {
 		Log:         io.Discard,
 		Checks:      []string{"mvn clean test"},
 		Colorless:   false,
+		Model:       "gpt-3.5-turbo",
 	}
 }
