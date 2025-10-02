@@ -99,6 +99,8 @@ func TestProviderToken_DefaultTokenPresent(t *testing.T) {
 }
 
 func TestProviderToken_DeepseekTokenAbsent(t *testing.T) {
+	t.Setenv("DEEPSEEK_API_KEY", "")
+
 	tempDir := t.TempDir()
 
 	result := Token(tempDir, "deepseek")
@@ -106,6 +108,8 @@ func TestProviderToken_DeepseekTokenAbsent(t *testing.T) {
 }
 
 func TestProviderToken_OpenAITokenAbsent(t *testing.T) {
+	t.Setenv("OPENAI_API_KEY", "")
+
 	tempDir := t.TempDir()
 
 	result := Token(tempDir, "openai")

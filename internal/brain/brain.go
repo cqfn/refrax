@@ -11,10 +11,12 @@ const deepseek = "deepseek"
 
 const openai = "openai"
 
+const ollama = "ollama"
+
 const mock = "mock"
 
 // New creates a new instance of Brain based on the provided provider and optional playbook strings.
-func New(provider, token, system string, playbook ...string) (Brain, error) {
+func New(provider, token, model, system string, playbook ...string) (Brain, error) {
 	switch provider {
 	case deepseek:
 		return NewDeepSeek(token, system), nil
@@ -25,6 +27,8 @@ func New(provider, token, system string, playbook ...string) (Brain, error) {
 			return NewMock(), nil
 		}
 		return NewMock(playbook[0]), nil
+	case ollama:
+		return NewOllama("http://localhost:11434", model, token, system), nil
 	default:
 		return nil, fmt.Errorf("unknown provider: %s", provider)
 	}

@@ -37,6 +37,7 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 	root.PersistentFlags().StringVar(&params.Format, "stats-format", "std", "Format for statistics output (std, csv)")
 	root.PersistentFlags().StringVar(&params.Soutput, "stats-output", "stats", "Output path for statistics")
 	root.PersistentFlags().BoolVar(&params.Colorless, "no-colors", false, "Disable colored output")
+	root.PersistentFlags().StringVarP(&params.Model, "model", "m", "", "Model to use (if supported by the AI provider)")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(),

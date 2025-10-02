@@ -76,7 +76,9 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find token: %w", err)
 	}
-	criticBrain, err := mind(c.params, token, &criticSystemPrompt, criticStats)
+	model := c.params.Model
+	log.Debug("Using model: %s", model)
+	criticBrain, err := mind(c.params, token, model, &criticSystemPrompt, criticStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -102,7 +104,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 			"You cannot remove JavaDoc comments",
 		},
 	}
-	fixerBrain, err := mind(c.params, token, &fixerSystemPrompt, fixerStats)
+	fixerBrain, err := mind(c.params, token, model, &fixerSystemPrompt, fixerStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -127,7 +129,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 			"You cannot suggest adding another dependencies",
 		},
 	}
-	reviewerBrain, err := mind(c.params, token, &reviewerSystemPrompt, reviewerStats)
+	reviewerBrain, err := mind(c.params, token, model, &reviewerSystemPrompt, reviewerStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance for reviewer: %w", err)
 	}
@@ -150,7 +152,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 			"You cannot change suggestions",
 		},
 	}
-	facilitatorBrain, err := mind(c.params, token, &facilitatorSystemPrompt, facilitatorStats)
+	facilitatorBrain, err := mind(c.params, token, model, &facilitatorSystemPrompt, facilitatorStats)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI instance: %w", err)
 	}
@@ -302,8 +304,8 @@ func printStats(p Params, s ...*stats.Stats) error {
 	return nil
 }
 
-func mind(p Params, token string, system *prompts.System, s *stats.Stats) (brain.Brain, error) {
-	ai, err := brain.New(p.Provider, token, system.String(), p.Playbook)
+func mind(p Params, token, model string, system *prompts.System, s *stats.Stats) (brain.Brain, error) {
+	ai, err := brain.New(p.Provider, token, model, system.String(), p.Playbook)
 	if p.Stats {
 		ai = brain.NewMetricBrain(ai, s)
 	}

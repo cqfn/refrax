@@ -17,6 +17,8 @@ func Token(path, provider string) string {
 		return find(path, "OPENAI_API_KEY")
 	case "mock":
 		return find(path, "MOCK_TOKEN")
+	case "ollama":
+		return find(path, "OLLAMA_TOKEN")
 	default:
 		return find(path, "TOKEN")
 	}
