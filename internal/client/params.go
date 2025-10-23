@@ -19,6 +19,7 @@ type Params struct {
 	Checks      []string
 	Colorless   bool
 	Model       string
+	Attempts    int
 }
 
 // NewMockParams creates a new Params object with mock settings.
@@ -39,5 +40,6 @@ func NewMockParams() *Params {
 		Checks:      []string{"mvn clean test"},
 		Colorless:   false,
 		Model:       "gpt-3.5-turbo",
+		Attempts:    3,
 	}
 }

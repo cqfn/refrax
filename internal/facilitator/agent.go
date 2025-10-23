@@ -21,6 +21,7 @@ type agent struct {
 	fixer    domain.Fixer
 	reviewer domain.Reviewer
 	frounds  int
+	attempts int
 }
 
 type fix struct {
@@ -45,7 +46,14 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 	}
 	diff := 0
 	result := make([]domain.Class, 0)
-	for diff < size {
+	attempts := a.attempts
+	if attempts <= 0 {
+		a.log.Info("Number of attempts less or equal zero (%d), skipping refactoring", attempts)
+	} else {
+		a.log.Info("Starting refactoring with max-size=%d and attempts=%d", size, attempts)
+	}
+	for diff < size && attempts > 0 {
+		a.log.Info("Refactoring attempt %d/%d, current diff %d/%d", a.attempts-attempts+1, a.attempts, diff, size)
 		c, err := a.criticizeAll(job.Classes, size)
 		if err != nil {
 			return nil, fmt.Errorf("failed to criticize classes: %w", err)
@@ -81,6 +89,7 @@ func (a *agent) Refactor(job *domain.Job) (*domain.Artifacts, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to stabilize refactored classes: %w", err)
 		}
+		attempts--
 	}
 	res := &domain.Artifacts{
 		Descr:   &domain.Description{Text: "refactored classes"},

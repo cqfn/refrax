@@ -160,7 +160,7 @@ func (c *RefraxClient) Refactor(proj domain.Project) (domain.Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to find free port for facilitator: %w", err)
 	}
-	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, rvwr, facilitatorPort, c.params.Colorless)
+	fclttor := facilitator.NewFacilitator(facilitatorBrain, ctc, fxr, rvwr, facilitatorPort, c.params.Colorless, c.params.Attempts)
 	fclttor.Handler(countStats(facilitatorStats))
 
 	go func() {

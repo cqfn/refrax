@@ -38,6 +38,7 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 	root.PersistentFlags().StringVar(&params.Soutput, "stats-output", "stats", "Output path for statistics")
 	root.PersistentFlags().BoolVar(&params.Colorless, "no-colors", false, "Disable colored output")
 	root.PersistentFlags().StringVarP(&params.Model, "model", "m", "", "Model to use (if supported by the AI provider)")
+	root.PersistentFlags().IntVar(&params.Attempts, "attempts", 3, "How many attempts the AI has to make a valid refactoring")
 	root.AddCommand(
 		newRefactorCmd(&params),
 		newStartCmd(),
