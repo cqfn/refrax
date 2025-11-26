@@ -43,7 +43,7 @@ type deepseekMsg struct {
 func NewDeepSeek(apiKey, _ string) Brain {
 	return &deepSeek{
 		token: apiKey,
-		url:   "https://api.deepseek.com/chat/completions",
+		url:   "https://api.deepseek.com/v1/chat/completions",
 		model: "deepseek-chat",
 	}
 }

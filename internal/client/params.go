@@ -5,6 +5,7 @@ import "io"
 // Params holds the configuration parameters for Refrax commands.
 type Params struct {
 	Provider    string
+	ProviderUrl string
 	Token       string
 	Playbook    string
 	MockProject bool
