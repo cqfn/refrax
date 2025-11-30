@@ -29,6 +29,7 @@ func NewRootCmd(out, _ io.Writer) *cobra.Command {
 		PersistentPreRun: func(_ *cobra.Command, _ []string) { params.Log = out },
 	}
 	root.PersistentFlags().StringVarP(&params.Provider, "ai", "a", "none", "AI provider to use (openai, deepseek, none)")
+	root.PersistentFlags().StringVar(&params.ProviderUrl, "ai-url", "", "Custom URL for AI provider")
 	root.PersistentFlags().StringVarP(&params.Token, "token", "t", "", "Token for the AI provider (if required)")
 	root.PersistentFlags().StringVar(&params.Playbook, "playbook", "", "Path to a user-defined YAML playbook for AI integration")
 	root.PersistentFlags().BoolVar(&params.MockProject, "mock-project", false, "Use mock project")

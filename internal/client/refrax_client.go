@@ -305,7 +305,7 @@ func printStats(p Params, s ...*stats.Stats) error {
 }
 
 func mind(p Params, token, model string, system *prompts.System, s *stats.Stats) (brain.Brain, error) {
-	ai, err := brain.New(p.Provider, token, model, system.String(), p.Playbook)
+	ai, err := brain.New(p.Provider, p.ProviderUrl, token, model, system.String(), p.Playbook)
 	if p.Stats {
 		ai = brain.NewMetricBrain(ai, s)
 	}
