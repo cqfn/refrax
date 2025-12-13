@@ -81,7 +81,7 @@ func TestMask_ReturnsEmptyForEmptyToken(t *testing.T) {
 
 func TestMask_MasksShortToken(t *testing.T) {
 	result := mask("AB")
-	assert.Equal(t, "AB", result, "short token must show visible part")
+	assert.Equal(t, "AB", result, "token shorter than 3 characters must remain fully visible")
 }
 
 func TestMask_MasksLongToken(t *testing.T) {
