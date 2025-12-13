@@ -74,6 +74,26 @@ func TestNewMockParams_SetsDefaultAttempts(t *testing.T) {
 	assert.Equal(t, 3, params.Attempts, "attempts must be 3")
 }
 
+func TestNewMockParams_SetsEmptyPlaybook(t *testing.T) {
+	params := NewMockParams()
+	assert.Equal(t, "", params.Playbook, "playbook must be empty")
+}
+
+func TestNewMockParams_SetsStatsOutput(t *testing.T) {
+	params := NewMockParams()
+	assert.Equal(t, "stats", params.Soutput, "soutput must be stats")
+}
+
+func TestNewMockParams_SetsEmptyInput(t *testing.T) {
+	params := NewMockParams()
+	assert.Equal(t, "", params.Input, "input must be empty")
+}
+
+func TestNewMockParams_SetsEmptyOutput(t *testing.T) {
+	params := NewMockParams()
+	assert.Equal(t, "", params.Output, "output must be empty")
+}
+
 func TestMask_ReturnsEmptyForEmptyToken(t *testing.T) {
 	result := mask("")
 	assert.Equal(t, "", result, "mask of empty string must be empty")
