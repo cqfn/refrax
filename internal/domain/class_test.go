@@ -65,7 +65,7 @@ func TestFSClass_SetContent_WritesToFile(t *testing.T) {
 	expected := "class Wrïtë { int ä = 42; }"
 	err := class.SetContent(expected)
 	require.NoError(t, err, "SetContent unexpectedly returned an error")
-	content, err := os.ReadFile(path)
+	content, err := os.ReadFile(filepath.Clean(path))
 	require.NoError(t, err, "failed to read test file")
 	assert.Equal(t, expected, string(content), "File content must match the updated value")
 }
