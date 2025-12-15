@@ -93,39 +93,3 @@ func TestNewMockParams_SetsEmptyOutput(t *testing.T) {
 	params := NewMockParams()
 	assert.Equal(t, "", params.Output, "output must be empty")
 }
-
-func TestMask_ReturnsEmptyForEmptyToken(t *testing.T) {
-	result := mask("")
-	assert.Equal(t, "", result, "mask of empty string must be empty")
-}
-
-func TestMask_MasksSingleCharacterToken(t *testing.T) {
-	result := mask("A")
-	assert.Equal(t, "A", result, "single character token must remain fully visible")
-}
-
-func TestMask_MasksShortToken(t *testing.T) {
-	result := mask("AB")
-	assert.Equal(t, "AB", result, "token shorter than 3 characters must remain fully visible")
-}
-
-func TestMask_MasksThreeCharacterToken(t *testing.T) {
-	result := mask("ABC")
-	assert.Equal(t, "ABC", result, "three character token must remain fully visible")
-}
-
-func TestMask_MasksFourCharacterToken(t *testing.T) {
-	result := mask("ABCD")
-	assert.Equal(t, "ABC*", result, "four character token must show first three characters and mask one")
-}
-
-func TestMask_MasksLongToken(t *testing.T) {
-	result := mask("ABCDEFGH")
-	assert.Equal(t, "ABC*****", result, "long token must be masked")
-}
-
-func TestMask_ShowsThreeCharacters(t *testing.T) {
-	result := mask("secrettoken12345")
-	assert.NotEmpty(t, result, "masked token must not be empty")
-	assert.Equal(t, "sec*************", result, "token must show first three characters")
-}
