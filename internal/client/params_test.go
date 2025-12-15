@@ -34,8 +34,7 @@ func TestNewMockParams_DisablesDebug(t *testing.T) {
 }
 
 func TestNewMockParams_DisablesStats(t *testing.T) {
-	params := NewMockParams()
-	assert.False(t, params.Stats, "stats must be disabled")
+	assert.False(t, NewMockParams().Stats, "stats must be disabled")
 }
 
 func TestNewMockParams_SetsStdFormat(t *testing.T) {
