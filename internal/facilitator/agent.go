@@ -3,6 +3,7 @@ package facilitator
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/cqfn/refrax/internal/brain"
 	"github.com/cqfn/refrax/internal/domain"
@@ -103,20 +104,28 @@ func (a *agent) criticizeAll(classes []domain.Class, size int) ([]critique, erro
 	a.log.Info("Received request for refactoring, number of attached files: %d, max-size: %d", nclasses, size)
 	improvements := make([]critique, 0, nclasses)
 	ch := make(chan critique, nclasses)
+	wg := sync.WaitGroup{}
 	reviewed := 0
 	for _, class := range classes {
 		tokens, _ := stats.Tokens(class.Content())
 		a.log.Debug("Class %s has %d tokens", class.Path(), tokens)
 		if tokens < MAX_TOKENS {
 			reviewed++
-			go a.criticize(class, ch)
+			wg.Add(1)
+			go func(c domain.Class) {
+				defer wg.Done()
+				a.criticize(c, ch)
+			}(class)
 		} else {
 			a.log.Warn("Class %s (%s) has too many tokens (%d), skipping review", class.Name(), class.Path(), tokens)
 		}
 	}
 	a.log.Info("Number of classes to review: %d", reviewed)
-	for range reviewed {
-		impr := <-ch
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+	for impr := range ch {
 		if impr.err != nil {
 			return nil, fmt.Errorf("failed to review class: %w", impr.err)
 		}
